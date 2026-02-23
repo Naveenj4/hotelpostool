@@ -1,0 +1,171 @@
+/* Bills & Sales Page Specific Styles */
+.bills-page-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* Tighter grid for metrics */
+.widgets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Charts Section - Dense Layout */
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-card {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.chart-container {
+    height: 300px;
+}
+
+/* Data Tables - Professional Look */
+.data-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.card-title {
+    padding: 1rem 1.25rem;
+    background-color: var(--slate-50);
+    border-bottom: 1px solid var(--border-light);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--slate-800);
+}
+
+/* Table Refinements */
+.custom-table th {
+    background-color: var(--slate-50);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--slate-500);
+    padding: 0.75rem 1rem;
+}
+
+.custom-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--slate-100);
+}
+
+.custom-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Striped Rows for better readability */
+.custom-table tbody tr:nth-child(even) {
+    background-color: #fafbfc;
+}
+
+.custom-table tbody tr:hover {
+    background-color: #f1f5f9;
+}
+
+.col-sno {
+    width: 50px;
+    text-align: center;
+    color: var(--slate-400);
+}
+
+.col-bill-no {
+    width: 100px;
+    font-weight: 600;
+    color: var(--primary-700);
+    font-family: monospace;
+}
+
+.col-date {
+    min-width: 130px;
+    color: var(--slate-500);
+    font-size: 0.85rem;
+}
+
+.col-items {
+    max-width: 250px;
+}
+
+.col-qty {
+    width: 70px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.col-total {
+    width: 100px;
+    text-align: right;
+    font-weight: 700;
+    color: var(--slate-900);
+}
+
+.quantity-badge {
+    background: var(--slate-200);
+    color: var(--slate-700);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .reports-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .widgets-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .date-filter {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .date-filter select,
+    .date-filter button {
+        width: 100%;
+    }
+
+    .bills-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+}

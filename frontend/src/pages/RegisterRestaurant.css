@@ -1,0 +1,209 @@
+/* Register Restaurant Page Specific Styles */
+.register-container {
+    height: 100vh;
+    display: flex;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .register-container {
+        flex-direction: column;
+        height: auto;
+        overflow: auto;
+    }
+}
+
+.register-sidebar {
+    width: 35%;
+    min-width: 400px;
+    background: linear-gradient(135deg, var(--slate-900) 0%, #1e293b 100%);
+    padding: 3rem;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    color: white;
+}
+
+@media (max-width: 1024px) {
+    .register-sidebar {
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        padding: 2rem;
+    }
+}
+
+.sidebar-glow {
+    position: absolute;
+    top: -10%;
+    right: -10%;
+    height: 500px;
+    width: 500px;
+    background: radial-gradient(circle, rgba(242, 166, 90, 0.2) 0%, rgba(242, 166, 90, 0) 70%);
+    border-radius: 50%;
+    filter: blur(60px);
+}
+
+.logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 3rem;
+    text-decoration: none;
+}
+
+.logo-icon-box {
+    background-color: var(--white);
+    padding: 0.5rem;
+    border-radius: 10px;
+    display: flex;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.logo-text {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.03em;
+}
+
+.sidebar-desc {
+    font-size: 1.1rem;
+    color: var(--slate-400);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.benefit-item {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    color: var(--slate-200);
+    font-weight: 500;
+}
+
+.sidebar-icon-box {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem;
+    border-radius: 8px;
+    display: flex;
+    color: var(--primary-500);
+}
+
+.testimonial-box {
+    position: relative;
+    z-index: 10;
+    margin-top: auto;
+    padding: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    border-radius: var(--radius-8);
+    color: var(--galaxy-black);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.register-main {
+    flex: 1;
+    background-color: var(--slate-50);
+    padding: 4rem 2rem 6rem 2rem;
+    display: flex;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+@media (max-width: 1024px) {
+    .register-main {
+        padding: 2rem 1.5rem 4rem 1.5rem;
+        overflow-y: visible;
+    }
+}
+
+.form-wrapper {
+    max-width: 42rem;
+    width: 100%;
+}
+
+
+.form-header {
+    margin-bottom: 2.5rem;
+}
+
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--slate-500);
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .input-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.full-width {
+    grid-column: span 2;
+}
+
+@media (max-width: 640px) {
+    .full-width {
+        grid-column: span 1;
+    }
+}
+
+.register-footer-text {
+    text-align: center;
+    color: var(--galaxy-muted);
+    font-size: 0.875rem;
+}
+
+.footer-link {
+    color: var(--primary-500);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    text-decoration: underline;
+}
