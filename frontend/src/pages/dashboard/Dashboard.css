@@ -504,3 +504,64 @@
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 768px) {
+    .dashboard-sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+    }
+
+    .dashboard-sidebar.show {
+        left: 0;
+    }
+
+    .dashboard-sidebar.collapsed {
+        width: 260px;
+        /* Reset on mobile */
+    }
+
+    .dashboard-main {
+        width: 100%;
+        max-width: 100vw;
+    }
+
+    .dashboard-header {
+        padding: 0 1rem;
+    }
+
+    .header-center {
+        display: none;
+        /* Hide date/time on mobile header to save space */
+    }
+
+    .user-info {
+        display: none;
+        /* Hide user name/role, avatar is enough */
+    }
+
+    .dashboard-content {
+        padding: 1rem;
+    }
+
+    .widgets-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dashboard-bottom-grid {
+        gap: 1rem;
+    }
+
+    .mobile-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 900;
+        backdrop-filter: blur(2px);
+    }
+}

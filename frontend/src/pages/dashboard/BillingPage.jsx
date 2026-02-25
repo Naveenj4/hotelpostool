@@ -56,6 +56,12 @@ const BillingPage = () => {
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+
+        // Close sidebar by default on mobile
+        if (window.innerWidth <= 768) {
+            setShowSidebar(false);
+        }
+
         return () => clearInterval(timer);
     }, []);
 
@@ -322,6 +328,10 @@ const BillingPage = () => {
 
             {/* Main POS Container */}
             <div className={`pos-main ${showSidebar ? '' : 'full-width'}`}>
+                {/* Mobile Sidebar Overlay */}
+                {showSidebar && window.innerWidth <= 768 && (
+                    <div className="mobile-overlay" onClick={() => setShowSidebar(false)} style={{ zIndex: 1999 }}></div>
+                )}
 
                 {/* 1. Category Sidebar (Left) */}
                 <div className={`category-sidebar ${showSidebar ? 'open' : 'closed'}`}>

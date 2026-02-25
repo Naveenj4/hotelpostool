@@ -528,3 +528,48 @@ a:hover {
 .custom-table tbody tr:last-child td {
   border-bottom: none;
 }
+
+/* Global Mobile Utilities */
+@media (max-width: 768px) {
+  .flex-responsive {
+    flex-direction: column !important;
+  }
+
+  .grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Make tables scrollable on small screens */
+  .table-card,
+  .data-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .custom-table {
+    min-width: 600px;
+    /* Force scroll instead of squishing */
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  /* Form spacing */
+  .input-field {
+    font-size: 16px !important;
+    /* Prevent iOS zoom */
+  }
+}
