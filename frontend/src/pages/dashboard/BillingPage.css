@@ -649,11 +649,33 @@
     font-size: 0.85rem;
     cursor: pointer;
     transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.pay-method.cash {
+    color: #f97316;
+    border-color: #fff7ed;
+    background: #fff7ed;
+}
+
+.pay-method.card {
+    color: #a855f7;
+    border-color: #faf5ff;
+    background: #faf5ff;
+}
+
+.pay-method.upi {
+    color: #3b82f6;
+    border-color: #eff6ff;
+    background: #eff6ff;
 }
 
 .pay-method:hover {
-    border-color: #7ea1c4;
-    background: #fff8f4;
+    transform: translateY(-1px);
+    filter: brightness(0.95);
 }
 
 .footer-actions {
@@ -930,6 +952,8 @@
 /* Payment Flow In-Place Styles */
 .payment-flow-container {
     height: 100%;
+    width: 100%;
+    /* Ensure full width */
     display: flex;
     flex-direction: column;
     background: #ffffff;
@@ -1000,13 +1024,18 @@
 .flow-content {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem;
+    padding: 1.5rem;
+    /* Slightly tighter padding to fit better */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .step-view {
-    max-width: 600px;
-    margin: 0 auto;
     width: 100%;
+    max-width: 900px;
+    /* Increased to avoid squishing in POS view */
+    margin: 0 auto;
 }
 
 .section-title {
@@ -1172,15 +1201,18 @@
 }
 
 .entry-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
 }
 
 .input-group {
+    flex: 1;
+    min-width: 250px;
+    /* Ensure labels and inputs have breathing room */
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
 }
 
 .input-group.full {

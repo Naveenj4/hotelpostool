@@ -45,6 +45,7 @@ const BillingPage = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showSidebar, setShowSidebar] = useState(true);
     const [checkoutActive, setCheckoutActive] = useState(false);
+    const [checkoutType, setCheckoutType] = useState('');
 
     // Get base API URL for images
     const getBaseUrl = () => {
@@ -230,10 +231,11 @@ const BillingPage = () => {
         return matchesCategory && matchesSearch;
     });
 
-    const handlePayment = () => {
+    const handlePayment = (type = '') => {
         if (!currentBillId) return;
         if (subTotal === 0) return alert("Bill is empty!");
-        setCheckoutActive(true); // Toggle in-place checkout
+        setCheckoutType(type);
+        setCheckoutActive(true);
     };
 
     const handlePaymentSubmit = async (paymentModes) => {
@@ -254,7 +256,8 @@ const BillingPage = () => {
                 setLastPaymentModes(paymentModes);
                 setLastBillId(currentBillId);
                 setShowBillPreview(true);
-                setCheckoutActive(false); // Reset to catalog
+                setCheckoutActive(false);
+                setCheckoutType('');
                 setCurrentBillId(null);
                 setBillNumber('Generating...');
                 setBillItems([]);
@@ -352,8 +355,9 @@ const BillingPage = () => {
                         <PaymentFlow
                             grandTotal={grandTotal}
                             onPaymentSubmit={handlePaymentSubmit}
-                            onCancel={() => setCheckoutActive(false)}
+                            onCancel={() => { setCheckoutActive(false); setCheckoutType(''); }}
                             loading={paymentLoading}
+                            initialType={checkoutType}
                         />
                     ) : (
                         <>
@@ -502,9 +506,9 @@ const BillingPage = () => {
 
                         {/* Fast Payment */}
                         <div className="fast-payment">
-                            <button className="pay-method cash" onClick={() => setShowPaymentModal(true)}>CASH</button>
-                            <button className="pay-method card" onClick={() => setShowPaymentModal(true)}>CARD</button>
-                            <button className="pay-method upi" onClick={() => setShowPaymentModal(true)}>UPI</button>
+                            <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
+                            <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
+                            <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
                         </div>
 
                         <div className="footer-actions">

@@ -6,7 +6,8 @@ const PaymentFlow = ({
     grandTotal,
     onPaymentSubmit,
     onCancel,
-    loading = false
+    loading = false,
+    initialType = ''
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedPaymentType, setSelectedPaymentType] = useState('');
@@ -17,6 +18,12 @@ const PaymentFlow = ({
         upiAmount: '',
         cardAmount: ''
     });
+
+    useEffect(() => {
+        if (initialType) {
+            handlePaymentTypeSelect(initialType);
+        }
+    }, [initialType]);
 
     const cashAmount = parseFloat(paymentData.cashAmount) || 0;
     const upiAmount = parseFloat(paymentData.upiAmount) || 0;
