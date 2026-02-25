@@ -46,6 +46,10 @@ const productSchema = new mongoose.Schema({
     is_active: {
         type: Boolean,
         default: true
+    },
+    image: {
+        type: String, // String will store the path or URL
+        default: ''
     }
 }, {
     timestamps: true

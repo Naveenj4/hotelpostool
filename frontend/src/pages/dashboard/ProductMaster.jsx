@@ -28,7 +28,8 @@ const ProductMaster = () => {
         product_type: 'TYPE_A', // Default
         selling_price: '',
         purchase_price: '',
-        opening_stock: ''
+        opening_stock: '',
+        image: ''
     });
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -172,7 +173,8 @@ const ProductMaster = () => {
             product_type: 'TYPE_A',
             selling_price: '',
             purchase_price: '',
-            opening_stock: ''
+            opening_stock: '',
+            image: ''
         });
         setIsEditing(false);
         setError('');
@@ -249,7 +251,18 @@ const ProductMaster = () => {
                                     </tr>
                                 ) : filteredProducts.map((product) => (
                                     <tr key={product._id}>
-                                        <td style={{ fontWeight: 600 }}>{product.name}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                {product.image ? (
+                                                    <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}>
+                                                        <Package size={20} color="#9ca3af" />
+                                                    </div>
+                                                )}
+                                                <span style={{ fontWeight: 600 }}>{product.name}</span>
+                                            </div>
+                                        </td>
                                         <td><span className="count-badge" style={{ backgroundColor: '#f3f4f6', color: '#4b5563' }}>{product.category}</span></td>
                                         <td>
                                             {product.product_type === 'TYPE_A' ? (
@@ -425,6 +438,19 @@ const ProductMaster = () => {
                                             </div>
                                         </div>
                                     )}
+
+                                    <div className="form-group mb-4">
+                                        <label className="input-label">Product Image URL</label>
+                                        <input
+                                            type="text"
+                                            name="image"
+                                            className="input-field"
+                                            placeholder="https://example.com/image.jpg"
+                                            value={formData.image}
+                                            onChange={handleInputChange}
+                                        />
+                                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Provide a direct link to the product image.</p>
+                                    </div>
                                 </form>
                             </div>
 

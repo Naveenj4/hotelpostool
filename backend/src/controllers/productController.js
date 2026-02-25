@@ -30,7 +30,7 @@ exports.getProducts = async (req, res) => {
 // @access  Private (Admin, Owner)
 exports.createProduct = async (req, res) => {
     try {
-        const { name, category, product_type, selling_price, purchase_price, opening_stock } = req.body;
+        const { name, category, product_type, selling_price, purchase_price, opening_stock, image } = req.body;
 
         if (!name || !category || !product_type || selling_price === undefined) {
             return res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -66,7 +66,8 @@ exports.createProduct = async (req, res) => {
             selling_price,
             purchase_price: product_type === 'TYPE_A' ? purchase_price : undefined,
             opening_stock: product_type === 'TYPE_A' ? opening_stock : 0,
-            current_stock: product_type === 'TYPE_A' ? opening_stock : 0
+            current_stock: product_type === 'TYPE_A' ? opening_stock : 0,
+            image: image || ''
         });
 
         res.status(201).json({
@@ -152,9 +153,9 @@ exports.deleteProduct = async (req, res) => {
         });
 
         if (billItems) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Cannot delete product because it has been used in bills' 
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete product because it has been used in bills'
             });
         }
 

@@ -370,47 +370,83 @@
 .product-scroll-grid {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    grid-auto-rows: 100px;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-auto-rows: min-content;
+    gap: 1.25rem;
     overflow-y: auto;
-    padding-bottom: 1rem;
+    padding: 0.5rem;
 }
 
 .pos-product-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 1rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    overflow: hidden;
     cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .pos-product-card:hover {
     border-color: #7ea1c4;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(126, 161, 196, 0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(126, 161, 196, 0.2);
 }
 
-.pos-product-card:active {
-    transform: scale(0.96);
+.pos-product-card .p-image-container {
+    width: 100%;
+    height: 120px;
+    background: #f8fafc;
+    overflow: hidden;
+    position: relative;
+}
+
+.pos-product-card .p-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.pos-product-card:hover .p-card-img {
+    transform: scale(1.1);
+}
+
+.pos-product-card .p-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pos-product-card .p-details {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: #ffffff;
 }
 
 .pos-product-card .p-name {
-    font-weight: 700;
-    font-size: 0.95rem;
+    font-weight: 800; /* Extra bold */
+    font-size: 1.1rem; /* Bigger */
     line-height: 1.2;
-    color: #1a202c;
+    color: #1e293b;
+    text-transform: uppercase;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .pos-product-card .p-price {
-    font-size: 1rem;
-    font-weight: 800;
-    color: #7ea1c4;
+    font-size: 1.2rem; /* Bigger */
+    font-weight: 900; /* Ultra bold */
+    color: #0f172a;
+    letter-spacing: -0.5px;
 }
 
 .pos-bottom-actions {

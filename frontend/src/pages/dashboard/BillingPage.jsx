@@ -369,8 +369,19 @@ const BillingPage = () => {
                                 className="pos-product-card"
                                 onClick={() => addToBill(product)}
                             >
-                                <div className="p-name">{product.name}</div>
-                                <div className="p-price">₹{product.selling_price}</div>
+                                <div className="p-image-container">
+                                    {product.image ? (
+                                        <img src={product.image} alt={product.name} className="p-card-img" />
+                                    ) : (
+                                        <div className="p-img-placeholder">
+                                            <ShoppingBag size={32} color="#cbd5e0" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="p-details">
+                                    <div className="p-name">{product.name}</div>
+                                    <div className="p-price">₹{product.selling_price}</div>
+                                </div>
                             </div>
                         ))}
                     </div>
