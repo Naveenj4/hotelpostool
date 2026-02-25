@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './BillingPage.css';
-import PaymentModal from './PaymentModal';
+import PaymentFlow from './PaymentFlow';
 import BillPreviewModal from './BillPreviewModal';
 import {
     ShoppingBag,
@@ -44,6 +44,7 @@ const BillingPage = () => {
     const [restaurantName, setRestaurantName] = useState("RestoBoard");
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showSidebar, setShowSidebar] = useState(true);
+    const [checkoutActive, setCheckoutActive] = useState(false);
 
     // Get base API URL for images
     const getBaseUrl = () => {
@@ -232,7 +233,7 @@ const BillingPage = () => {
     const handlePayment = () => {
         if (!currentBillId) return;
         if (subTotal === 0) return alert("Bill is empty!");
-        setShowPaymentModal(true);
+        setCheckoutActive(true); // Toggle in-place checkout
     };
 
     const handlePaymentSubmit = async (paymentModes) => {
@@ -253,7 +254,7 @@ const BillingPage = () => {
                 setLastPaymentModes(paymentModes);
                 setLastBillId(currentBillId);
                 setShowBillPreview(true);
-                setShowPaymentModal(false);
+                setCheckoutActive(false); // Reset to catalog
                 setCurrentBillId(null);
                 setBillNumber('Generating...');
                 setBillItems([]);
@@ -347,76 +348,87 @@ const BillingPage = () => {
 
                 {/* 2. Product Area (Middle) */}
                 <div className="product-area">
-                    <div className="search-bar">
-                        {!showSidebar && (
-                            <button
-                                className="toggle-cat-btn"
-                                onClick={() => setShowSidebar(true)}
-                                title="Show Categories"
-                            >
-                                <MenuIcon size={20} />
-                            </button>
-                        )}
-                        <Search size={20} className="text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by product name or code..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                    {checkoutActive ? (
+                        <PaymentFlow
+                            grandTotal={grandTotal}
+                            onPaymentSubmit={handlePaymentSubmit}
+                            onCancel={() => setCheckoutActive(false)}
+                            loading={paymentLoading}
                         />
-                    </div>
-
-                    <div className="product-scroll-grid">
-                        {loading ? (
-                            <div className="flex-center h-full text-gray-400">Loading catalog...</div>
-                        ) : filteredProducts.map(product => (
-                            <div
-                                key={product._id}
-                                className="pos-product-card"
-                                onClick={() => addToBill(product)}
-                            >
-                                <div className="p-image-container">
-                                    {product.image ? (
-                                        <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
-                                    ) : (
-                                        <div className="p-img-placeholder">
-                                            <ShoppingBag size={32} color="#cbd5e0" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-details">
-                                    <div className="p-name">{product.name}</div>
-                                    <div className="p-price">₹{product.selling_price}</div>
-                                </div>
+                    ) : (
+                        <>
+                            <div className="search-bar">
+                                {!showSidebar && (
+                                    <button
+                                        className="toggle-cat-btn"
+                                        onClick={() => setShowSidebar(true)}
+                                        title="Show Categories"
+                                    >
+                                        <MenuIcon size={20} />
+                                    </button>
+                                )}
+                                <Search size={20} className="text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by product name or code..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Bottom Category List (Horizontal) */}
-                    <div className="bottom-category-bar">
-                        <button
-                            className={`bottom-cat-chip ${activeCategory === "ALL" ? 'active' : ''}`}
-                            onClick={() => setActiveCategory("ALL")}
-                        >
-                            All
-                        </button>
-                        {categories.map(cat => (
-                            <button
-                                key={cat._id}
-                                className={`bottom-cat-chip ${activeCategory === cat.name ? 'active' : ''}`}
-                                onClick={() => setActiveCategory(cat.name)}
-                            >
-                                {cat.name}
-                            </button>
-                        ))}
-                    </div>
+                            <div className="product-scroll-grid">
+                                {loading ? (
+                                    <div className="flex-center h-full text-gray-400">Loading catalog...</div>
+                                ) : filteredProducts.map(product => (
+                                    <div
+                                        key={product._id}
+                                        className="pos-product-card"
+                                        onClick={() => addToBill(product)}
+                                    >
+                                        <div className="p-image-container">
+                                            {product.image ? (
+                                                <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
+                                            ) : (
+                                                <div className="p-img-placeholder">
+                                                    <ShoppingBag size={32} color="#cbd5e0" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-details">
+                                            <div className="p-name">{product.name}</div>
+                                            <div className="p-price">₹{product.selling_price}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
 
-                    {/* Bottom Action Bar */}
-                    <div className="pos-bottom-actions">
-                        <button className="action-btn">Alter</button>
-                        <button className="action-btn">Sales Return</button>
-                        <button className="action-btn">Transfer</button>
-                    </div>
+                            {/* Bottom Category List (Horizontal) */}
+                            <div className="bottom-category-bar">
+                                <button
+                                    className={`bottom-cat-chip ${activeCategory === "ALL" ? 'active' : ''}`}
+                                    onClick={() => setActiveCategory("ALL")}
+                                >
+                                    All
+                                </button>
+                                {categories.map(cat => (
+                                    <button
+                                        key={cat._id}
+                                        className={`bottom-cat-chip ${activeCategory === cat.name ? 'active' : ''}`}
+                                        onClick={() => setActiveCategory(cat.name)}
+                                    >
+                                        {cat.name}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Bottom Action Bar */}
+                            <div className="pos-bottom-actions">
+                                <button className="action-btn">Alter</button>
+                                <button className="action-btn">Sales Return</button>
+                                <button className="action-btn">Transfer</button>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* 3. Bill Panel (Right) */}
@@ -508,15 +520,6 @@ const BillingPage = () => {
             </div>
 
             {/* Modals */}
-            {showPaymentModal && (
-                <PaymentModal
-                    isOpen={showPaymentModal}
-                    onClose={() => setShowPaymentModal(false)}
-                    grandTotal={grandTotal}
-                    onPaymentSubmit={handlePaymentSubmit}
-                    loading={paymentLoading}
-                />
-            )}
             {showBillPreview && (
                 <BillPreviewModal
                     isOpen={showBillPreview}
