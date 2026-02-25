@@ -37,6 +37,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
+  font-size: 16px;
+  /* Base size */
 }
 
 /* Layout Utilities (Replacing Tailwind) */
@@ -209,31 +211,38 @@ body {
 }
 
 .text-sm {
-  font-size: 0.875rem;
+  font-size: 1rem;
+  /* Scaled up from 0.875rem */
 }
 
 .text-lg {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
+  /* Scaled up from 1.125rem */
 }
 
 .text-xl {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  /* Scaled up from 1.25rem */
 }
 
 .text-2xl {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  /* Scaled up from 1.5rem */
 }
 
 .text-3xl {
-  font-size: 1.875rem;
+  font-size: 2.25rem;
+  /* Scaled up */
 }
 
 .text-4xl {
-  font-size: 2.25rem;
+  font-size: 2.75rem;
+  /* Scaled up */
 }
 
 .text-5xl {
-  font-size: 3rem;
+  font-size: 3.5rem;
+  /* Scaled up */
 }
 
 .font-bold {
@@ -480,7 +489,8 @@ a:hover {
 .custom-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  /* Bigger table text */
 }
 
 .custom-table th {

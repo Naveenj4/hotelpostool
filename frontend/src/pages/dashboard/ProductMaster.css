@@ -11,8 +11,9 @@
 }
 
 .page-title h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.85rem;
+    /* Scaled up from 1.5rem */
+    font-weight: 800;
     color: var(--slate-800);
     margin-bottom: 0.25rem;
     letter-spacing: -0.02em;
@@ -20,7 +21,8 @@
 
 .page-title p {
     color: var(--slate-500);
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    /* Scaled up from 0.9rem */
 }
 
 .product-toolbar {
@@ -53,10 +55,11 @@
 
 .count-badge {
     color: var(--slate-600);
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 1rem;
+    /* Scaled up from 0.85rem */
+    font-weight: 700;
     background-color: var(--slate-100);
-    padding: 0.25rem 0.75rem;
+    padding: 0.35rem 1rem;
     border-radius: 9999px;
     border: 1px solid var(--slate-200);
 }
@@ -87,20 +90,23 @@
 .custom-table th {
     background-color: var(--slate-50);
     color: var(--slate-500);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    /* Scaled up from 0.75rem */
     letter-spacing: 0.05em;
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 1.5rem;
     /* More horizontal padding */
     border-bottom: 1px solid var(--border-light);
 }
 
 .custom-table td {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
+    /* More vertical padding */
     border-bottom: 1px solid var(--slate-100);
     color: var(--slate-800);
-    font-size: 0.9rem;
+    font-size: 1.05rem;
+    /* Scaled up from 0.9rem */
 }
 
 .custom-table tr:last-child td {
@@ -263,8 +269,9 @@
 }
 
 .drawer-title {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    /* Scaled up from 1.25rem */
+    font-weight: 800;
     color: var(--galaxy-black);
 }
 
