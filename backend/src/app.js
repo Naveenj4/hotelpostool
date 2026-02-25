@@ -12,9 +12,13 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const path = require('path');
 
 // Trust proxy (required for Render/reverse proxies)
 app.set('trust proxy', 1);
+
+// Static folders
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Middleware
 app.use(express.json());

@@ -45,6 +45,12 @@ const BillingPage = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showSidebar, setShowSidebar] = useState(true);
 
+    // Get base API URL for images
+    const getBaseUrl = () => {
+        const fullUrl = import.meta.env.VITE_API_URL;
+        return fullUrl.replace('/api', '');
+    };
+
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
@@ -371,7 +377,7 @@ const BillingPage = () => {
                             >
                                 <div className="p-image-container">
                                     {product.image ? (
-                                        <img src={product.image} alt={product.name} className="p-card-img" />
+                                        <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
                                     ) : (
                                         <div className="p-img-placeholder">
                                             <ShoppingBag size={32} color="#cbd5e0" />

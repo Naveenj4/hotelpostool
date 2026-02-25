@@ -33,6 +33,13 @@ const ProductMaster = () => {
     });
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [uploading, setUploading] = useState(false);
+
+    // Get base API URL for images
+    const getBaseUrl = () => {
+        const fullUrl = import.meta.env.VITE_API_URL;
+        return fullUrl.replace('/api', '');
+    };
 
     const [categories, setCategories] = useState([]);
 
@@ -166,6 +173,43 @@ const ProductMaster = () => {
         }
     };
 
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        setError('');
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/products/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                    // No Content-Type header needed for FormData
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message);
+            }
+
+            setFormData(prev => ({ ...prev, image: result.data }));
+        } catch (err) {
+            setError('Upload failed: ' + err.message);
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const resetForm = () => {
         setFormData({
             name: '',
@@ -254,7 +298,7 @@ const ProductMaster = () => {
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 {product.image ? (
-                                                    <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                                                    <img src={`${getBaseUrl()}${product.image}`} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
                                                 ) : (
                                                     <div style={{ width: '40px', height: '40px', borderRadius: '4px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}>
                                                         <Package size={20} color="#9ca3af" />
@@ -440,16 +484,34 @@ const ProductMaster = () => {
                                     )}
 
                                     <div className="form-group mb-4">
-                                        <label className="input-label">Product Image URL</label>
-                                        <input
-                                            type="text"
-                                            name="image"
-                                            className="input-field"
-                                            placeholder="https://example.com/image.jpg"
-                                            value={formData.image}
-                                            onChange={handleInputChange}
-                                        />
-                                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Provide a direct link to the product image.</p>
+                                        <label className="input-label">Product Image</label>
+                                        <div className="flex flex-col gap-2">
+                                            {formData.image && (
+                                                <div className="relative w-24 h-24 mb-2">
+                                                    <img
+                                                        src={`${getBaseUrl()}${formData.image}`}
+                                                        alt="Preview"
+                                                        className="w-full h-full object-cover rounded-md border"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                                                    >
+                                                        <XCircle size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                                className="input-field"
+                                                disabled={uploading}
+                                            />
+                                            {uploading && <p className="text-xs text-blue-500">Uploading image...</p>}
+                                        </div>
+                                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Select an image file from your computer.</p>
                                     </div>
                                 </form>
                             </div>
