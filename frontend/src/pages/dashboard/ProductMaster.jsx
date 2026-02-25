@@ -14,6 +14,7 @@ import {
     AlertCircle,
     Loader2
 } from 'lucide-react';
+import { TableSkeleton } from '../../components/Skeleton';
 
 const ProductMaster = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
@@ -285,7 +286,7 @@ const ProductMaster = () => {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="7" className="empty-state"><Loader2 className="animate-spin mb-2 mx-auto" /> Loading products...</td></tr>
+                                    <TableSkeleton rows={8} cols={7} />
                                 ) : filteredProducts.length === 0 ? (
                                     <tr>
                                         <td colSpan="7" className="empty-state">

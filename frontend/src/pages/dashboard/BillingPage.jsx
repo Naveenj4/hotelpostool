@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './BillingPage.css';
 import PaymentFlow from './PaymentFlow';
 import BillPreviewModal from './BillPreviewModal';
+import { CardSkeleton } from '../../components/Skeleton';
 import {
     ShoppingBag,
     Plus,
@@ -382,7 +383,11 @@ const BillingPage = () => {
 
                             <div className="product-scroll-grid">
                                 {loading ? (
-                                    <div className="flex-center h-full text-gray-400">Loading catalog...</div>
+                                    <CardSkeleton count={12} />
+                                ) : filteredProducts.length === 0 ? (
+                                    <div className="flex-center h-full text-gray-400 w-full py-20">
+                                        No products found in this category.
+                                    </div>
                                 ) : filteredProducts.map(product => (
                                     <div
                                         key={product._id}

@@ -12,6 +12,7 @@ import {
     BarChart3,
     PieChart
 } from 'lucide-react';
+import { Skeleton, TableSkeleton } from '@/components/Skeleton';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -241,9 +242,37 @@ const ReportsPage = () => {
                 <main className="dashboard-main">
                     <Header toggleSidebar={toggleSidebar} />
                     <div className="dashboard-content">
-                        <div className="loading-container">
-                            <div className="loading-spinner"></div>
-                            <p>Generating reports...</p>
+                        <div className="page-header">
+                            <div className="page-title">
+                                <Skeleton width="200px" height="32px" className="mb-2" />
+                                <Skeleton width="300px" height="20px" />
+                            </div>
+                        </div>
+
+                        <div className="widgets-grid">
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="stat-card">
+                                    <Skeleton height="20px" width="100px" className="mb-4" />
+                                    <Skeleton height="32px" width="150px" />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="reports-grid">
+                            {[...Array(3)].map((_, i) => (
+                                <div key={i} className="data-card chart-card">
+                                    <Skeleton height="24px" width="150px" className="mb-6" />
+                                    <Skeleton height="250px" width="100%" />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="data-card">
+                            <h3 className="card-title">Top Selling Products</h3>
+                            <table className="custom-table">
+                                <thead><tr><th>Name</th><th>Qty</th><th>Revenue</th></tr></thead>
+                                <tbody><TableSkeleton rows={5} cols={3} /></tbody>
+                            </table>
                         </div>
                     </div>
                 </main>

@@ -11,6 +11,7 @@ import {
     ShoppingBag,
     PlusCircle
 } from 'lucide-react';
+import { Skeleton, TableSkeleton } from '../../components/Skeleton';
 
 const StatCard = ({ label, value, icon, color, trend }) => (
     <div className="stat-card">
@@ -84,7 +85,51 @@ const SelfServiceDashboard = () => {
         }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center">Loading Dashboard...</div>;
+    // If loading, render the layout with skeletons
+    if (loading) {
+        return (
+            <div className="dashboard-layout">
+                <Sidebar isCollapsed={isCollapsed} />
+                <main className="dashboard-main">
+                    <Header toggleSidebar={toggleSidebar} />
+                    <div className="dashboard-content">
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h2 className="text-2xl font-bold text-galaxy">Dashboard Overview</h2>
+                                <p className="text-galaxy-muted">Loading your metrics...</p>
+                            </div>
+                        </div>
+
+                        <div className="widgets-grid">
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="stat-card">
+                                    <Skeleton height="20px" width="100px" className="mb-4" />
+                                    <Skeleton height="32px" width="150px" />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="dashboard-bottom-grid">
+                            <div className="data-card">
+                                <h3 className="card-title">Top Selling Products</h3>
+                                <table className="custom-table">
+                                    <thead><tr><th>Name</th><th>Qty</th><th>Sales</th></tr></thead>
+                                    <tbody><TableSkeleton rows={5} cols={3} /></tbody>
+                                </table>
+                            </div>
+                            <div className="data-card">
+                                <h3 className="card-title">Stock Alerts</h3>
+                                <table className="custom-table">
+                                    <thead><tr><th>Name</th><th>Stock</th><th>Status</th></tr></thead>
+                                    <tbody><TableSkeleton rows={5} cols={3} /></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     // Helper to get payment amount by mode
     const getPaymentAmount = (mode) => {
