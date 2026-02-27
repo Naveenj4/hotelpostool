@@ -28,7 +28,9 @@ const Login = () => {
         const res = await login(formData);
 
         if (res.success) {
-            navigate(res.data.restaurant_type === 'SELF_SERVICE' ? '/dashboard/self-service' : '/dashboard/dining');
+            const rType = res.data.restaurant_type;
+            const target = (rType === 'SMART' || rType === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining';
+            navigate(target);
         } else {
             setError(res.error);
         }

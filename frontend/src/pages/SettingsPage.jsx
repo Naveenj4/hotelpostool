@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
 import './SettingsPage.css';
@@ -10,10 +11,12 @@ import {
     Eye,
     EyeOff,
     Save,
-    CheckCircle
+    CheckCircle,
+    Palette
 } from 'lucide-react';
 
 const SettingsPage = () => {
+    const { user } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -23,8 +26,10 @@ const SettingsPage = () => {
     const [profileForm, setProfileForm] = useState({
         ownerName: '',
         email: '',
-        phone: '',
-        businessName: ''
+        mobile: '',
+        businessName: '',
+        restaurantType: '',
+        billingLayout: 'SIDEBAR'
     });
 
     const [passwordForm, setPasswordForm] = useState({
@@ -68,11 +73,25 @@ const SettingsPage = () => {
             });
 
             const result = await response.json();
-            if (result.success) {
+            if (result.success && result.data) {
                 setSettings(result.data);
-                setProfileForm(result.data.profile);
-                setPrinterForm(result.data.printer);
-                setBillForm(result.data.billFormat);
+
+                // Use data from API, but keep defaults if something is missing
+                const profile = result.data.profile || {};
+                const restaurant = result.data.restaurant || {};
+
+                setProfileForm(prev => ({
+                    ...prev,
+                    ownerName: profile.ownerName || '',
+                    email: profile.email || '',
+                    mobile: profile.mobile || profile.phone || '',
+                    businessName: profile.businessName || '',
+                    restaurantType: restaurant.restaurant_type || '',
+                    billingLayout: restaurant.billing_layout || 'SIDEBAR'
+                }));
+
+                if (result.data.printer) setPrinterForm(result.data.printer);
+                if (result.data.billFormat) setBillForm(result.data.billFormat);
             }
         } catch (err) {
             console.error("Failed to fetch settings", err);
@@ -146,14 +165,70 @@ const SettingsPage = () => {
             });
 
             const result = await response.json();
-            if (result.success) {
+            if (result.success && result.data) {
                 setSuccess(prev => ({ ...prev, profile: true }));
+
+                // Update everything from the consistent data structure
+                const profile = result.data.profile || {};
+                const restaurant = result.data.restaurant || {};
+
+                const updatedProfile = {
+                    ownerName: profile.ownerName || profileForm.ownerName,
+                    email: profile.email || profileForm.email,
+                    mobile: profile.mobile || profileForm.mobile,
+                    businessName: profile.businessName || profileForm.businessName,
+                    restaurantType: restaurant.restaurant_type || profileForm.restaurantType,
+                    billingLayout: restaurant.billing_layout || profileForm.billingLayout
+                };
+
+                setProfileForm(updatedProfile);
+
+                // Immediate local sync for Billing Page speed
+                if (restaurant.billing_layout) {
+                    localStorage.setItem('cachedBillingLayout', restaurant.billing_layout);
+                }
+
                 setTimeout(() => setSuccess(prev => ({ ...prev, profile: false })), 3000);
-            } else {
-                setErrors(prev => ({ ...prev, profile: result.message }));
+            }
+            else {
+                setErrors(prev => ({ ...prev, profile: result.message || 'Validation failed' }));
             }
         } catch (err) {
             setErrors(prev => ({ ...prev, profile: 'Failed to update profile' }));
+        } finally {
+            setSaving(prev => ({ ...prev, profile: false }));
+        }
+    };
+
+    // Save ONLY the billing layout — no profile fields needed at all
+    const saveLayout = async () => {
+        setSaving(prev => ({ ...prev, profile: true }));
+        setErrors(prev => ({ ...prev, profile: '' }));
+        setSuccess(prev => ({ ...prev, profile: false }));
+
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/settings/layout`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ billingLayout: profileForm.billingLayout })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                setSuccess(prev => ({ ...prev, profile: true }));
+                localStorage.setItem('cachedBillingLayout', profileForm.billingLayout);
+                setTimeout(() => setSuccess(prev => ({ ...prev, profile: false })), 3000);
+            } else {
+                setErrors(prev => ({ ...prev, profile: result.message || 'Failed to save layout' }));
+            }
+        } catch (err) {
+            setErrors(prev => ({ ...prev, profile: 'Failed to save layout. Check your connection.' }));
         } finally {
             setSaving(prev => ({ ...prev, profile: false }));
         }
@@ -337,6 +412,13 @@ const SettingsPage = () => {
                                     <FileText size={20} />
                                     Bill Format
                                 </button>
+                                <button
+                                    className={`nav-item ${activeTab === 'appearance' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('appearance')}
+                                >
+                                    <Palette size={20} />
+                                    Appearance
+                                </button>
                             </div>
                         </div>
 
@@ -380,14 +462,14 @@ const SettingsPage = () => {
                                         </div>
 
                                         <div className="form-group">
-                                            <label className="input-label">Phone Number</label>
+                                            <label className="input-label">Phone / Mobile Number *</label>
                                             <input
                                                 type="tel"
-                                                name="phone"
+                                                name="mobile"
                                                 className="input-field"
-                                                value={profileForm.phone}
+                                                value={profileForm.mobile}
                                                 onChange={handleProfileChange}
-                                                placeholder="Enter phone number"
+                                                placeholder="Enter mobile number"
                                             />
                                         </div>
 
@@ -402,6 +484,25 @@ const SettingsPage = () => {
                                                 placeholder="Enter business name"
                                             />
                                         </div>
+
+                                        {/* Module Type visibility rule: Only visible if Super Admin */}
+                                        {user?.role === 'SUPER_ADMIN' && (
+                                            <div className="form-group">
+                                                <label className="input-label" style={{ color: 'var(--primary-600)', fontWeight: 'bold' }}>Module Type (Plan)</label>
+                                                <select
+                                                    name="restaurantType"
+                                                    className="input-field"
+                                                    value={profileForm.restaurantType}
+                                                    onChange={handleProfileChange}
+                                                    style={{ border: '2px solid var(--primary-200)' }}
+                                                >
+                                                    <option value="SMART">SMART</option>
+                                                    <option value="EFFICIENT">EFFICIENT</option>
+                                                    <option value="ENTERPRISE">ENTERPRISE</option>
+                                                </select>
+                                                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Visible only to administrators for plan upgrades.</p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="form-actions">
@@ -642,6 +743,68 @@ const SettingsPage = () => {
                                             style={{ marginLeft: '1rem' }}
                                         >
                                             Preview Bill
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'appearance' && (
+                                <div className="settings-card">
+                                    <h3 className="card-title">
+                                        <Palette size={24} color="var(--primary-500)" />
+                                        Appearance & Layout
+                                    </h3>
+                                    <p className="card-description">Customize the look and feel of your POS terminal</p>
+
+                                    {errors.profile && <div className="error-message">{errors.profile}</div>}
+                                    {success.profile && <div className="success-message"><CheckCircle size={16} /> Layout updated successfully!</div>}
+
+                                    <div className="form-group mb-6">
+                                        <label className="input-label" style={{ marginBottom: '1rem', display: 'block' }}>Billing Page Layout</label>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '1.5rem',
+                                                background: 'var(--slate-50)',
+                                                padding: '1.5rem',
+                                                borderRadius: '16px',
+                                                border: '1px solid var(--border-light)',
+                                                width: 'fit-content'
+                                            }}
+                                        >
+                                            <span style={{ fontWeight: 700, color: profileForm.billingLayout === 'SIDEBAR' ? 'var(--primary-600)' : 'var(--slate-400)', fontSize: '0.95rem' }}>
+                                                Sidebar (Layout 1)
+                                            </span>
+
+                                            <label className="toggle-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={profileForm.billingLayout === 'TOP_HEADER'}
+                                                    onChange={(e) => {
+                                                        const newLayout = e.target.checked ? 'TOP_HEADER' : 'SIDEBAR';
+                                                        setProfileForm(prev => ({
+                                                            ...prev,
+                                                            billingLayout: newLayout
+                                                        }));
+                                                    }}
+                                                />
+                                                <span className="toggle-slider"></span>
+                                            </label>
+
+                                            <span style={{ fontWeight: 700, color: profileForm.billingLayout === 'TOP_HEADER' ? 'var(--primary-600)' : 'var(--slate-400)', fontSize: '0.95rem' }}>
+                                                Top Header (Layout 2)
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-actions">
+                                        <button
+                                            className="btn-primary"
+                                            onClick={saveLayout}
+                                            disabled={saving.profile}
+                                        >
+                                            {saving.profile ? 'Saving...' : 'Apply & Save Layout'}
                                         </button>
                                     </div>
                                 </div>

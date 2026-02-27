@@ -19,7 +19,7 @@ const restaurantSchema = new mongoose.Schema({
     },
     restaurant_type: {
         type: String,
-        enum: ['SELF_SERVICE', 'DINING'],
+        enum: ['SMART', 'EFFICIENT', 'ENTERPRISE', 'SELF_SERVICE', 'DINING'],
         required: [true, 'Restaurant type is required']
     },
     financial_year_start: {
@@ -45,6 +45,35 @@ const restaurantSchema = new mongoose.Schema({
     gstin: {
         type: String,
         trim: true
+    },
+    billing_layout: {
+        type: String,
+        enum: ['SIDEBAR', 'TOP_HEADER'],
+        default: 'SIDEBAR'
+    },
+    printer_enabled: {
+        type: Boolean,
+        default: false
+    },
+    printer_width: {
+        type: String,
+        default: '58mm'
+    },
+    bill_header: {
+        type: String,
+        default: ''
+    },
+    bill_footer: {
+        type: String,
+        default: ''
+    },
+    gst_no: {
+        type: String,
+        default: ''
+    },
+    auto_print: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

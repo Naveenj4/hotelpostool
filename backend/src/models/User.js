@@ -10,14 +10,12 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: [true, 'Email is required'],
-        unique: true,
         trim: true,
         lowercase: true
     },
     mobile: {
         type: String,
         required: [true, 'Mobile number is required'],
-        unique: true,
         trim: true
     },
     password: {
@@ -48,6 +46,10 @@ const userSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+// Allow same email/mobile for different companies, but keep it unique within one company
+userSchema.index({ email: 1, restaurant_id: 1 }, { unique: true });
+userSchema.index({ mobile: 1, restaurant_id: 1 }, { unique: true });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

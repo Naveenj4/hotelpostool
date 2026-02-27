@@ -30,22 +30,10 @@ exports.getProducts = async (req, res) => {
 // @access  Private (Admin, Owner)
 exports.createProduct = async (req, res) => {
     try {
-        const { name, category, product_type, selling_price, purchase_price, opening_stock, image } = req.body;
+        const { name, category, selling_price } = req.body;
 
-        if (!name || !category || !product_type || selling_price === undefined) {
+        if (!name || !category || selling_price === undefined) {
             return res.status(400).json({ success: false, message: 'Please provide all required fields' });
-        }
-
-        // Check if product type is valid
-        if (!['TYPE_A', 'TYPE_B'].includes(product_type)) {
-            return res.status(400).json({ success: false, message: 'Invalid product type' });
-        }
-
-        // Additional validation for TYPE_A
-        if (product_type === 'TYPE_A') {
-            if (purchase_price === undefined || opening_stock === undefined) {
-                return res.status(400).json({ success: false, message: 'Purchase price and opening stock are required for TYPE_A products' });
-            }
         }
 
         // Check for duplicates
@@ -59,15 +47,9 @@ exports.createProduct = async (req, res) => {
         }
 
         const product = await Product.create({
+            ...req.body,
             company_id: req.user.restaurant_id,
-            name,
-            category,
-            product_type,
-            selling_price,
-            purchase_price: product_type === 'TYPE_A' ? purchase_price : undefined,
-            opening_stock: product_type === 'TYPE_A' ? opening_stock : 0,
-            current_stock: product_type === 'TYPE_A' ? opening_stock : 0,
-            image: image || ''
+            current_stock: req.body.opening_stock || 0
         });
 
         res.status(201).json({
@@ -89,11 +71,6 @@ exports.updateProduct = async (req, res) => {
 
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
-        }
-
-        // Prevent changing product_type
-        if (req.body.product_type && req.body.product_type !== product.product_type) {
-            return res.status(400).json({ success: false, message: 'Product type cannot be changed once created' });
         }
 
         product = await Product.findByIdAndUpdate(req.params.id, req.body, {

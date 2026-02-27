@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './BillingPage.css';
 import PaymentFlow from './PaymentFlow';
 import BillPreviewModal from './BillPreviewModal';
@@ -19,7 +19,9 @@ import {
     Users,
     Save,
     Printer,
-    Menu as MenuIcon
+    Menu as MenuIcon,
+    LayoutGrid,
+    Columns
 } from 'lucide-react';
 
 const BillingPage = () => {
@@ -47,6 +49,14 @@ const BillingPage = () => {
     const [showSidebar, setShowSidebar] = useState(true);
     const [checkoutActive, setCheckoutActive] = useState(false);
     const [checkoutType, setCheckoutType] = useState('');
+    const [showMoreOptions, setShowMoreOptions] = useState(false);
+    const [stepProceeded, setStepProceeded] = useState(false);
+    const [extraCharges, setExtraCharges] = useState(0);
+    const [discount, setDiscount] = useState(0);
+    const [gstPercentage, setGstPercentage] = useState(5);
+    const [promoCode, setPromoCode] = useState('');
+    const [showLoyalty, setShowLoyalty] = useState(false);
+    const [billingLayout, setBillingLayout] = useState(() => localStorage.getItem('cachedBillingLayout') || 'SIDEBAR');
 
     // Get base API URL for images
     const getBaseUrl = () => {
@@ -65,9 +75,12 @@ const BillingPage = () => {
         return () => clearInterval(timer);
     }, []);
 
+    const location = useLocation();
+
     // Load initial data
     useEffect(() => {
         const fetchInitialData = async () => {
+            setLoading(true);
             try {
                 const savedUser = localStorage.getItem('user');
                 if (!savedUser) return;
@@ -95,19 +108,22 @@ const BillingPage = () => {
                 // 4. Fetch Restaurant Info
                 const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/profile`, { headers });
                 const profileData = await profileRes.json();
+
                 if (profileData.success) {
                     setRestaurantName(profileData.data.restaurant.name);
+                    const layout = profileData.data.restaurant.billing_layout || 'SIDEBAR';
+                    setBillingLayout(layout);
+                    localStorage.setItem('cachedBillingLayout', layout);
                 }
-
-                setLoading(false);
             } catch (error) {
                 console.error("Billing init error", error);
+            } finally {
                 setLoading(false);
             }
         };
 
         fetchInitialData();
-    }, []);
+    }, [location.key]);
 
     // Create New Bill
     const createNewBill = async () => {
@@ -277,8 +293,39 @@ const BillingPage = () => {
         }
     };
 
+    // Toggle billing layout instantly from the header
+    const toggleLayout = async () => {
+        const newLayout = billingLayout === 'SIDEBAR' ? 'TOP_HEADER' : 'SIDEBAR';
+        setBillingLayout(newLayout);
+        localStorage.setItem('cachedBillingLayout', newLayout);
+
+        // If switching to TOP_HEADER, close sidebar
+        if (newLayout === 'TOP_HEADER') {
+            setShowSidebar(false);
+        } else {
+            setShowSidebar(true);
+        }
+
+        // Save to backend silently
+        try {
+            const savedUser = localStorage.getItem('user');
+            if (!savedUser) return;
+            const { token } = JSON.parse(savedUser);
+            await fetch(`${import.meta.env.VITE_API_URL}/settings/layout`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ billingLayout: newLayout })
+            });
+        } catch (err) {
+            console.error('Failed to save layout preference', err);
+        }
+    };
+
     return (
-        <div className={`pos-layout ${showSidebar ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <div className={`pos-layout ${showSidebar ? 'sidebar-open' : 'sidebar-closed'} layout-${billingLayout.toLowerCase().replace('_', '-')}`}>
             {/* Top Navigation Bar */}
             <div className="pos-nav">
                 <div className="nav-left">
@@ -320,6 +367,19 @@ const BillingPage = () => {
                         <span className="label">Counter:</span>
                         <span className="value">{counters.find(c => c._id === selectedCounter)?.name || '...'}</span>
                     </div>
+
+                    {/* Layout Toggle Button */}
+                    <button
+                        className="layout-toggle-btn"
+                        onClick={toggleLayout}
+                        title={billingLayout === 'SIDEBAR' ? 'Switch to Top Header' : 'Switch to Sidebar'}
+                    >
+                        {billingLayout === 'SIDEBAR' ? <LayoutGrid size={18} /> : <Columns size={18} />}
+                        <span className="layout-toggle-label">
+                            {billingLayout === 'SIDEBAR' ? 'Top' : 'Side'}
+                        </span>
+                    </button>
+
                     <button className="reset-btn" onClick={() => window.location.reload()}>
                         <RotateCcw size={18} />
                     </button>
@@ -333,32 +393,34 @@ const BillingPage = () => {
                     <div className="mobile-overlay" onClick={() => setShowSidebar(false)} style={{ zIndex: 1999 }}></div>
                 )}
 
-                {/* 1. Category Sidebar (Left) */}
-                <div className={`category-sidebar ${showSidebar ? 'open' : 'closed'}`}>
-                    <div className="sidebar-header">
-                        <span>CATEGORY</span>
-                        <button onClick={() => setShowSidebar(false)} className="icon-btn-sm">
-                            <ArrowLeft size={16} />
-                        </button>
-                    </div>
-                    <div className="category-list">
-                        <button
-                            className={`category-item ${activeCategory === "ALL" ? 'active' : ''}`}
-                            onClick={() => setActiveCategory("ALL")}
-                        >
-                            All Items <ChevronDown size={14} />
-                        </button>
-                        {categories.map(cat => (
-                            <button
-                                key={cat._id}
-                                className={`category-item ${activeCategory === cat.name ? 'active' : ''}`}
-                                onClick={() => setActiveCategory(cat.name)}
-                            >
-                                {cat.name} <ChevronDown size={14} />
+                {/* 1. Category Sidebar (Left) - Only if Layout 1 */}
+                {billingLayout === 'SIDEBAR' && (
+                    <div className={`category-sidebar ${showSidebar ? 'open' : 'closed'}`}>
+                        <div className="sidebar-header">
+                            <span>CATEGORY</span>
+                            <button onClick={() => setShowSidebar(false)} className="icon-btn-sm">
+                                <ArrowLeft size={16} />
                             </button>
-                        ))}
+                        </div>
+                        <div className="category-list">
+                            <button
+                                className={`category-item ${activeCategory === "ALL" ? 'active' : ''}`}
+                                onClick={() => setActiveCategory("ALL")}
+                            >
+                                All Items <ChevronDown size={14} />
+                            </button>
+                            {categories.map(cat => (
+                                <button
+                                    key={cat._id}
+                                    className={`category-item ${activeCategory === cat.name ? 'active' : ''}`}
+                                    onClick={() => setActiveCategory(cat.name)}
+                                >
+                                    {cat.name} <ChevronDown size={14} />
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* 2. Product Area (Middle) */}
                 <div className="product-area">
@@ -373,7 +435,7 @@ const BillingPage = () => {
                     ) : (
                         <>
                             <div className="search-bar">
-                                {!showSidebar && (
+                                {billingLayout === 'SIDEBAR' && !showSidebar && (
                                     <button
                                         className="toggle-cat-btn"
                                         onClick={() => setShowSidebar(true)}
@@ -390,6 +452,27 @@ const BillingPage = () => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
+
+                            {/* Top Category Header - Only if Layout 2 */}
+                            {billingLayout === 'TOP_HEADER' && (
+                                <div className="top-category-header">
+                                    <button
+                                        className={`top-cat-btn ${activeCategory === "ALL" ? 'active' : ''}`}
+                                        onClick={() => setActiveCategory("ALL")}
+                                    >
+                                        ALL ITEMS
+                                    </button>
+                                    {categories.map(cat => (
+                                        <button
+                                            key={cat._id}
+                                            className={`top-cat-btn ${activeCategory === cat.name ? 'active' : ''}`}
+                                            onClick={() => setActiveCategory(cat.name)}
+                                        >
+                                            {cat.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                             <div className="product-scroll-grid">
                                 {loading ? (
@@ -421,24 +504,26 @@ const BillingPage = () => {
                                 ))}
                             </div>
 
-                            {/* Bottom Category List (Horizontal) */}
-                            <div className="bottom-category-bar">
-                                <button
-                                    className={`bottom-cat-chip ${activeCategory === "ALL" ? 'active' : ''}`}
-                                    onClick={() => setActiveCategory("ALL")}
-                                >
-                                    All
-                                </button>
-                                {categories.map(cat => (
+                            {/* Bottom Category List (Horizontal) - Only if Layout 1 */}
+                            {billingLayout === 'SIDEBAR' && (
+                                <div className="bottom-category-bar">
                                     <button
-                                        key={cat._id}
-                                        className={`bottom-cat-chip ${activeCategory === cat.name ? 'active' : ''}`}
-                                        onClick={() => setActiveCategory(cat.name)}
+                                        className={`bottom-cat-chip ${activeCategory === "ALL" ? 'active' : ''}`}
+                                        onClick={() => setActiveCategory("ALL")}
                                     >
-                                        {cat.name}
+                                        All
                                     </button>
-                                ))}
-                            </div>
+                                    {categories.map(cat => (
+                                        <button
+                                            key={cat._id}
+                                            className={`bottom-cat-chip ${activeCategory === cat.name ? 'active' : ''}`}
+                                            onClick={() => setActiveCategory(cat.name)}
+                                        >
+                                            {cat.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                             {/* Bottom Action Bar */}
                             <div className="pos-bottom-actions">
@@ -502,29 +587,71 @@ const BillingPage = () => {
                                 <span>Subtotal ({billItems.length} items)</span>
                                 <span>₹{subTotal.toFixed(2)}</span>
                             </div>
-                            <div className="sum-row">
-                                <span>Discount</span>
-                                <div className="flex gap-2">
-                                    <input type="checkbox" /> % <input type="checkbox" /> Amt
-                                    <input type="text" className="discount-in" placeholder="0.00" />
+
+                            {/* Expanded "More" Options */}
+                            {showMoreOptions && (
+                                <div className="more-options-grid">
+                                    <div className="opt-field">
+                                        <label>GST %</label>
+                                        <input type="number" value={gstPercentage} onChange={(e) => setGstPercentage(e.target.value)} />
+                                    </div>
+                                    <div className="opt-field">
+                                        <label>Disc (₹)</label>
+                                        <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+                                    </div>
+                                    <div className="opt-field">
+                                        <label>Addl Chg</label>
+                                        <input type="number" value={extraCharges} onChange={(e) => setExtraCharges(e.target.value)} />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* Loyalty Section */}
+                            {showLoyalty && (
+                                <div className="loyalty-promo-row">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter promo/loyalty code"
+                                        value={promoCode}
+                                        onChange={(e) => setPromoCode(e.target.value)}
+                                    />
+                                    <button className="apply-btn">Apply</button>
+                                </div>
+                            )}
+
                             <div className="sum-row">
-                                <span>Tax (5.0%)</span>
-                                <span>₹{tax.toFixed(2)}</span>
+                                <span>Tax ({gstPercentage}%)</span>
+                                <span>₹{((subTotal - discount) * (gstPercentage / 100)).toFixed(2)}</span>
                             </div>
                             <div className="sum-total">
                                 <span>Total Payable</span>
-                                <span>₹{grandTotal.toFixed(2)}</span>
+                                <span>₹{(subTotal - discount + ((subTotal - discount) * (gstPercentage / 100)) + parseFloat(extraCharges || 0)).toFixed(2)}</span>
                             </div>
                         </div>
 
-                        {/* Fast Payment */}
-                        <div className="fast-payment">
-                            <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
-                            <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
-                            <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
+                        {/* Top Control Buttons */}
+                        <div className="panel-controls">
+                            <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
+                                Loyalty
+                            </button>
+                            <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
+                                More
+                            </button>
+                            {!stepProceeded && (
+                                <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
+                                    Check Out (Next)
+                                </button>
+                            )}
                         </div>
+
+                        {/* Fast Payment - Show only after Check Out/Proceed */}
+                        {stepProceeded && (
+                            <div className="fast-payment fade-in">
+                                <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
+                                <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
+                                <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
+                            </div>
+                        )}
 
                         <div className="footer-actions">
                             <button className="save-btn" onClick={handlePayment} disabled={billItems.length === 0}>
@@ -533,6 +660,11 @@ const BillingPage = () => {
                             <button className="print-btn" onClick={handlePayment} disabled={billItems.length === 0}>
                                 <Printer size={18} /> SAVE & PRINT
                             </button>
+                            {stepProceeded && (
+                                <button className="back-btn" onClick={() => setStepProceeded(false)}>
+                                    Back
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

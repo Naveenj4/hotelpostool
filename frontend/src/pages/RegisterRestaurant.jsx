@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    Store, User, Mail, Phone, Lock, Hash, MapPin,
+    Store, Mail, Phone, Lock, Hash, MapPin,
     ArrowRight, Loader2, Utensils, CheckCircle2,
     Calendar, Shield, Info, AlertCircle
 } from 'lucide-react';
@@ -23,7 +23,6 @@ const RegisterRestaurant = () => {
         address: '',
         fssai_no: '',
         gstin: '',
-        owner_name: '',
         email: '',
         mobile: '',
         password: '',
@@ -56,10 +55,17 @@ const RegisterRestaurant = () => {
             return;
         }
 
-        const res = await register(formData);
+        const registrationData = {
+            ...formData,
+            owner_name: formData.company_name // Use company name as owner name since input was removed
+        };
+
+        const res = await register(registrationData);
 
         if (res.success) {
-            navigate(res.data.restaurant_type === 'SELF_SERVICE' ? '/dashboard/self-service' : '/dashboard/dining');
+            const rType = res.data.restaurant_type;
+            const target = (rType === 'SMART' || rType === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining';
+            navigate(target);
         } else {
             setError(res.error);
         }
@@ -144,14 +150,14 @@ const RegisterRestaurant = () => {
                                     </div>
                                 </div>
                                 <div className="form-group">
-                                    <label className="input-label">Store Name</label>
+                                    <label className="input-label">Sort Name</label>
                                     <div className="input-relative">
                                         <Hash className="input-icon" />
                                         <input
                                             type="text"
                                             name="store_name"
                                             required
-                                            placeholder="Palace - MG Road"
+                                            placeholder="Short name for sorting"
                                             className="input-field pad-left"
                                             value={formData.store_name}
                                             onChange={handleChange}
@@ -181,8 +187,8 @@ const RegisterRestaurant = () => {
                                         value={formData.restaurant_type}
                                         onChange={handleChange}
                                     >
-                                        <option value="SELF_SERVICE">SELF SERVICE</option>
-                                        <option value="DINING">FULL DINING</option>
+                                        <option value="SMART">SMART</option>
+                                        <option value="EFFICIENT">EFFICIENT</option>
                                     </select>
                                 </div>
                             </div>
@@ -205,21 +211,6 @@ const RegisterRestaurant = () => {
                                         value={formData.address}
                                         onChange={handleChange}
                                     ></textarea>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">Owner Full Name</label>
-                                    <div className="input-relative">
-                                        <User className="input-icon" />
-                                        <input
-                                            type="text"
-                                            name="owner_name"
-                                            required
-                                            placeholder="John Doe"
-                                            className="input-field pad-left"
-                                            value={formData.owner_name}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
                                 </div>
                                 <div className="form-group">
                                     <label className="input-label">Cell Number</label>

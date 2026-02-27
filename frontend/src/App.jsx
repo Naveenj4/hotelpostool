@@ -33,8 +33,14 @@ function AppRoutes() {
     return (
         <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/register" element={user ? <Navigate to={user.restaurant_type === 'SELF_SERVICE' ? '/dashboard/self-service' : '/dashboard/dining'} /> : <RegisterRestaurant />} />
-            <Route path="/login" element={user ? <Navigate to={user.restaurant_type === 'SELF_SERVICE' ? '/dashboard/self-service' : '/dashboard/dining'} /> : <Login />} />
+            <Route
+                path="/register"
+                element={user ? <Navigate to={(user.restaurant_type === 'SMART' || user.restaurant_type === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining'} /> : <RegisterRestaurant />}
+            />
+            <Route
+                path="/login"
+                element={user ? <Navigate to={(user.restaurant_type === 'SMART' || user.restaurant_type === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining'} /> : <Login />}
+            />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Self Service Dashboard Nested Routes */}

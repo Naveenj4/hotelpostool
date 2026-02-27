@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { 
+const {
     getUserSettings,
     updateProfile,
     changePassword,
     updatePrinterSettings,
-    updateBillFormat
+    updateBillFormat,
+    updateBillingLayout
 } = require('../controllers/settingsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -27,5 +28,8 @@ router.put('/printer', updatePrinterSettings);
 
 // Update bill format
 router.put('/bill-format', updateBillFormat);
+
+// Update billing layout only (Appearance tab)
+router.put('/layout', updateBillingLayout);
 
 module.exports = router;

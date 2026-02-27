@@ -6,49 +6,127 @@ const productSchema = new mongoose.Schema({
         ref: 'Restaurant',
         required: true
     },
+    code: {
+        type: String,
+        trim: true
+    },
+    barcode: {
+        type: String,
+        trim: true
+    },
     name: {
         type: String,
         required: [true, 'Product name is required'],
         trim: true
     },
-    category: { // Using String for Phase 1 simplicity as Category model isn't defined yet
+    short_name: {
+        type: String,
+        trim: true
+    },
+    print_name: {
+        type: String,
+        trim: true
+    },
+    category: {
         type: String,
         required: [true, 'Category is required'],
         trim: true
     },
-    product_type: {
+    brand: {
         type: String,
-        enum: ['TYPE_A', 'TYPE_B'],
-        required: true
+        trim: true
+    },
+    food_type: {
+        type: String,
+        enum: ['VEG', 'NON_VEG', 'NONE'],
+        default: 'NONE'
+    },
+    item_nature: {
+        type: String,
+        enum: ['GOOD', 'SERVICE'],
+        default: 'GOOD'
+    },
+    purchase_price: {
+        type: Number,
+        default: 0
+    },
+    cost_price: {
+        type: Number,
+        default: 0
     },
     selling_price: {
         type: Number,
         required: [true, 'Selling price is required'],
-        min: 0
+        default: 0
     },
-    // Fields for TYPE_A (Stock Managed)
-    purchase_price: {
+    mrp: {
         type: Number,
-        min: 0,
-        required: function () { return this.product_type === 'TYPE_A'; }
+        default: 0
+    },
+    gst_sales: {
+        type: Number,
+        default: 0
+    },
+    gst_purchase: {
+        type: Number,
+        default: 0
+    },
+    hsn_code: {
+        type: String,
+        trim: true
     },
     opening_stock: {
         type: Number,
-        min: 0,
-        default: 0,
-        required: function () { return this.product_type === 'TYPE_A'; }
+        default: 0
     },
     current_stock: {
         type: Number,
-        min: 0,
         default: 0
     },
+    stock_value: {
+        type: Number,
+        default: 0
+    },
+    // Stock levels
+    min_stock: { type: Number, default: 0 },
+    max_stock: { type: Number, default: 0 },
+    reorder_level: { type: Number, default: 0 },
+    urgent_order_level: { type: Number, default: 0 },
+
+    // Timing
+    available_timings: [{
+        label: String, // Morning, Afternoon, Evening
+        start_time: String,
+        end_time: String,
+        enabled: { type: Boolean, default: true }
+    }],
+
+    // Addons
+    addons: [{
+        name: String,
+        rate: Number
+    }],
+
+    // Variations
+    variations: [{
+        name: String,
+        amount: Number
+    }],
+
+    // Service Types
+    serve_types: {
+        dine_in: { type: Boolean, default: true },
+        delivery: { type: Boolean, default: true },
+        parcel: { type: Boolean, default: true },
+        order: { type: Boolean, default: true }
+    },
+
     is_active: {
         type: Boolean,
         default: true
     },
     image: {
-        type: String, // String will store the path or URL
+        type: String,
         default: ''
     }
 }, {

