@@ -13,15 +13,16 @@
    1. Top Navigation — Default: WHITE (Sidebar Layout)
    =================================================== */
 .pos-nav {
-    height: 75px;
+    height: 70px;
     background: #ffffff;
     border-bottom: 2px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2.5rem;
+    padding: 0 1rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     z-index: 100;
+    gap: 0.5rem;
 }
 
 .nav-left {
@@ -71,9 +72,10 @@
 .nav-center {
     display: flex;
     align-items: center;
-    gap: 3rem;
-    flex: 1.5;
+    gap: 1rem;
+    flex: 1;
     justify-content: center;
+    min-width: 0;
 }
 
 .nav-center .mode-selector {
@@ -88,20 +90,19 @@
 .pos-timer-display {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0 1.25rem;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
     background: #f8fafc;
     border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    height: 48px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    border-radius: 10px;
+    height: 38px;
     flex-shrink: 0;
     white-space: nowrap;
 }
 
 .pos-date {
     color: #64748B;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 700;
 }
 
@@ -114,17 +115,17 @@
 .pos-time {
     color: #0F172A;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 800;
-    min-width: 95px;
+    min-width: 85px;
     text-align: center;
 }
 
 .mode-btn {
-    padding: 8px 18px;
+    padding: 6px 14px;
     border: none;
     background: transparent;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #64748B;
     border-radius: 8px;
@@ -142,16 +143,16 @@
 .nav-right {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    min-width: 400px;
+    gap: 0.75rem;
     justify-content: flex-end;
+    flex-shrink: 0;
 }
 
 .nav-stat {
     display: flex;
     align-items: baseline;
-    gap: 0.5rem;
-    padding: 0 0.75rem;
+    gap: 0.35rem;
+    padding: 0 0.4rem;
     flex-shrink: 0;
 }
 
@@ -172,34 +173,19 @@
     line-height: 1;
 }
 
-.reset-btn {
-    background: #fff5f0;
-    color: #ea9a4e;
-    border: 1px solid #ffe0c7;
-    padding: 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.reset-btn:hover {
-    background: #fee2c5;
-    border-color: #ea9a4e;
-}
-
 .new-bill-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     background: #ecfdf5;
     color: #059669;
     border: 1.5px solid #10b981;
-    padding: 0 16px;
+    padding: 0 0.75rem;
     border-radius: 10px;
     cursor: pointer;
     font-weight: 700;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 42px;
+    height: 38px;
     white-space: nowrap;
 }
 
@@ -232,8 +218,8 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 42px;
-    width: 42px;
+    height: 38px;
+    width: 38px;
 }
 
 .logout-btn-pos:hover {
@@ -248,8 +234,8 @@
     background: #fff7ed;
     color: #f97316;
     border: 1.5px solid #fdba74;
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     border-radius: 10px;
     cursor: pointer;
     display: flex;
@@ -318,7 +304,7 @@
     font-weight: 800;
     font-size: 0.78rem;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 42px;
+    height: 38px;
     white-space: nowrap;
 }
 
