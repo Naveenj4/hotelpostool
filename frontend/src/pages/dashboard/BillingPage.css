@@ -13,13 +13,13 @@
    1. Top Navigation — Default: WHITE (Sidebar Layout)
    =================================================== */
 .pos-nav {
-    height: 70px;
+    height: 75px;
     background: #ffffff;
     border-bottom: 2px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2rem;
+    padding: 0 2.5rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     z-index: 100;
 }
@@ -71,8 +71,8 @@
 .nav-center {
     display: flex;
     align-items: center;
-    gap: 2rem;
-    flex: 1;
+    gap: 3rem;
+    flex: 1.5;
     justify-content: center;
 }
 
@@ -81,6 +81,7 @@
     background: #f1f5f9;
     padding: 4px;
     border-radius: 10px;
+    flex-shrink: 0;
 }
 
 /* Timer Display */
@@ -92,8 +93,10 @@
     background: #f8fafc;
     border: 1.5px solid #e2e8f0;
     border-radius: 12px;
-    height: 44px;
+    height: 48px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .pos-date {
@@ -118,15 +121,16 @@
 }
 
 .mode-btn {
-    padding: 8px 16px;
+    padding: 8px 18px;
     border: none;
     background: transparent;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     color: #64748B;
     border-radius: 8px;
     cursor: pointer;
     transition: 0.2s;
+    white-space: nowrap;
 }
 
 .mode-btn.active {
@@ -138,31 +142,34 @@
 .nav-right {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    min-width: 320px;
+    gap: 1.25rem;
+    min-width: 400px;
     justify-content: flex-end;
 }
 
 .nav-stat {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0 0.5rem;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
+    flex-shrink: 0;
 }
 
 .nav-stat .label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: #94A3B8;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .nav-stat .value {
     font-weight: 800;
     color: #0F172A;
-    font-size: 0.95rem;
+    font-size: 1rem;
     white-space: nowrap;
+    line-height: 1;
 }
 
 .reset-btn {
