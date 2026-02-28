@@ -1,6 +1,6 @@
 .auth-container {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
     background-color: var(--white);
     overflow: hidden;
 }
@@ -9,17 +9,20 @@
 .auth-sidebar {
     width: 35%;
     background: var(--primary-500);
-    padding: 4rem;
+    padding: 3rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    left: 0;
+    justify-content: flex-start;
     height: 100vh;
+    position: relative;
     overflow-y: auto;
     color: var(--white);
     z-index: 100;
+}
+
+.auth-sidebar::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
 }
 
 .auth-sidebar::-webkit-scrollbar {
@@ -123,7 +126,8 @@
 
 /* Professional Form Scroll Area */
 .auth-main-scroll {
-    flex: 1;
+    width: 65%;
+    height: 100vh;
     background: var(--slate-50);
     overflow-y: auto;
     padding: 6rem 4rem;
