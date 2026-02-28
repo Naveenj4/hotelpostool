@@ -9,7 +9,8 @@ import {
     Star,
     Layers,
     ShieldCheck,
-    Cpu
+    Cpu,
+    CheckCircle2
 } from 'lucide-react';
 import './LandingPage.css';
 
@@ -25,133 +26,115 @@ const LandingPage = () => {
     }, []);
 
     const fadeInUp = {
-        initial: { opacity: 0, y: 60 },
+        initial: { opacity: 0, y: 40 },
         whileInView: { opacity: 1, y: 0 },
         viewport: { once: true },
         transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
     };
 
-    const features = [
-        {
-            title: "Neural POS Engine",
-            desc: "A lightning-fast interface built on high-performance architecture for zero-latency operations.",
-            icon: <Zap size={32} />,
-            color: "#60a5fa"
-        },
-        {
-            title: "Omnichannel Flow",
-            desc: "Synchronize dine-in, delivery, and self-service channels through a single, unified brain.",
-            icon: <Layers size={32} />,
-            color: "#f472b6"
-        },
-        {
-            title: "Predictive Analytics",
-            desc: "Convert raw transaction data into actionable growth strategies with built-in intelligence.",
-            icon: <BarChart3 size={32} />,
-            color: "#fbbf24"
-        }
-    ];
-
     return (
         <div className="landing-page">
-            {/* Mesmerizing Background Animation */}
-            <div className="animated-bg">
-                <div className="orb orb-1"></div>
-                <div className="orb orb-2"></div>
-                <div className="orb orb-3"></div>
+            {/* Creative Geometric Background */}
+            <div className="bg-geometric">
+                <div className="shape shape-1"></div>
             </div>
 
-            {/* Premium Navigation */}
+            {/* Professional Navigation */}
             <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
                 <div className="nav-container">
                     <Link to="/" className="flex items-center gap-4 no-underline">
-                        <div className="bg-white p-2.5 rounded-2xl shadow-2xl" style={{ display: 'flex' }}>
-                            <Utensils className="w-6 h-6 text-galaxy-black" />
+                        <div className="bg-primary-500 p-2.5 rounded-2xl shadow-xl shadow-primary-500/10" style={{ display: 'flex' }}>
+                            <Utensils className="w-6 h-6 text-white" />
                         </div>
                         <span className="logo-text">Resto<span className="text-primary-500">SaaS</span></span>
                     </Link>
-                    <div className="flex items-center gap-10">
+                    <div className="flex items-center gap-12">
                         <div className="hidden lg:flex gap-10">
-                            <Link to="/" className="nav-link">Platform</Link>
-                            <Link to="/features" className="nav-link">Ecosystem</Link>
-                            <Link to="/pricing" className="nav-link">Enterprise</Link>
+                            <Link to="/" className="nav-link no-underline">Solution</Link>
+                            <Link to="/features" className="nav-link no-underline">Network</Link>
+                            <Link to="/pricing" className="nav-link no-underline">Enterprise</Link>
                         </div>
                         <div className="flex items-center gap-6">
-                            <Link to="/login" className="nav-link">Sign In</Link>
-                            <Link to="/register" className="btn-primary" style={{
-                                padding: '0.8rem 2.5rem',
-                                borderRadius: '16px',
-                                background: 'white',
-                                color: 'black',
-                                fontWeight: 900
-                            }}>Get Started</Link>
+                            <Link to="/login" className="nav-link no-underline font-extrabold" style={{ color: 'var(--galaxy-black)' }}>Sign In</Link>
+                            <Link to="/register" className="btn-primary no-underline" style={{
+                                padding: '0.9rem 2.25rem',
+                                borderRadius: '14px',
+                                boxShadow: '0 15px 30px -10px rgba(126, 161, 196, 0.4)'
+                            }}>Initialize</Link>
                         </div>
                     </div>
                 </div>
             </nav>
 
-            {/* High-Impact Hero Section */}
+            {/* Creative Split Hero Section */}
             <section className="hero-section">
-                <div className="hero-content">
-                    <motion.div {...fadeInUp}>
-                        <div className="feature-tag">
-                            <Cpu size={16} /> Autonomous Restaurant Infrastructure
+                <div className="hero-grid">
+                    <motion.div {...fadeInUp} className="hero-content">
+                        <div className="badge-creative">
+                            <ShieldCheck size={16} /> Verified Enterprise Infrastructure
                         </div>
                         <h1 className="hero-title">
-                            The future of dining,<br />
-                            engineered today.
+                            Professional Scale <br />
+                            <span className="text-accent">Simplified.</span>
                         </h1>
                         <p className="hero-subtitle">
-                            RestoSaaS is a sophisticated multi-tenant ecosystem built to handle the complexity of modern restaurant operations with biological ease.
+                            The definitive modular OS for high-growth restaurants. Manage global franchise operations with precision, speed, and real-time intelligence.
                         </p>
-                        <div className="flex gap-6 justify-center" style={{ flexWrap: 'wrap' }}>
-                            <Link to="/register" className="cta-btn flex items-center gap-4 no-underline">
-                                Deploy Workspace <ArrowRight size={24} />
+                        <div className="flex gap-6" style={{ flexWrap: 'wrap' }}>
+                            <Link to="/register" className="btn-primary no-underline flex items-center gap-4 py-5 px-10 text-xl" style={{ borderRadius: '20px' }}>
+                                Start Free Trial <ArrowRight size={24} />
                             </Link>
-                            <button className="btn-outline py-5 px-10 text-xl" style={{
-                                borderColor: 'rgba(255,255,255,0.2)',
-                                color: 'white',
-                                borderRadius: '20px'
-                            }}>
-                                Explore Ecosystem
+                            <button className="btn-outline py-5 px-10 text-xl font-bold" style={{ borderRadius: '20px', color: 'var(--galaxy-black)', borderColor: 'var(--border-light)' }}>
+                                View Ecosystem
                             </button>
+                        </div>
+
+                        <div className="mt-12 flex items-center gap-8 text-sm font-bold text-slate-400 uppercase tracking-widest">
+                            <div className="flex items-center gap-2"><CheckCircle2 size={16} /> No CC Required</div>
+                            <div className="flex items-center gap-2"><CheckCircle2 size={16} /> Instant Setup</div>
                         </div>
                     </motion.div>
 
                     <motion.div
-                        initial={{ opacity: 0, rotateX: 20, scale: 0.9 }}
-                        whileInView={{ opacity: 1, rotateX: 10, scale: 1 }}
+                        initial={{ opacity: 0, x: 60 }}
+                        whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 1.2, ease: 'easeOut' }}
-                        className="hero-image-wrapper"
+                        transition={{ duration: 1, ease: 'easeOut' }}
+                        className="hero-visuals"
                     >
-                        <img
-                            src="https://images.unsplash.com/photo-1556742044-3c52d6e88c02?auto=format&fit=crop&q=80&w=1200"
-                            alt="RestoSaaS Professional Dashboard"
-                            className="hero-image"
-                        />
+                        <div className="visual-card">
+                            <img
+                                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200"
+                                alt="Analytics Dashboard"
+                                style={{ width: '100%', borderRadius: '32px' }}
+                            />
+                        </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Advanced Capabilities Section */}
+            {/* Capabilities Section */}
             <section className="features-section">
-                <div className="max-w-7xl mx-auto">
-                    <motion.div {...fadeInUp} className="text-center mb-24">
-                        <span className="text-primary-500 font-black uppercase tracking-[0.3em] text-sm">Architecture</span>
-                        <h2 className="text-6xl font-black text-white mt-6 mb-8 tracking-tighter">Beyond POS.</h2>
-                        <p className="text-slate-400 max-w-2xl mx-auto text-xl leading-relaxed">We don't just process orders; we manage the entire neural tissue of your business.</p>
+                <div className="max-w-7xl mx-auto px-8">
+                    <motion.div {...fadeInUp} className="text-center">
+                        <span className="text-primary-500 font-black uppercase tracking-[0.3em] text-sm">Capabilities</span>
+                        <h2 className="text-5xl md:text-6xl font-black text-slate-900 mt-6 mb-8 tracking-tighter">Engineered for Excellence.</h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto text-xl leading-relaxed">Everything you need to eliminate friction and drive revenue across every digital touchpoint.</p>
                     </motion.div>
 
-                    <div className="grid lg:grid-cols-3 gap-10">
-                        {features.map((f, i) => (
+                    <div className="features-grid">
+                        {[
+                            { title: "Smart Terminals", desc: "Deploy high-performance self-service and table-side nodes instantly.", icon: <Zap size={32} /> },
+                            { title: "Global Brain", desc: "Sync your entire franchise estate with real-time inventory and menu control.", icon: <Layers size={32} /> },
+                            { title: "Insight Engine", desc: "Transform raw data into actionable growth strategies with advanced analytics.", icon: <BarChart3 size={32} /> }
+                        ].map((f, i) => (
                             <motion.div
                                 key={i}
                                 {...fadeInUp}
                                 transition={{ delay: i * 0.15 + 0.2 }}
                                 className="feature-card"
                             >
-                                <div className="feature-icon-wrapper" style={{ color: f.color }}>
+                                <div className="feature-icon-box">
                                     {f.icon}
                                 </div>
                                 <h3>{f.title}</h3>
@@ -162,72 +145,44 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Logic & Workflow Section */}
-            <section className="how-it-works">
-                <div className="max-w-5xl mx-auto">
-                    <motion.div {...fadeInUp} className="text-center mb-24">
-                        <h2 className="text-6xl font-black text-white mb-6 tracking-tighter">Seamless Onboarding.</h2>
+            {/* CTA Section */}
+            <section className="cta-section">
+                <div className="max-w-7xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                        className="cta-container"
+                    >
+                        <div className="cta-glow"></div>
+                        <h2 className="cta-title">Scale with Confidence.</h2>
+                        <p className="text-slate-400 mb-16 text-2xl max-w-2xl mx-auto">Join the ranks of high-performance restaurants transforming their operations with RestoSaaS.</p>
+                        <div>
+                            <Link to="/register" className="btn-primary-white">
+                                Activate Your Profile
+                            </Link>
+                        </div>
                     </motion.div>
-
-                    <div className="flex flex-col gap-10">
-                        {[
-                            { title: "Define Neural Profile", desc: "Configure your restaurant's DNA with multi-outlet hierarchy and intelligent menu mapping." },
-                            { title: "Zero-Latency Deploy", desc: "Instantly activate specialized terminal nodes for self-service or elite table dining." },
-                            { title: "Scale with Intelligence", desc: "Start receiving traffic and let our engine optimize your revenue streams automatically." }
-                        ].map((step, i) => (
-                            <motion.div
-                                key={i}
-                                {...fadeInUp}
-                                transition={{ delay: i * 0.2 }}
-                                className="step-card"
-                            >
-                                <div className="step-number">
-                                    {i + 1}
-                                </div>
-                                <div>
-                                    <h4 className="text-3xl font-black text-white mb-3 tracking-tight">{step.title}</h4>
-                                    <p className="text-slate-400 text-xl">{step.desc}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
                 </div>
             </section>
 
-            {/* Final Conversion Section */}
-            <section className="cta-section">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    className="cta-banner"
-                >
-                    <h2 className="text-6xl font-black text-white mb-8 tracking-tighter">Join the elite.</h2>
-                    <p className="text-slate-400 mb-16 text-2xl max-w-2xl mx-auto">Elevate your brand with the most sophisticated restaurant operating system ever built.</p>
-                    <div>
-                        <Link to="/register" className="cta-btn no-underline">
-                            Activate Your Workspace
-                        </Link>
-                    </div>
-                </motion.div>
-            </section>
-
-            {/* Premium Footer */}
+            {/* Professional Footer */}
             <footer className="footer">
-                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-12">
+                <div className="max-w-7xl mx-auto px-8 flex flex-col lg:flex-row justify-between items-center gap-12">
                     <div className="flex items-center gap-4">
-                        <div className="bg-white p-2 rounded-2xl" style={{ display: 'flex' }}>
-                            <Utensils className="w-8 h-8 text-black" />
+                        <div className="bg-primary-500 p-2 rounded-2xl" style={{ display: 'flex' }}>
+                            <Utensils className="w-8 h-8 text-white" />
                         </div>
-                        <span className="text-3xl font-black tracking-tighter text-white">Resto<span className="text-primary-500">SaaS</span></span>
+                        <span className="text-3xl font-black tracking-tighter text-slate-900">Resto<span className="text-primary-500">SaaS</span></span>
                     </div>
-                    <div className="flex gap-12 text-slate-500 font-bold text-lg">
-                        <span className="hover:text-white cursor-pointer transition-colors">Safety</span>
-                        <span className="hover:text-white cursor-pointer transition-colors">Privacy</span>
-                        <span className="hover:text-white cursor-pointer transition-colors">Open Source</span>
+                    <div className="flex gap-12 text-slate-400 font-bold text-lg">
+                        <span className="hover:text-slate-900 cursor-pointer transition-colors">Safety</span>
+                        <span className="hover:text-slate-900 cursor-pointer transition-colors">Terms</span>
+                        <span className="hover:text-slate-900 cursor-pointer transition-colors">Privacy</span>
                     </div>
-                    <div className="text-slate-600 font-bold">
-                        © 2026 RestoSaaS Labs. Engineered for Performance.
+                    <div className="text-slate-500 font-bold">
+                        © 2026 RestoSaaS. Higher Standard Operations.
                     </div>
                 </div>
             </footer>

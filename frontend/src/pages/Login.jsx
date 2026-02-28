@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader2, Utensils, ArrowRight } from 'lucide-react';
+import {
+    Mail, Lock, Loader2, Utensils,
+    ArrowRight, ShieldCheck, Zap, BarChart3
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
@@ -40,85 +43,126 @@ const Login = () => {
     };
 
     return (
-        <div className="auth-page">
-            {/* Mesmerizing Background Animation */}
-            <div className="animated-bg">
-                <div className="orb orb-1"></div>
-                <div className="orb orb-2"></div>
+        <div className="auth-container">
+            {/* Creative Professional Sidebar */}
+            <div className="auth-sidebar">
+                <div className="sidebar-glow"></div>
+
+                <Link to="/" className="auth-logo-box no-underline">
+                    <div className="logo-icon-white">
+                        <Utensils className="w-8 h-8" />
+                    </div>
+                    <span className="logo-text-white">Resto<span className="opacity-80">SaaS</span></span>
+                </Link>
+
+                <div className="sidebar-main-content">
+                    <h2 className="sidebar-tagline">
+                        Enterprise Access <br />
+                        <span className="opacity-70">Redefined.</span>
+                    </h2>
+
+                    <div className="benefits-stack">
+                        {[
+                            { icon: <ShieldCheck size={24} />, title: "Bank-Grade Security", desc: "Your data architecture is protected by multi-tier encryption." },
+                            { icon: <Zap size={24} />, title: "Instant Deployment", desc: "Access your global workspace nodes in real-time." },
+                            { icon: <BarChart3 size={24} />, title: "Live Intelligence", desc: "Monitor entire franchise streams from a single brain." }
+                        ].map((benefit, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 + i * 0.1 }}
+                                className="benefit-card"
+                            >
+                                <div className="benefit-icon">
+                                    {benefit.icon}
+                                </div>
+                                <div className="benefit-text">
+                                    <h4>{benefit.title}</h4>
+                                    <p>{benefit.desc}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="sidebar-footer text-sm font-bold opacity-60 tracking-widest uppercase">
+                    © 2026 RestoSaaS Operations Center
+                </div>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="auth-card"
-            >
-                <div className="auth-header">
-                    <Link to="/" className="auth-logo no-underline">
-                        <div className="auth-logo-icon">
-                            <Utensils className="w-8 h-8 text-black" />
+            {/* Clean Professional Form Main Area */}
+            <main className="auth-main">
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="auth-form-wrapper"
+                >
+                    <div className="form-header">
+                        <h1 className="form-title">Welcome back.</h1>
+                        <p className="form-subtitle">Enter your enterprise keys to resume operations.</p>
+                    </div>
+
+                    {error && (
+                        <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl text-red-600 font-bold flex items-center gap-3">
+                            <span className="text-xl">⚠️</span> {error}
                         </div>
-                        <span className="auth-logo-text">Resto<span className="text-primary-500">SaaS</span></span>
-                    </Link>
-                    <h1 className="auth-title">Welcome Back.</h1>
-                    <p className="auth-subtitle">Elevate your workspace with a single click.</p>
-                </div>
+                    )}
 
-                {error && (
-                    <div className="error-box mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-center font-bold">
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label className="input-label">Email Architecture</label>
-                        <input
-                            type="email"
-                            name="email"
-                            required
-                            placeholder="admin@yourdomain.com"
-                            className="input-field"
-                            value={formData.email}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="input-label">Security Key</label>
+                    <form onSubmit={handleSubmit} className="auth-card-clean">
+                        <div className="input-group">
+                            <label className="input-header">Email Architecture</label>
+                            <div className="input-wrapper">
+                                <Mail className="input-icon-left" size={20} />
+                                <input
+                                    type="email"
+                                    name="email"
+                                    required
+                                    placeholder="admin@workspace.com"
+                                    className="input-field-professional"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
-                        <input
-                            type="password"
-                            name="password"
-                            required
-                            placeholder="••••••••••••"
-                            className="input-field"
-                            value={formData.password}
-                            onChange={handleChange}
-                        />
-                    </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="auth-btn flex items-center justify-center gap-4"
-                    >
-                        {loading ? (
-                            <Loader2 className="animate-spin" />
-                        ) : (
-                            <>
-                                Access Dashboard <ArrowRight size={24} />
-                            </>
-                        )}
-                    </button>
-                </form>
+                        <div className="input-group">
+                            <label className="input-header">Security Key</label>
+                            <div className="input-wrapper">
+                                <Lock className="input-icon-left" size={20} />
+                                <input
+                                    type="password"
+                                    name="password"
+                                    required
+                                    placeholder="••••••••••••"
+                                    className="input-field-professional"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
 
-                <div className="auth-footer">
-                    New to the ecosystem?
-                    <Link to="/register" className="auth-link">Initialize Workspace</Link>
-                </div>
-            </motion.div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn-auth-primary flex items-center justify-center gap-4"
+                        >
+                            {loading ? (
+                                <Loader2 className="animate-spin" />
+                            ) : (
+                                <>
+                                    Access Dashboard <ArrowRight size={22} />
+                                </>
+                            )}
+                        </button>
+
+                        <div className="auth-footer">
+                            New operator?
+                            <Link to="/register" className="auth-redirect no-underline">Initialize Workspace</Link>
+                        </div>
+                    </form>
+                </motion.div>
+            </main>
         </div>
     );
 };

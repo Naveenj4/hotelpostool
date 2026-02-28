@@ -42,11 +42,9 @@ const Header = ({ toggleSidebar, restaurantName }) => {
             <div className="header-center">
                 <div className="date-time-display">
                     <div className="display-item">
-                        <Calendar size={16} />
                         <span>{formatDate(currentTime)}</span>
                     </div>
                     <div className="display-item">
-                        <Clock size={16} />
                         <span>{formatTime(currentTime)}</span>
                     </div>
                 </div>

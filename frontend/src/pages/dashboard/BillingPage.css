@@ -13,16 +13,16 @@
    1. Top Navigation — Default: WHITE (Sidebar Layout)
    =================================================== */
 .pos-nav {
-    height: 70px;
+    height: 90px;
     background: #ffffff;
     border-bottom: 2px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    z-index: 100;
-    gap: 0.25rem;
+    padding: 0 1.5rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    z-index: 1000;
+    gap: 1.5rem;
 }
 
 .nav-left {
@@ -99,13 +99,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 0 0.5rem;
+    align-items: center;
+    padding: 0.5rem 1rem;
     background: #f8fafc;
     border: 1.5px solid #e2e8f0;
-    border-radius: 8px;
-    height: 42px;
+    border-radius: 12px;
+    height: 54px;
     flex-shrink: 0;
-    min-width: 85px;
+    min-width: 120px;
 }
 
 .timer-v-date {
@@ -158,10 +159,11 @@
 .pos-status-info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 0 0.5rem;
-    border-left: 2px solid #e2e8f0;
+    gap: 4px;
+    padding: 0.25rem 1rem;
+    border-left: 2.5px solid #f1f5f9;
     flex-shrink: 0;
+    justify-content: center;
 }
 
 .status-row {

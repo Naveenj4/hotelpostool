@@ -376,6 +376,10 @@ a {
   font-weight: 500;
 }
 
+.no-underline {
+  text-decoration: none !important;
+}
+
 a:hover {
   text-decoration: underline;
 }

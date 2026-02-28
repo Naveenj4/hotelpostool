@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    Store, Mail, Phone, Lock, Hash, MapPin,
-    ArrowRight, Loader2, Utensils, Shield, Info, AlertCircle
+    Store, Mail, Phone, Lock,
+    ArrowRight, Loader2, Utensils,
+    ShieldCheck, Star
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './RegisterRestaurant.css';
@@ -48,12 +49,6 @@ const RegisterRestaurant = () => {
             return;
         }
 
-        if (formData.password.length < 8 || !/\d/.test(formData.password)) {
-            setError('Password must be at least 8 characters and contain one number');
-            setLoading(false);
-            return;
-        }
-
         const registrationData = {
             ...formData,
             owner_name: formData.company_name
@@ -72,192 +67,220 @@ const RegisterRestaurant = () => {
     };
 
     return (
-        <div className="auth-page">
-            {/* Mesmerizing Background Animation */}
-            <div className="animated-bg">
-                <div className="orb orb-1"></div>
-                <div className="orb orb-2"></div>
+        <div className="auth-container">
+            {/* Creative Professional Sidebar */}
+            <div className="auth-sidebar">
+                <div className="sidebar-glow"></div>
+
+                <Link to="/" className="auth-logo-box no-underline">
+                    <div className="logo-icon-white">
+                        <Utensils className="w-8 h-8" />
+                    </div>
+                    <span className="logo-text-white">Resto<span className="opacity-80">SaaS</span></span>
+                </Link>
+
+                <div className="sidebar-main-content">
+                    <h2 className="sidebar-tagline">
+                        Architecting <br />
+                        <span className="opacity-70">The Future.</span>
+                    </h2>
+
+                    <div className="testimonial-card-creative">
+                        <p className="testimonial-text">
+                            "The transition to RestoSaaS has been a paradigm shift for our operations. The modular architecture is exactly what we needed for scale."
+                        </p>
+                        <div className="author-box">
+                            <div className="author-avatar">
+                                <Star size={24} fill="currentColor" />
+                            </div>
+                            <div className="author-info">
+                                <h5>Sarah K.</h5>
+                                <span>Operations Lead, FoodVentures</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="sidebar-footer text-sm font-bold opacity-60 tracking-widest uppercase">
+                    © 2026 RestoSaaS Operations Center
+                </div>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="auth-card"
-                style={{ maxWidth: '800px' }}
-            >
-                <div className="auth-header">
-                    <Link to="/" className="auth-logo no-underline">
-                        <div className="auth-logo-icon">
-                            <Utensils className="w-8 h-8 text-black" />
-                        </div>
-                        <span className="auth-logo-text">Resto<span className="text-primary-500">SaaS</span></span>
-                    </Link>
-                    <h1 className="auth-title">Initialize Workspace.</h1>
-                    <p className="auth-subtitle">Define your restaurant's digital DNA today.</p>
-                </div>
-
-                {error && (
-                    <div className="error-box mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-center font-bold">
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit}>
-                    <div className="grid md:grid-cols-2 gap-8">
-                        <div className="form-group">
-                            <label className="input-label">Company Entity</label>
-                            <input
-                                type="text"
-                                name="company_name"
-                                required
-                                placeholder="The Grand Palace Inc."
-                                className="input-field"
-                                value={formData.company_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Sort Alias</label>
-                            <input
-                                type="text"
-                                name="store_name"
-                                required
-                                placeholder="Sort Identifier"
-                                className="input-field"
-                                value={formData.store_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Print Branding</label>
-                            <input
-                                type="text"
-                                name="print_name"
-                                required
-                                placeholder="Name on Invoices"
-                                className="input-field"
-                                value={formData.print_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Ecosystem Node</label>
-                            <select
-                                name="restaurant_type"
-                                className="input-field"
-                                style={{ background: 'rgba(255,255,255,0.03)', appearance: 'none' }}
-                                value={formData.restaurant_type}
-                                onChange={handleChange}
-                            >
-                                <option value="SMART" style={{ background: '#0f172a' }}>SMART - Global Analytics</option>
-                                <option value="EFFICIENT" style={{ background: '#0f172a' }}>EFFICIENT - Ultra High Speed</option>
-                            </select>
-                        </div>
-                        <div className="form-group md:col-span-2">
-                            <label className="input-label">Geographic Coordinates</label>
-                            <input
-                                type="text"
-                                name="address"
-                                required
-                                placeholder="Street, City, Building..."
-                                className="input-field"
-                                value={formData.address}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Neural Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                required
-                                placeholder="owner@domain.com"
-                                className="input-field"
-                                value={formData.email}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Comm Line</label>
-                            <input
-                                type="text"
-                                name="mobile"
-                                required
-                                placeholder="Phone connection"
-                                className="input-field"
-                                value={formData.mobile}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">FSSAI ID</label>
-                            <input
-                                type="text"
-                                name="fssai_no"
-                                placeholder="Optional"
-                                className="input-field"
-                                value={formData.fssai_no}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">GSTIN Mapping</label>
-                            <input
-                                type="text"
-                                name="gstin"
-                                placeholder="Optional"
-                                className="input-field"
-                                value={formData.gstin}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Security Key</label>
-                            <input
-                                type="password"
-                                name="password"
-                                required
-                                placeholder="Min 8 chars"
-                                className="input-field"
-                                value={formData.password}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Verify Key</label>
-                            <input
-                                type="password"
-                                name="confirm_password"
-                                required
-                                placeholder="Re-enter key"
-                                className="input-field"
-                                value={formData.confirm_password}
-                                onChange={handleChange}
-                            />
-                        </div>
+            {/* Professional Form Scroll Area */}
+            <main className="auth-main-scroll">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="auth-form-wrapper-wide"
+                >
+                    <div className="form-header text-center" style={{ marginBottom: '4rem' }}>
+                        <h1 className="form-title">Initialize Ecosystem.</h1>
+                        <p className="form-subtitle">Define your restaurant's digital DNA.</p>
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="auth-btn flex items-center justify-center gap-4 mt-12"
-                    >
-                        {loading ? (
-                            <Loader2 className="animate-spin" />
-                        ) : (
-                            <>
-                                Activate Ecosystem <ArrowRight size={24} />
-                            </>
-                        )}
-                    </button>
-                </form>
+                    {error && (
+                        <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl text-red-600 font-bold flex items-center gap-3">
+                            <span className="text-xl">⚠️</span> {error}
+                        </div>
+                    )}
 
-                <div className="auth-footer mt-12">
-                    Already a member?
-                    <Link to="/login" className="auth-link">Resume Access</Link>
-                </div>
-            </motion.div>
+                    <form onSubmit={handleSubmit} className="auth-card-clean">
+                        <div className="input-grid">
+                            <div className="input-group">
+                                <label className="input-header">Company Entity</label>
+                                <input
+                                    type="text"
+                                    name="company_name"
+                                    required
+                                    placeholder="The Grand Palace Inc."
+                                    className="input-field-professional"
+                                    value={formData.company_name}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">Store Identifier</label>
+                                <input
+                                    type="text"
+                                    name="store_name"
+                                    required
+                                    placeholder="Unique Sort Name"
+                                    className="input-field-professional"
+                                    value={formData.store_name}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">Print Branding</label>
+                                <input
+                                    type="text"
+                                    name="print_name"
+                                    required
+                                    placeholder="Name for Invoices"
+                                    className="input-field-professional"
+                                    value={formData.print_name}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">Operational Node</label>
+                                <select
+                                    name="restaurant_type"
+                                    className="input-field-professional"
+                                    style={{ appearance: 'none' }}
+                                    value={formData.restaurant_type}
+                                    onChange={handleChange}
+                                >
+                                    <option value="DINING">ELITE DINING</option>
+                                    <option value="SMART">SMART SERVICE</option>
+                                    <option value="SELF_SERVICE">SELF SERVICE</option>
+                                </select>
+                            </div>
+                            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                <label className="input-header">Geographic Location</label>
+                                <input
+                                    type="text"
+                                    name="address"
+                                    required
+                                    placeholder="Full street address, building, city..."
+                                    className="input-field-professional"
+                                    value={formData.address}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">Email Architecture</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    required
+                                    placeholder="owner@workspace.com"
+                                    className="input-field-professional"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">Comm Line</label>
+                                <input
+                                    type="text"
+                                    name="mobile"
+                                    required
+                                    placeholder="Primary phone connection"
+                                    className="input-field-professional"
+                                    value={formData.mobile}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">FSSAI ID</label>
+                                <input
+                                    type="text"
+                                    name="fssai_no"
+                                    placeholder="Food License No (Optional)"
+                                    className="input-field-professional"
+                                    value={formData.fssai_no}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">GSTIN Mapping</label>
+                                <input
+                                    type="text"
+                                    name="gstin"
+                                    placeholder="Tax Registration (Optional)"
+                                    className="input-field-professional"
+                                    value={formData.gstin}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">Security Key</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    required
+                                    placeholder="Minimum 8 characters"
+                                    className="input-field-professional"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-header">Verify Key</label>
+                                <input
+                                    type="password"
+                                    name="confirm_password"
+                                    required
+                                    placeholder="Re-enter security key"
+                                    className="input-field-professional"
+                                    value={formData.confirm_password}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn-auth-primary flex items-center justify-center gap-4"
+                        >
+                            {loading ? (
+                                <Loader2 className="animate-spin" />
+                            ) : (
+                                <>
+                                    Initialize Ecosystem <ArrowRight size={22} />
+                                </>
+                            )}
+                        </button>
+
+                        <div className="auth-footer">
+                            Resume access?
+                            <Link to="/login" className="auth-redirect no-underline">Login To Dashboard</Link>
+                        </div>
+                    </form>
+                </motion.div>
+            </main>
         </div>
     );
 };

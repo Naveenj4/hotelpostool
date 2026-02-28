@@ -165,7 +165,7 @@
 }
 
 .dashboard-header {
-    height: 64px;
+    height: 80px;
     background-color: white;
     border-bottom: 1px solid var(--border-light);
     display: flex;
@@ -186,32 +186,27 @@
 
 .date-time-display {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 1rem;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.5rem 1.25rem;
     background: #F8FAFC;
-    /* Match POS timer bg */
     border: 1px solid #E2E8F0;
-    /* Match POS timer border */
-    border-radius: 8px;
-    height: 40px;
+    border-radius: 12px;
 }
 
 .display-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1.05rem;
-    /* Scaled up from 0.9rem */
-    font-weight: 600;
-    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--slate-600);
 }
 
-.display-item:first-child::after {
-    content: "|";
-    color: #CBD5E0;
-    margin-left: 0.75rem;
-    font-weight: 300;
+.display-item:first-child span {
+    color: var(--primary-500);
 }
 
 .display-item:last-child span {

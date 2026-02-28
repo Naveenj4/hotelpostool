@@ -381,11 +381,11 @@ const BillingPage = () => {
                 <div className="nav-right">
                     <div className="pos-status-info">
                         <div className="status-row">
-                            <span className="status-label">B:</span>
+                            <span className="status-label">Bill No:</span>
                             <span className="status-value">{billNumber}</span>
                         </div>
                         <div className="status-row">
-                            <span className="status-label">C:</span>
+                            <span className="status-label">Counter:</span>
                             <span className="status-value">{counters.find(c => c._id === selectedCounter)?.name || '...'}</span>
                         </div>
                     </div>
