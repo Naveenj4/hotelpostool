@@ -553,6 +553,14 @@
         gap: 1rem;
     }
 
+    .data-card {
+        overflow-x: auto;
+    }
+
+    .custom-table {
+        min-width: 500px;
+    }
+
     .dashboard-bottom-grid {
         gap: 1rem;
     }

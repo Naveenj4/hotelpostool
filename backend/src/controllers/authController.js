@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
+const Role = require('../models/Role');
 const jwt = require('jsonwebtoken');
 const PasswordReset = require('../models/PasswordReset');
 const bcrypt = require('bcryptjs'); // Needed for OTP verification if hashing
@@ -179,9 +180,8 @@ exports.resetPassword = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Hash new password
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(new_password, salt);
+        // Set plain password — the User model's pre-save hook will hash it
+        user.password = new_password;
         await user.save();
 
         // Delete OTP
@@ -273,13 +273,21 @@ exports.register = async (req, res) => {
             });
 
             res.status(201).json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                restaurant_id: user.restaurant_id,
-                restaurant_type: restaurant.restaurant_type,
-                role: user.role,
-                token: generateToken(user._id)
+                success: true,
+                token: generateToken(user._id),
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    role: user.role,
+                    restaurant_id: user.restaurant_id,
+                    email: user.email
+                },
+                restaurant: {
+                    name: restaurant.company_name,
+                    restaurant_type: restaurant.restaurant_type,
+                    billing_layout: restaurant.billing_layout
+                },
+                permissions: null
             });
 
         } catch (dbError) {
@@ -337,7 +345,7 @@ exports.getProfile = async (req, res) => {
 };
 exports.login = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password, company_name } = req.body;
 
         if (!username || !password) {
             return res.status(400).json({ success: false, message: 'Please provide username and password' });
@@ -345,56 +353,107 @@ exports.login = async (req, res) => {
 
         // MASTER ADMIN DEFAULT LOGIN BYPASS
         if (username === 'admin@restoboard.com' && password === 'password123') {
-            // Find just ANY user to provide some context, or just return a dummy
-            // For now, let's just use the bypass to log in as a special role
-            return res.json({
-                success: true,
-                token: 'MASTER_TOKEN_' + Date.now(), // Real apps should use a proper static token or find a super-user
-                user: {
-                    id: 'master-admin-id',
-                    name: 'Master Support',
-                    role: 'SUPER_ADMIN',
-                    restaurant_id: 'master-restaurant-id'
-                },
-                restaurant: {
-                    name: 'Admin Dashboard',
-                    restaurant_type: 'ENTERPRISE'
-                }
-            });
+            // Find the first OWNER user in the system to use as the actual user
+            const anyOwner = await User.findOne({ role: 'OWNER' }).populate('restaurant_id');
+            if (anyOwner) {
+                const token = generateToken(anyOwner._id);
+                return res.json({
+                    success: true,
+                    token,
+                    user: {
+                        id: anyOwner._id,
+                        name: 'Master Support',
+                        role: 'SUPER_ADMIN',
+                        restaurant_id: anyOwner.restaurant_id._id
+                    },
+                    restaurant: {
+                        name: anyOwner.restaurant_id.company_name || 'Admin Dashboard',
+                        restaurant_type: anyOwner.restaurant_id.restaurant_type || 'SELF_SERVICE',
+                        billing_layout: anyOwner.restaurant_id.billing_layout
+                    },
+                    permissions: null
+                });
+            } else {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No restaurant found. Please register a restaurant first.'
+                });
+            }
         }
 
-        // Find user by email or mobile
-        const user = await User.findOne({
+        // Build query: find user by email, mobile, or username
+        let query = {
             $or: [
                 { email: username.toLowerCase() },
-                { mobile: username }
+                { mobile: username },
+                { username: username.toLowerCase() }
             ]
-        }).select('+password').populate('restaurant_id');
+        };
 
-        if (user && (await user.matchPassword(password))) {
-            const token = generateToken(user._id);
-
-            res.json({
-                success: true,
-                token,
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    role: user.role,
-                    restaurant_id: user.restaurant_id._id
-                },
-                restaurant: {
-                    name: user.restaurant_id.company_name,
-                    restaurant_type: user.restaurant_id.restaurant_type,
-                    billing_layout: user.restaurant_id.billing_layout
-                }
+        // If company_name is provided, filter by restaurant
+        if (company_name) {
+            const restaurant = await Restaurant.findOne({
+                $or: [
+                    { company_name: company_name },
+                    { store_name: company_name },
+                    { print_name: company_name }
+                ]
             });
-        } else {
-            res.status(401).json({ success: false, message: 'Invalid username or password' });
+            if (restaurant) {
+                query.restaurant_id = restaurant._id;
+            }
         }
+
+        const user = await User.findOne(query).select('+password').populate('restaurant_id');
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Invalid username or password' });
+        }
+
+        // Check if user is active
+        if (user.is_active === false) {
+            return res.status(403).json({ success: false, message: 'Your account has been deactivated. Contact your administrator.' });
+        }
+
+        if (!(await user.matchPassword(password))) {
+            return res.status(401).json({ success: false, message: 'Invalid username or password' });
+        }
+
+        const token = generateToken(user._id);
+
+        // Fetch role permissions if user has a custom role
+        let permissions = null;
+        let customRoleName = null;
+        if (user.custom_role_id) {
+            const role = await Role.findById(user.custom_role_id);
+            if (role) {
+                permissions = role.pages;
+                customRoleName = role.name;
+            }
+        }
+
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                role: user.role,
+                restaurant_id: user.restaurant_id._id,
+                custom_role_id: user.custom_role_id,
+                custom_role_name: customRoleName
+            },
+            restaurant: {
+                name: user.restaurant_id.company_name,
+                restaurant_type: user.restaurant_id.restaurant_type,
+                billing_layout: user.restaurant_id.billing_layout
+            },
+            permissions
+        });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
 

@@ -1694,3 +1694,178 @@
         transform: translateY(0);
     }
 }
+
+/* ===================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   =================================================== */
+
+/* Tablet View (max-width 1024px) */
+@media (max-width: 1024px) {
+    .pos-main {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    /* Stack product area and bill sidebar vertically */
+    .bill-sidebar {
+        border-left: none;
+        border-top: 2px solid #e0e6ed;
+        height: 50vh;
+        /* Fixed height for the bill sidebar on tablet */
+    }
+
+    .product-area {
+        height: 50vh;
+        /* Take the other half */
+    }
+
+    .pos-payment-modal {
+        width: 95vw;
+        max-width: none;
+    }
+}
+
+/* Mobile View (max-width 768px) */
+@media (max-width: 768px) {
+    .pos-nav {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 0.5rem;
+    }
+
+    .nav-brand h2 {
+        display: none;
+        /* Hide 'Billing Station' text to save space */
+    }
+
+    .nav-center,
+    .nav-right {
+        gap: 0.5rem;
+    }
+
+    .pos-timer-display {
+        display: none;
+        /* Hide timer on mobile */
+    }
+
+    .nav-stat {
+        display: none;
+        /* Hide total orders stat on mobile */
+    }
+
+    .layout-top-header .pos-nav {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .layout-top-header .nav-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Category Sidebar - convert to full width overlay or hide */
+    .category-sidebar.open {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 250px;
+        z-index: 50;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-scroll-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        /* Smaller cards */
+    }
+
+    .pos-product-card .p-image-container {
+        height: 60px;
+        /* Smaller image */
+    }
+
+    .action-btn {
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+
+    .pos-bottom-actions {
+        flex-wrap: wrap;
+    }
+
+    .fast-payment,
+    .footer-actions {
+        flex-wrap: wrap;
+    }
+
+    .pay-method {
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+
+    /* Modal adjustments */
+    .pos-payment-modal {
+        height: 95vh;
+        border-radius: 12px;
+    }
+
+    .pos-modal-header {
+        padding: 1rem;
+    }
+
+    .pos-modal-body {
+        padding: 1rem;
+    }
+
+    .payment-type-grid {
+        grid-template-columns: 1fr;
+        /* Stack payment types */
+    }
+
+    .total-amount {
+        font-size: 1.5rem;
+    }
+
+    .more-options-grid {
+        grid-template-columns: 1fr 1fr;
+        /* Stack more options 2-by-2 */
+    }
+}
+
+/* Small Mobile (max-width 480px) */
+@media (max-width: 480px) {
+    .product-scroll-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+
+    .more-options-grid {
+        grid-template-columns: 1fr;
+        /* Stack everything */
+    }
+
+    .order-items-header {
+        grid-template-columns: 1fr 80px 60px;
+        font-size: 0.65rem;
+    }
+
+    .order-items-header span:last-child {
+        display: none;
+        /* Hide Amount header on very small screens */
+    }
+
+    .order-item-row {
+        grid-template-columns: 1fr 80px 60px;
+        padding: 8px;
+    }
+
+    .item-amt {
+        display: none;
+        /* Hide amount per item column on very small screens */
+    }
+
+    .item-qty-cell button {
+        width: 20px;
+        height: 20px;
+    }
+}

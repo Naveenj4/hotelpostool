@@ -89,7 +89,12 @@ const SelfServiceDashboard = () => {
     if (loading) {
         return (
             <div className="dashboard-layout">
-                <Sidebar isCollapsed={isCollapsed} />
+                <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+
+                {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                    <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+                )}
+
                 <main className="dashboard-main">
                     <Header toggleSidebar={toggleSidebar} />
                     <div className="dashboard-content">
@@ -248,7 +253,7 @@ const SelfServiceDashboard = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colspan="3" style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>
+                                            <td colSpan="3" style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>
                                                 No stock alerts
                                             </td>
                                         </tr>

@@ -16,6 +16,7 @@ import {
 
 const CategoryMaster = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -29,9 +30,13 @@ const CategoryMaster = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const toggleSidebar = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem('sidebarCollapsed', newState);
+        if (window.innerWidth <= 768) {
+            setIsMobileSidebarOpen(!isMobileSidebarOpen);
+        } else {
+            const newState = !isCollapsed;
+            setIsCollapsed(newState);
+            localStorage.setItem('sidebarCollapsed', newState);
+        }
     };
 
     const fetchCategories = async () => {
@@ -158,7 +163,10 @@ const CategoryMaster = () => {
 
     return (
         <div className="dashboard-layout">
-            <Sidebar isCollapsed={isCollapsed} />
+            <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+            )}
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
                 <div className="dashboard-content">

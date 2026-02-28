@@ -245,8 +245,12 @@ const BillingPage = () => {
     };
 
     const subTotal = billItems.reduce((acc, item) => acc + item.total_price, 0);
-    const tax = subTotal * 0.05;
-    const grandTotal = subTotal + tax;
+    const parsedDiscount = parseFloat(discount) || 0;
+    const parsedExtraCharges = parseFloat(extraCharges) || 0;
+    const parsedGst = parseFloat(gstPercentage) || 0;
+    const taxableAmount = subTotal - parsedDiscount;
+    const tax = taxableAmount * (parsedGst / 100);
+    const grandTotal = taxableAmount + tax + parsedExtraCharges;
 
     const filteredProducts = products.filter(p => {
         const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
@@ -272,7 +276,13 @@ const BillingPage = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ payment_modes: paymentModes })
+                body: JSON.stringify({
+                    payment_modes: paymentModes,
+                    sub_total: subTotal,
+                    tax_amount: tax,
+                    discount_amount: parsedDiscount,
+                    grand_total: grandTotal
+                })
             });
             const data = await res.json();
             if (data.success) {
@@ -620,12 +630,12 @@ const BillingPage = () => {
                             )}
 
                             <div className="sum-row">
-                                <span>Tax ({gstPercentage}%)</span>
-                                <span>₹{((subTotal - discount) * (gstPercentage / 100)).toFixed(2)}</span>
+                                <span>Tax ({parsedGst}%)</span>
+                                <span>₹{tax.toFixed(2)}</span>
                             </div>
                             <div className="sum-total">
                                 <span>Total Payable</span>
-                                <span>₹{(subTotal - discount + ((subTotal - discount) * (gstPercentage / 100)) + parseFloat(extraCharges || 0)).toFixed(2)}</span>
+                                <span>₹{grandTotal.toFixed(2)}</span>
                             </div>
                         </div>
 

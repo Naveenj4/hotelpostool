@@ -25,6 +25,7 @@ import { TableSkeleton } from '../../components/Skeleton';
 
 const ProductMaster = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -279,13 +280,12 @@ const ProductMaster = () => {
 
     return (
         <div className="dashboard-layout">
-            <Sidebar isCollapsed={isCollapsed} />
+            <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+            )}
             <main className="dashboard-main">
-                <Header toggleSidebar={() => {
-                    const ns = !isCollapsed;
-                    setIsCollapsed(ns);
-                    localStorage.setItem('sidebarCollapsed', ns);
-                }} />
+                <Header toggleSidebar={() => window.innerWidth <= 768 ? setIsMobileSidebarOpen(!isMobileSidebarOpen) : (setIsCollapsed(!isCollapsed), localStorage.setItem('sidebarCollapsed', !isCollapsed))} />
 
                 <div className="dashboard-content">
                     <div className="page-header">

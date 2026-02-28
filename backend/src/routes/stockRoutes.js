@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    getStockItems, 
-    getLowStockItems, 
-    updateStock, 
-    bulkUpdateStock 
+const {
+    getStockItems,
+    getLowStockItems,
+    updateStock,
+    bulkUpdateStock
 } = require('../controllers/stockController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -18,10 +18,10 @@ router.get('/', getStockItems);
 // Get low stock items
 router.get('/low-stock', getLowStockItems);
 
+// Bulk update stock (must be before /:id to avoid route conflict)
+router.put('/bulk-update', bulkUpdateStock);
+
 // Update single product stock
 router.put('/:id', updateStock);
-
-// Bulk update stock
-router.put('/bulk-update', bulkUpdateStock);
 
 module.exports = router;

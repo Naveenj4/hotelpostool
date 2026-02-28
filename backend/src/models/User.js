@@ -9,25 +9,27 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: [true, 'Email is required'],
+        required: false,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        default: null
+    },
+    username: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        default: null
     },
     mobile: {
         type: String,
-        required: [true, 'Mobile number is required'],
-        trim: true
+        required: false,
+        trim: true,
+        default: null
     },
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [8, 'Password must be at least 8 characters'],
-        validate: {
-            validator: function (v) {
-                return /\d/.test(v); // At least one number
-            },
-            message: props => 'Password must contain at least one number'
-        },
+        minlength: [6, 'Password must be at least 6 characters'],
         select: false
     },
     role: {
@@ -39,6 +41,15 @@ const userSchema = new mongoose.Schema({
         ref: 'Restaurant',
         required: true
     },
+    custom_role_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role',
+        default: null
+    },
+    is_active: {
+        type: Boolean,
+        default: true
+    },
     security_control_enabled: {
         type: Boolean,
         default: true
@@ -48,8 +59,9 @@ const userSchema = new mongoose.Schema({
 });
 
 // Allow same email/mobile for different companies, but keep it unique within one company
-userSchema.index({ email: 1, restaurant_id: 1 }, { unique: true });
-userSchema.index({ mobile: 1, restaurant_id: 1 }, { unique: true });
+userSchema.index({ email: 1, restaurant_id: 1 }, { unique: true, sparse: true });
+userSchema.index({ mobile: 1, restaurant_id: 1 }, { unique: true, sparse: true });
+userSchema.index({ username: 1, restaurant_id: 1 }, { unique: true, sparse: true });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

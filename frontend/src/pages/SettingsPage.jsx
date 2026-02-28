@@ -18,6 +18,7 @@ import {
 const SettingsPage = () => {
     const { user } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('profile');
@@ -105,9 +106,13 @@ const SettingsPage = () => {
     }, []);
 
     const toggleSidebar = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem('sidebarCollapsed', newState);
+        if (window.innerWidth <= 768) {
+            setIsMobileSidebarOpen(!isMobileSidebarOpen);
+        } else {
+            const newState = !isCollapsed;
+            setIsCollapsed(newState);
+            localStorage.setItem('sidebarCollapsed', newState);
+        }
     };
 
     // Handle form changes
@@ -352,7 +357,10 @@ const SettingsPage = () => {
     if (loading) {
         return (
             <div className="dashboard-layout">
-                <Sidebar isCollapsed={isCollapsed} />
+                <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+            )}
                 <main className="dashboard-main">
                     <Header toggleSidebar={toggleSidebar} />
                     <div className="dashboard-content">
@@ -368,7 +376,10 @@ const SettingsPage = () => {
 
     return (
         <div className="dashboard-layout">
-            <Sidebar isCollapsed={isCollapsed} />
+            <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+            )}
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
 

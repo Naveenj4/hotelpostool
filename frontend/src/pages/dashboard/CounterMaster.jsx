@@ -14,6 +14,7 @@ import {
 
 const CounterMaster = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [counters, setCounters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -28,9 +29,13 @@ const CounterMaster = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const toggleSidebar = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem('sidebarCollapsed', newState);
+        if (window.innerWidth <= 768) {
+            setIsMobileSidebarOpen(!isMobileSidebarOpen);
+        } else {
+            const newState = !isCollapsed;
+            setIsCollapsed(newState);
+            localStorage.setItem('sidebarCollapsed', newState);
+        }
     };
 
     const fetchCounters = async () => {
@@ -116,7 +121,10 @@ const CounterMaster = () => {
 
     return (
         <div className="dashboard-layout">
-            <Sidebar isCollapsed={isCollapsed} />
+            <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+            )}
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
                 <div className="dashboard-content">

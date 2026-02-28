@@ -5,9 +5,8 @@ const Product = require('../models/Product');
 // @access  Private (Admin, Owner)
 exports.getStockItems = async (req, res) => {
     try {
-        const products = await Product.find({ 
-            company_id: req.user.restaurant_id,
-            product_type: 'TYPE_A' // Only stock-managed products
+        const products = await Product.find({
+            company_id: req.user.restaurant_id
         }).sort({ name: 1 });
 
         res.status(200).json({
@@ -26,9 +25,8 @@ exports.getStockItems = async (req, res) => {
 // @access  Private (Admin, Owner)
 exports.getLowStockItems = async (req, res) => {
     try {
-        const products = await Product.find({ 
+        const products = await Product.find({
             company_id: req.user.restaurant_id,
-            product_type: 'TYPE_A',
             current_stock: { $lt: 10 },
             is_active: true
         }).sort({ current_stock: 1 });
@@ -50,24 +48,23 @@ exports.getLowStockItems = async (req, res) => {
 exports.updateStock = async (req, res) => {
     try {
         const { current_stock } = req.body;
-        
+
         if (current_stock === undefined || current_stock < 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Valid current stock value is required' 
+            return res.status(400).json({
+                success: false,
+                message: 'Valid current stock value is required'
             });
         }
 
-        const product = await Product.findOne({ 
-            _id: req.params.id, 
-            company_id: req.user.restaurant_id,
-            product_type: 'TYPE_A'
+        const product = await Product.findOne({
+            _id: req.params.id,
+            company_id: req.user.restaurant_id
         });
 
         if (!product) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Stock-managed product not found' 
+            return res.status(404).json({
+                success: false,
+                message: 'Stock-managed product not found'
             });
         }
 
@@ -90,20 +87,20 @@ exports.updateStock = async (req, res) => {
 exports.bulkUpdateStock = async (req, res) => {
     try {
         const { updates } = req.body; // Array of { productId, current_stock }
-        
+
         if (!Array.isArray(updates) || updates.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Valid updates array is required' 
+            return res.status(400).json({
+                success: false,
+                message: 'Valid updates array is required'
             });
         }
 
         // Validate all updates
         for (const update of updates) {
             if (!update.productId || update.current_stock === undefined || update.current_stock < 0) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Each update must have productId and valid current_stock' 
+                return res.status(400).json({
+                    success: false,
+                    message: 'Each update must have productId and valid current_stock'
                 });
             }
         }
@@ -111,10 +108,9 @@ exports.bulkUpdateStock = async (req, res) => {
         // Update all products
         const updatedProducts = [];
         for (const update of updates) {
-            const product = await Product.findOne({ 
-                _id: update.productId, 
-                company_id: req.user.restaurant_id,
-                product_type: 'TYPE_A'
+            const product = await Product.findOne({
+                _id: update.productId,
+                company_id: req.user.restaurant_id
             });
 
             if (product) {

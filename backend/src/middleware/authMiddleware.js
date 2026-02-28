@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Role = require('../models/Role');
 
 const protect = async (req, res, next) => {
     let token;
@@ -24,6 +25,20 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ success: false, message: 'Not authorized, no linked company' });
             }
 
+            // Check if user is active
+            if (req.user.is_active === false) {
+                return res.status(403).json({ success: false, message: 'Account deactivated. Contact your administrator.' });
+            }
+
+            // If user is STAFF with custom role, load their permissions
+            if (req.user.role === 'STAFF' && req.user.custom_role_id) {
+                const role = await Role.findById(req.user.custom_role_id);
+                if (role) {
+                    req.userPermissions = role.pages;
+                    req.customRoleName = role.name;
+                }
+            }
+
             next();
         } catch (error) {
             console.error('Token verification error:', error);
@@ -32,19 +47,41 @@ const protect = async (req, res, next) => {
     }
 
     if (!token) {
-        res.status(401).json({ success: false, message: 'Not authorized, no token' });
+        return res.status(401).json({ success: false, message: 'Not authorized, no token' });
     }
 };
 
 const authorize = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: `User role ${req.user.role} is not authorized to access this route`
-            });
+        // OWNER and ADMIN always pass
+        if (['OWNER', 'ADMIN'].includes(req.user.role)) {
+            return next();
         }
-        next();
+
+        // If STAFF is in the allowed roles list, let them through
+        // (frontend handles page/feature-level access)
+        if (roles.includes('STAFF') && req.user.role === 'STAFF') {
+            return next();
+        }
+
+        // Legacy: also check if the user's static role is in the allowed list
+        if (roles.includes(req.user.role)) {
+            return next();
+        }
+
+        // If user is STAFF and has custom role permissions, allow if they have
+        // any active page access (the specific page check is done on frontend)
+        if (req.user.role === 'STAFF' && req.userPermissions) {
+            const hasAnyAccess = req.userPermissions.some(p => p.has_access);
+            if (hasAnyAccess) {
+                return next();
+            }
+        }
+
+        return res.status(403).json({
+            success: false,
+            message: `User role ${req.user.role} is not authorized to access this route`
+        });
     };
 };
 

@@ -7,7 +7,7 @@ const Product = require('../models/Product');
 // @access  Private (Admin, Billing)
 exports.getDashboardSummary = async (req, res) => {
     try {
-        const hotelId = req.user.restaurant_id; // Using the hotelId from the authenticated user
+        const hotelId = req.user.restaurant_id._id || req.user.restaurant_id; // Get the ObjectId
 
         // Get today's date for calculating today's sales
         const today = new Date();
@@ -26,7 +26,7 @@ exports.getDashboardSummary = async (req, res) => {
         const topProductsPromise = Bill.aggregate([
             {
                 $match: {
-                    company_id: hotelId,
+                    company_id: new mongoose.Types.ObjectId(hotelId),
                     createdAt: { $gte: today, $lt: tomorrow },
                     status: 'PAID'
                 }
@@ -104,7 +104,7 @@ exports.getDashboardSummary = async (req, res) => {
             topProducts: topProducts,
             lowStockItems: lowStockAlerts,
             restaurantInfo: {
-                printName: req.user.restaurant_id.print_name || req.user.restaurant_id.company_name
+                printName: req.user.restaurant_id?.print_name || req.user.restaurant_id?.company_name || 'Restaurant'
             }
         };
 

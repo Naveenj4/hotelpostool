@@ -11,80 +11,95 @@ import {
     Settings,
     LogOut,
     Utensils,
-    Store
+    Store,
+    Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../pages/dashboard/Dashboard.css';
 
 const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
     const location = useLocation();
-    const { user, logout } = useAuth();
+    const { user, logout, hasPageAccess, isAdmin } = useAuth();
 
     // Close sidebar on navigation on mobile
     useEffect(() => {
         if (window.innerWidth <= 768 && onMobileClose) {
             onMobileClose();
         }
-    }, [location, onMobileClose]);
+    }, [location.pathname]);
 
     const menuItems = [
         {
             label: "Dashboard",
             icon: <LayoutDashboard size={20} />,
             route: "/dashboard/self-service/home",
-            roles: ["ADMIN", "BILLING", "OWNER"]
+            pageKey: "dashboard"
         },
         {
             label: "New Bill",
             icon: <PlusCircle size={20} />,
             route: "/dashboard/self-service/billing",
-            roles: ["ADMIN", "BILLING", "OWNER"]
+            pageKey: "billing"
         },
         {
             label: "Bills & Sales",
             icon: <FileText size={20} />,
             route: "/dashboard/self-service/bills-sales",
-            roles: ["ADMIN", "OWNER", "BILLING"]
+            pageKey: "bills_sales"
         },
         {
             label: "Products",
             icon: <Box size={20} />,
             route: "/dashboard/self-service/products",
-            roles: ["ADMIN", "OWNER"]
+            pageKey: "products"
         },
         {
             label: "Categories",
             icon: <Layers size={20} />,
             route: "/dashboard/self-service/categories",
-            roles: ["ADMIN", "OWNER"]
+            pageKey: "categories"
         },
-        { // Added Counters specifically
+        {
             label: "Counters",
             icon: <Store size={20} />,
             route: "/dashboard/self-service/counters",
-            roles: ["ADMIN", "OWNER"]
+            pageKey: "counters"
         },
         {
             label: "Stock",
             icon: <Database size={20} />,
             route: "/dashboard/self-service/stock",
-            roles: ["ADMIN", "OWNER"]
+            pageKey: "stock"
         },
         {
             label: "Reports",
             icon: <BarChart3 size={20} />,
             route: "/dashboard/self-service/reports",
-            roles: ["ADMIN", "OWNER"]
+            pageKey: "reports"
         },
         {
             label: "Settings",
             icon: <Settings size={20} />,
             route: "/dashboard/self-service/settings",
-            roles: ["ADMIN", "OWNER"]
+            pageKey: "settings"
         }
     ];
 
-    const filteredMenu = menuItems.filter(item => item.roles.includes(user?.role));
+    // Admin-only items (Role & User Management)
+    const adminItems = [
+        {
+            label: "Access Control",
+            icon: <Shield size={20} />,
+            route: "/dashboard/self-service/access-control",
+            pageKey: "access_control"
+        }
+    ];
+
+    // Filter menu based on permissions
+    const filteredMenu = menuItems.filter(item => hasPageAccess(item.pageKey));
+
+    // Add admin-only items for OWNER/ADMIN
+    const finalMenu = isAdmin() ? [...filteredMenu, ...adminItems] : filteredMenu;
 
     return (
         <aside className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'show' : ''}`}>
@@ -96,7 +111,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             </div>
 
             <nav className="sidebar-nav">
-                {filteredMenu.map((item, index) => (
+                {finalMenu.map((item, index) => (
                     <Link
                         key={index}
                         to={item.route}

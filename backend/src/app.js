@@ -38,6 +38,7 @@ app.use('/api/bills', require('./routes/billRoutes'));
 app.use('/api/stock', require('./routes/stockRoutes'));
 app.use('/api/reports', require('./routes/reportsRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
+app.use('/api/roles', require('./routes/roleRoutes'));
 
 // Basic health check
 app.get('/', (req, res) => {

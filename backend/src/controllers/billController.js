@@ -75,8 +75,8 @@ exports.addItemToBill = async (req, res) => {
         if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
         if (!product.is_active) return res.status(400).json({ success: false, error: 'Product is inactive' });
 
-        // Stock Check for Type A
-        if (product.product_type === 'TYPE_A') {
+        // Stock Check - only for products that track stock
+        if (product.opening_stock > 0 || product.current_stock > 0) {
             if (product.current_stock < quantity) {
                 return res.status(400).json({ success: false, error: `Insufficient stock for ${product.name}. Available: ${product.current_stock}` });
             }
@@ -149,7 +149,7 @@ exports.removeItemFromBill = async (req, res) => {
 
         // Remove the item
         bill.items = bill.items.filter(item => item.product_id.toString() !== productId);
-        
+
         // Recalculate totals
         const subTotal = bill.items.reduce((acc, item) => acc + item.total_price, 0);
         bill.sub_total = subTotal;
@@ -165,7 +165,7 @@ exports.removeItemFromBill = async (req, res) => {
 };
 exports.processPayment = async (req, res) => {
     try {
-        const { payment_modes } = req.body;
+        const { payment_modes, sub_total, tax_amount, discount_amount, grand_total } = req.body;
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
@@ -182,24 +182,31 @@ exports.processPayment = async (req, res) => {
             if (!payment.type || !['CASH', 'UPI', 'CARD'].includes(payment.type)) {
                 return res.status(400).json({ success: false, error: 'Invalid payment type. Must be CASH, UPI, or CARD' });
             }
-            
+
             if (typeof payment.amount !== 'number' || payment.amount <= 0) {
                 return res.status(400).json({ success: false, error: 'Payment amount must be a positive number' });
             }
-            
+
             totalPaid += payment.amount;
         }
 
+        // Final totals (prefer values from frontend but fallback to bill values)
+        const finalGrandTotal = grand_total !== undefined ? grand_total : bill.grand_total;
+
         // Validate that total paid is at least equal to grand total
-        if (totalPaid < bill.grand_total) {
+        if (totalPaid < (finalGrandTotal - 0.1)) { // Small buffer for float math
             return res.status(400).json({ success: false, error: 'Total payment amount is less than bill amount' });
         }
 
-        // Set payment details
+        // Update bill status and final financial values
         bill.status = 'PAID';
         bill.payment_modes = payment_modes;
         bill.total_paid = totalPaid;
-        
+        bill.sub_total = sub_total !== undefined ? sub_total : bill.sub_total;
+        bill.tax_amount = tax_amount !== undefined ? tax_amount : bill.tax_amount;
+        bill.discount_amount = discount_amount !== undefined ? discount_amount : bill.discount_amount;
+        bill.grand_total = finalGrandTotal;
+
         // Determine primary payment mode for reporting purposes
         if (payment_modes.length === 1) {
             bill.payment_mode = payment_modes[0].type;
@@ -215,10 +222,10 @@ exports.processPayment = async (req, res) => {
             bill.payment_details.change_returned = cashPayment.balance_return;
         }
 
-        // Decrement Stock Logic
+        // Decrement Stock Logic (Secured with company_id)
         for (const item of bill.items) {
-            const product = await Product.findOne({ _id: item.product_id });
-            if (product && product.product_type === 'TYPE_A') {
+            const product = await Product.findOne({ _id: item.product_id, company_id: req.user.restaurant_id });
+            if (product && (product.opening_stock > 0 || product.current_stock > 0)) {
                 product.current_stock -= item.quantity;
                 await product.save();
             }
@@ -239,9 +246,9 @@ exports.processPayment = async (req, res) => {
 exports.getAllBills = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        
+
         let start, end;
-        
+
         if (startDate && endDate) {
             start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
@@ -261,8 +268,8 @@ exports.getAllBills = async (req, res) => {
             createdAt: { $gte: start, $lte: end }
         }).sort({ createdAt: -1 });
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             data: bills,
             count: bills.length
         });

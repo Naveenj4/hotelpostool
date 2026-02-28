@@ -14,6 +14,7 @@ import {
 
 const StockPage = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [products, setProducts] = useState([]);
     const [lowStockItems, setLowStockItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,7 +35,7 @@ const StockPage = () => {
 
             const [stockRes, lowStockRes] = await Promise.all([
                 fetch(`${import.meta.env.VITE_API_URL}/stock`, { headers }),
-                fetch(`${import.meta.env.VITE_API_URL}/products/low-stock`, { headers })
+                fetch(`${import.meta.env.VITE_API_URL}/stock/low-stock`, { headers })
             ]);
 
             const stockData = await stockRes.json();
@@ -54,9 +55,13 @@ const StockPage = () => {
     }, []);
 
     const toggleSidebar = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem('sidebarCollapsed', newState);
+        if (window.innerWidth <= 768) {
+            setIsMobileSidebarOpen(!isMobileSidebarOpen);
+        } else {
+            const newState = !isCollapsed;
+            setIsCollapsed(newState);
+            localStorage.setItem('sidebarCollapsed', newState);
+        }
     };
 
     // Filter products
@@ -147,7 +152,10 @@ const StockPage = () => {
     if (loading) {
         return (
             <div className="dashboard-layout">
-                <Sidebar isCollapsed={isCollapsed} />
+                <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+                {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                    <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+                )}
                 <main className="dashboard-main">
                     <Header toggleSidebar={toggleSidebar} />
                     <div className="dashboard-content">
@@ -163,7 +171,10 @@ const StockPage = () => {
 
     return (
         <div className="dashboard-layout">
-            <Sidebar isCollapsed={isCollapsed} />
+            <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+            )}
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
 

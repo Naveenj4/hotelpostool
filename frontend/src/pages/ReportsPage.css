@@ -154,6 +154,10 @@
     .pie-container {
         height: 250px;
     }
+
+    .data-card {
+        overflow-x: auto;
+    }
 }
 
 @media (max-width: 768px) {
@@ -188,6 +192,10 @@
     .widgets-grid {
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
+    }
+
+    .custom-table {
+        min-width: 650px;
     }
 }
 

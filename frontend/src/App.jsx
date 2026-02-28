@@ -13,15 +13,31 @@ import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage';
 import StockPage from './pages/StockPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
+import AccessControlPage from './pages/AccessControlPage';
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
-    const { user, loading } = useAuth();
+const ProtectedRoute = ({ children, adminOnly }) => {
+    const { user, loading, isAdmin } = useAuth();
 
     if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
     if (!user) return <Navigate to="/login" />;
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/" />; // Redirect unauthorized
+    // If admin-only route, check if user is admin
+    if (adminOnly && !isAdmin()) {
+        return <Navigate to="/dashboard/self-service/home" />;
+    }
+
+    return children;
+};
+
+// Route guard that checks page-level permission
+const PermissionRoute = ({ children, pageKey }) => {
+    const { user, loading, hasPageAccess } = useAuth();
+
+    if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
+    if (!user) return <Navigate to="/login" />;
+
+    if (!hasPageAccess(pageKey)) {
+        return <Navigate to="/dashboard/self-service/home" replace />;
     }
 
     return children;
@@ -47,17 +63,38 @@ function AppRoutes() {
             <Route
                 path="/dashboard/self-service/*"
                 element={
-                    <ProtectedRoute allowedRoles={['ADMIN', 'OWNER', 'BILLING']}>
+                    <ProtectedRoute>
                         <Routes>
-                            <Route path="home" element={<SelfServiceDashboard />} />
-                            <Route path="products" element={<ProductMaster />} />
-                            <Route path="categories" element={<CategoryMaster />} />
-                            <Route path="counters" element={<CounterMaster />} />
-                            <Route path="billing" element={<BillingPage />} />
-                            <Route path="bills-sales" element={<BillsAndSalesPage />} />
-                            <Route path="stock" element={<StockPage />} />
-                            <Route path="reports" element={<ReportsPage />} />
-                            <Route path="settings" element={<SettingsPage />} />
+                            <Route path="home" element={
+                                <PermissionRoute pageKey="dashboard"><SelfServiceDashboard /></PermissionRoute>
+                            } />
+                            <Route path="products" element={
+                                <PermissionRoute pageKey="products"><ProductMaster /></PermissionRoute>
+                            } />
+                            <Route path="categories" element={
+                                <PermissionRoute pageKey="categories"><CategoryMaster /></PermissionRoute>
+                            } />
+                            <Route path="counters" element={
+                                <PermissionRoute pageKey="counters"><CounterMaster /></PermissionRoute>
+                            } />
+                            <Route path="billing" element={
+                                <PermissionRoute pageKey="billing"><BillingPage /></PermissionRoute>
+                            } />
+                            <Route path="bills-sales" element={
+                                <PermissionRoute pageKey="bills_sales"><BillsAndSalesPage /></PermissionRoute>
+                            } />
+                            <Route path="stock" element={
+                                <PermissionRoute pageKey="stock"><StockPage /></PermissionRoute>
+                            } />
+                            <Route path="reports" element={
+                                <PermissionRoute pageKey="reports"><ReportsPage /></PermissionRoute>
+                            } />
+                            <Route path="settings" element={
+                                <PermissionRoute pageKey="settings"><SettingsPage /></PermissionRoute>
+                            } />
+                            <Route path="access-control" element={
+                                <ProtectedRoute adminOnly><AccessControlPage /></ProtectedRoute>
+                            } />
                             <Route path="*" element={<Navigate to="home" replace />} />
                         </Routes>
                     </ProtectedRoute>
@@ -67,7 +104,7 @@ function AppRoutes() {
             <Route
                 path="/dashboard/dining/*"
                 element={
-                    <ProtectedRoute allowedRoles={['ADMIN', 'BILLING', 'OWNER']}>
+                    <ProtectedRoute>
                         <div className="p-10">
                             <h1 className="text-3xl font-bold mb-4">Dining Dashboard</h1>
                             <p className="text-galaxy-secondary">Welcome to your POS system! Module implementation coming soon.</p>
@@ -90,4 +127,3 @@ function App() {
 }
 
 export default App;
-

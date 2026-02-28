@@ -145,6 +145,10 @@
     .reports-grid {
         grid-template-columns: 1fr;
     }
+
+    .data-card {
+        overflow-x: auto;
+    }
 }
 
 @media (max-width: 768px) {
@@ -167,5 +171,9 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 1.5rem;
+    }
+
+    .custom-table {
+        min-width: 600px;
     }
 }
