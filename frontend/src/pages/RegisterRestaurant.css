@@ -1,179 +1,231 @@
 /* Register Restaurant Page Specific Styles */
 .register-container {
-    height: 100vh;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    min-height: 100vh;
     background-color: var(--white);
     overflow: hidden;
 }
 
+@media (max-width: 1200px) {
+    .register-container {
+        grid-template-columns: 400px 1fr;
+    }
+}
+
 @media (max-width: 1024px) {
     .register-container {
-        flex-direction: column;
-        height: auto;
-        overflow: auto;
+        grid-template-columns: 1fr;
+        overflow-y: auto;
     }
 }
 
 .register-sidebar {
-    width: 35%;
-    min-width: 400px;
-    background: linear-gradient(135deg, var(--slate-900) 0%, #1e293b 100%);
-    padding: 3rem;
     position: relative;
-    overflow: hidden;
+    background-color: var(--primary-500);
+    padding: 5rem 4rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    color: var(--galaxy-black);
+    overflow: hidden;
     height: 100vh;
-    color: white;
 }
 
 @media (max-width: 1024px) {
     .register-sidebar {
-        width: 100%;
-        min-width: 0;
         height: auto;
-        padding: 2rem;
+        padding: 4rem 2rem;
     }
 }
 
 .sidebar-glow {
     position: absolute;
-    top: -10%;
-    right: -10%;
-    height: 500px;
-    width: 500px;
-    background: radial-gradient(circle, rgba(242, 166, 90, 0.2) 0%, rgba(242, 166, 90, 0) 70%);
-    border-radius: 50%;
-    filter: blur(60px);
+    bottom: -10%;
+    left: -10%;
+    width: 30rem;
+    height: 30rem;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, transparent 70%);
+    filter: blur(80px);
+    pointer-events: none;
 }
 
 .logo-link {
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 3rem;
     text-decoration: none;
+    margin-bottom: 5rem;
 }
 
 .logo-icon-box {
-    background-color: var(--white);
-    padding: 0.5rem;
-    border-radius: 10px;
+    padding: 0.75rem;
+    background: var(--white);
+    border-radius: 16px;
     display: flex;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
 }
 
 .logo-text {
     font-size: 1.75rem;
     font-weight: 800;
-    color: white;
-    letter-spacing: -0.02em;
+    letter-spacing: -1px;
+    color: var(--galaxy-black);
 }
 
 .sidebar-title {
-    font-size: 2.5rem;
+    font-size: 3.25rem;
     font-weight: 800;
-    color: white;
     line-height: 1.1;
-    margin-bottom: 1.5rem;
-    letter-spacing: -0.03em;
+    margin-bottom: 2rem;
+    letter-spacing: -1.5px;
 }
 
 .sidebar-desc {
-    font-size: 1.1rem;
-    color: var(--slate-400);
-    margin-bottom: 2rem;
-    line-height: 1.6;
+    font-size: 1.25rem;
+    line-height: 1.7;
+    opacity: 0.9;
+    margin-bottom: 4rem;
+}
+
+.benefit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 4rem;
 }
 
 .benefit-item {
     display: flex;
-    gap: 1rem;
     align-items: center;
-    color: var(--slate-200);
-    font-weight: 500;
+    gap: 1.5rem;
 }
 
 .sidebar-icon-box {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 0.5rem;
-    border-radius: 8px;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
     display: flex;
-    color: var(--primary-500);
+    align-items: center;
+    justify-content: center;
+    color: var(--galaxy-black);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.benefit-item span {
+    font-size: 1.1rem;
+    font-weight: 700;
 }
 
 .testimonial-box {
     position: relative;
     z-index: 10;
-    margin-top: auto;
-    padding: 1.5rem;
-    background-color: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(12px);
-    border-radius: var(--radius-8);
-    color: var(--galaxy-black);
-    font-style: italic;
-    font-weight: 500;
-    font-size: 0.9rem;
+    padding: 2.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    border-radius: 32px;
     border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--galaxy-black);
 }
 
+.testimonial-box p {
+    font-size: 1.1rem;
+    font-style: italic;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.author-info h4 {
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 2px;
+}
+
+.author-info span {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    font-weight: 600;
+}
+
+/* Right Main - Form */
 .register-main {
     flex: 1;
-    background-color: var(--slate-50);
-    padding: 4rem 2rem 6rem 2rem;
+    background-color: var(--smoke-white);
+    padding: 5rem 4rem;
     display: flex;
     justify-content: center;
     overflow-y: auto;
+    position: relative;
 }
 
 @media (max-width: 1024px) {
     .register-main {
-        padding: 2rem 1.5rem 4rem 1.5rem;
-        overflow-y: visible;
+        padding: 4rem 2rem;
     }
 }
 
 .form-wrapper {
-    max-width: 42rem;
     width: 100%;
+    max-width: 800px;
 }
 
-
 .form-header {
-    margin-bottom: 2.5rem;
+    margin-bottom: 4rem;
+    text-align: left;
+}
+
+.form-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--galaxy-black);
+    letter-spacing: -1.5px;
+    margin-bottom: 0.75rem;
+}
+
+.form-header p {
+    font-size: 1.1rem;
+    color: var(--galaxy-secondary);
 }
 
 .register-form {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 3rem;
 }
 
 .form-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    background: var(--white);
+    padding: 3rem;
+    border-radius: 32px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 40px 80px -20px rgba(15, 23, 42, 0.08);
 }
 
 .section-title {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    font-size: 0.8rem;
+    gap: 1rem;
+    font-size: 0.85rem;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--slate-500);
-    border-bottom: 1px solid var(--border-light);
-    padding-bottom: 0.5rem;
-    margin-bottom: 1rem;
+    letter-spacing: 2px;
+    color: var(--primary-600);
+    margin-bottom: 2.5rem;
 }
 
 .input-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+    gap: 2rem;
 }
 
 @media (max-width: 640px) {
@@ -192,18 +244,33 @@
     }
 }
 
-.register-footer-text {
+.register-footer {
+    margin-top: 4rem;
     text-align: center;
-    color: var(--galaxy-muted);
-    font-size: 0.875rem;
+}
+
+.register-footer-text {
+    font-size: 1.1rem;
+    color: var(--galaxy-secondary);
+    font-weight: 500;
 }
 
 .footer-link {
     color: var(--primary-500);
-    font-weight: 700;
+    font-weight: 800;
     text-decoration: none;
 }
 
 .footer-link:hover {
     text-decoration: underline;
+}
+
+/* Select Field Optimization */
+select.input-field {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.25rem center;
+    background-size: 1.25rem;
+    padding-right: 3rem;
 }

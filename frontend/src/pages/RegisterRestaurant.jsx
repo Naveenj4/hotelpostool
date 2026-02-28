@@ -74,36 +74,46 @@ const RegisterRestaurant = () => {
 
     return (
         <div className="register-container">
-            {/* Left Side - Info */}
+            {/* Left Side - Brand Sidebar */}
             <div className="register-sidebar">
                 <div className="sidebar-glow"></div>
 
-                <div className="sidebar-content">
-                    <Link to="/" className="logo-link">
-                        <div className="logo-icon-box" style={{ backgroundColor: 'var(--white)' }}>
+                <div className="sidebar-brand">
+                    <Link to="/" className="logo-link no-underline">
+                        <div className="logo-icon-box">
                             <Utensils className="w-6 h-6 text-galaxy" />
                         </div>
-                        <span className="logo-text" style={{ color: 'var(--galaxy-black)' }}>RestoSaaS</span>
+                        <span className="logo-text">Resto<span className="text-white">SaaS</span></span>
                     </Link>
 
-                    <h2 className="sidebar-title">Empower your restaurant with <span className="text-white">Next-Gen POS</span></h2>
+                    <h2 className="sidebar-title">Scale your workspace <br /><span className="text-white">With Precision.</span></h2>
                     <p className="sidebar-desc">
-                        Register today to manage multiple locations, real-time inventory, and seamless billing.
+                        Join 500+ global brands managing their entire restaurant ecosystem with our modular POS platform.
                     </p>
 
                     <div className="benefit-list">
                         {[
-                            { icon: <Shield />, text: "Highly Secure & Reliable" },
-                            { icon: <Store />, text: "Multi-tenant Dashboard" },
-                            { icon: <Info />, text: "Real-time Bill Printing" }
+                            { icon: <Shield size={24} />, text: "Enterprise-grade Security" },
+                            { icon: <Store size={24} />, text: "Automated Multi-tier Management" },
+                            { icon: <Info size={24} />, text: "Biological UX/UI Patterns" }
                         ].map((item, i) => (
                             <div key={i} className="benefit-item">
                                 <div className="sidebar-icon-box">
                                     {item.icon}
                                 </div>
-                                <p>{item.text}</p>
+                                <span className="text-galaxy-black">{item.text}</span>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                <div className="testimonial-box">
+                    <p>"The most intuitive POS system we have ever deployed. Scaling our franchise from 10 to 50 locations became effortless."</p>
+                    <div className="testimonial-author">
+                        <div className="author-info">
+                            <h4>Naveen J.</h4>
+                            <span>Founder, Global Dining Co.</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -111,13 +121,14 @@ const RegisterRestaurant = () => {
             {/* Right Side - Form */}
             <div className="register-main">
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     className="form-wrapper"
                 >
                     <div className="form-header">
-                        <h1 className="text-title">Create New Company</h1>
-                        <p className="text-muted">Set up your restaurant profile and administrative controls.</p>
+                        <h1>Create Workspace</h1>
+                        <p>Begin your restaurant's digital transformation in minutes.</p>
                     </div>
 
                     {error && (

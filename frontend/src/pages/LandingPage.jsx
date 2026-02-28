@@ -1,55 +1,82 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     BarChart3,
     Utensils,
-    Settings,
     Zap,
-    CheckCircle2,
     ArrowRight,
-    ChevronRight
+    Star
 } from 'lucide-react';
 import './LandingPage.css';
 
 const LandingPage = () => {
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const fadeIn = {
-        initial: { opacity: 0, y: 20 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.6 }
+        initial: { opacity: 0, y: 30 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true },
+        transition: { duration: 0.8, cubicBezier: [0.16, 1, 0.3, 1] }
     };
 
     const features = [
         {
-            title: "Self-Service Kiosk",
-            desc: "Perfect for fast-casual and quick-service restaurants to speed up ordering.",
-            icon: <Zap className="w-6 h-6 text-primary-500" />
+            title: "Quick-Service Kiosk",
+            desc: "Empower customers with high-speed ordering terminals designed for rapid efficiency.",
+            icon: <Zap size={28} />,
+            color: "#7ea1c4"
         },
         {
-            title: "Table Side Ordering",
-            desc: "Complete dining experience with KOT, table management, and bill splitting.",
-            icon: <Utensils className="w-6 h-6 text-primary-500" />
+            title: "Table Side Dining",
+            desc: "Full-service management including KOT, complex billing, and live table occupancy tracking.",
+            icon: <Utensils size={28} />,
+            color: "#fca5a5"
         },
         {
-            title: "Real-time Analytics",
-            desc: "Keep track of sales, inventory, and staff performance from anywhere.",
-            icon: <BarChart3 className="w-6 h-6 text-primary-500" />
+            title: "Insight Analytics",
+            desc: "Visualise your restaurant's growth with real-time sales data and inventory intelligence.",
+            icon: <BarChart3 size={28} />,
+            color: "#fbbf24"
         }
     ];
 
     return (
         <div className="landing-page">
+            {/* Background Decorative Blobs */}
+            <div className="bg-blobs">
+                <div className="blob blob-1"></div>
+                <div className="blob blob-2"></div>
+                <div className="blob blob-3"></div>
+            </div>
+
             {/* Navigation */}
-            <nav className="navbar glass-morphism">
+            <nav className={`navbar ${scrolled ? 'scrolled' : ''} `}>
                 <div className="nav-container">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-primary-500 p-2 rounded-lg" style={{ display: 'flex' }}>
-                            <Utensils className="w-6 h-6 text-white" />
+                    <Link to="/" className="flex items-center gap-3 no-underline">
+                        <div className="bg-primary-500 p-2.5 rounded-xl shadow-lg shadow-primary-500/20" style={{ display: 'flex' }}>
+                            <Utensils className="w-5 h-5 text-galaxy" />
                         </div>
                         <span className="logo-text">Resto<span className="text-primary-500">SaaS</span></span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <Link to="/login" className="px-6 py-2 text-galaxy-secondary font-medium hover-orange transition-colors" style={{ textDecoration: 'none' }}>Login</Link>
-                        <Link to="/register" className="btn-primary">Get Started</Link>
+                    </Link>
+                    <div className="flex items-center gap-8">
+                        <div className="hidden md:flex gap-8">
+                            <Link to="/" className="nav-link">Home</Link>
+                            <Link to="/features" className="nav-link">Features</Link>
+                            <Link to="/pricing" className="nav-link">Pricing</Link>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Link to="/login" className="nav-link">Login</Link>
+                            <Link to="/register" className="btn-primary" style={{ padding: '0.65rem 1.75rem' }}>Join Now</Link>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -58,32 +85,35 @@ const LandingPage = () => {
             <section className="hero-section">
                 <div className="hero-container grid">
                     <motion.div {...fadeIn}>
-                        <span className="feature-tag">
-                            Production-ready Restaurant POS
-                        </span>
+                        <div className="feature-tag">
+                            <Star size={14} fill="currentColor" /> Multi-Tenant POS Platform
+                        </div>
                         <h1 className="hero-title">
-                            The only POS your restaurant <span className="text-primary-500">needs to grow.</span>
+                            The Operating System <br />
+                            <span className="text-primary-500">for Modern Restaurants.</span>
                         </h1>
                         <p className="hero-subtitle">
-                            Streamline your operations, manage orders, and get real-time insights with the most intuitive multi-tenant POS system.
+                            RestoSaaS is a modular, high-performance POS platform designed for scale. Manage single outlets or global franchises with unparalleled speed and biological simplicity.
                         </p>
                         <div className="flex gap-4" style={{ flexWrap: 'wrap' }}>
-                            <Link to="/register" className="btn-primary flex items-center gap-2">
-                                Start Free Trial <ArrowRight className="w-5 h-5" />
+                            <Link to="/register" className="btn-primary flex items-center gap-3 py-4 px-8 text-lg">
+                                Get Started Free <ArrowRight size={20} />
                             </Link>
-                            <button className="btn-outline">Watch Demo</button>
+                            <button className="btn-outline py-4 px-8 text-lg">Watch Ecosystem Tour</button>
                         </div>
                     </motion.div>
+
                     <motion.div
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8 }}
-                        className="relative"
+                        initial={{ opacity: 0, scale: 0.9, x: 40 }}
+                        whileInView={{ opacity: 1, scale: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1, ease: 'easeOut' }}
+                        className="hero-image-container"
                     >
                         <div className="hero-image-glow"></div>
                         <img
-                            src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=800"
-                            alt="Dashboard Preview"
+                            src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=800"
+                            alt="RestoSaaS Dashboard"
                             className="hero-image"
                         />
                     </motion.div>
@@ -92,26 +122,26 @@ const LandingPage = () => {
 
             {/* Features Section */}
             <section className="features-section">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-galaxy mb-4">Powerful Features</h2>
-                        <p className="text-galaxy-secondary max-w-2xl mx-auto">Everything you need to run your restaurant efficiently, from order to payment.</p>
-                    </div>
+                <div className="max-w-7xl mx-auto">
+                    <motion.div {...fadeIn} className="text-center mb-16">
+                        <span className="text-primary-500 font-bold uppercase tracking-widest text-sm">Capabilities</span>
+                        <h2 className="text-5xl font-bold text-galaxy mt-4 mb-6">Engineered for Excellence</h2>
+                        <p className="text-galaxy-secondary max-w-2xl mx-auto text-lg">Our suite of tools eliminates friction from every touchpoint of your restaurant's lifecycle.</p>
+                    </motion.div>
+
                     <div className="features-grid grid">
                         {features.map((f, i) => (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
+                                {...fadeIn}
+                                transition={{ delay: i * 0.15 }}
                                 className="feature-card"
                             >
-                                <div className="feature-icon-wrapper">
+                                <div className="feature-icon-wrapper" style={{ color: f.color }}>
                                     {f.icon}
                                 </div>
-                                <h3 className="text-xl font-bold mb-3">{f.title}</h3>
-                                <p className="text-galaxy-secondary" style={{ lineHeight: '1.6' }}>{f.desc}</p>
+                                <h3>{f.title}</h3>
+                                <p className="text-galaxy-secondary leading-relaxed">{f.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -121,24 +151,30 @@ const LandingPage = () => {
             {/* How it works */}
             <section className="how-it-works">
                 <div className="steps-container">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-galaxy mb-4">How It Works</h2>
-                    </div>
-                    <div className="steps-list" style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                    <motion.div {...fadeIn} className="text-center mb-20">
+                        <h2 className="text-5xl font-bold text-galaxy mb-4">Three Steps to Scale</h2>
+                    </motion.div>
+
+                    <div className="steps-list" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
                         {[
-                            "Register your restaurant with your details.",
-                            "Choose your restaurant type (Self-Service or Dining).",
-                            "Set up your menu and start taking orders."
+                            { title: "Define Your Space", desc: "Create your restaurant profile with advanced multi-tier configuration." },
+                            { title: "Select Your Interface", desc: "Deploy specialized self-service or table-side terminals instantly." },
+                            { title: "Activate Growth", desc: "Start processing orders and watch your data transform into revenue." }
                         ].map((step, i) => (
-                            <div key={i} className="step-card">
+                            <motion.div
+                                key={i}
+                                {...fadeIn}
+                                transition={{ delay: i * 0.2 }}
+                                className="step-card"
+                            >
                                 <div className="step-number">
                                     {i + 1}
                                 </div>
                                 <div>
-                                    <h4 className="text-xl font-semibold mb-2">{step}</h4>
-                                    <p className="text-galaxy-secondary">RestoSaaS automates the complex parts so you can focus on great food.</p>
+                                    <h4 className="text-2xl font-bold text-galaxy mb-2">{step.title}</h4>
+                                    <p className="text-galaxy-secondary text-lg">{step.desc}</p>
                                 </div>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
@@ -146,31 +182,42 @@ const LandingPage = () => {
 
             {/* CTA Section */}
             <section className="cta-section">
-                <div className="cta-banner">
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="cta-banner"
+                >
                     <div className="cta-glow-1"></div>
                     <div className="cta-glow-2"></div>
 
-                    <h2 className="text-4xl font-bold text-galaxy mb-6 relative z-10">Ready to transform your restaurant?</h2>
-                    <p className="text-galaxy-secondary mb-10 text-lg relative z-10">Join 500+ restaurants that use RestoSaaS to scale their business.</p>
+                    <h2 className="text-5xl font-bold text-white mb-6 relative z-10">Scale your restaurant to infinity.</h2>
+                    <p className="text-white opacity-80 mb-12 text-xl relative z-10">Start your journey with the world's most modular POS ecosystem.</p>
                     <div className="relative z-10">
                         <Link to="/register" className="cta-btn">
-                            Create Your Free Account
+                            Create Free Workspace <ArrowRight size={24} />
                         </Link>
                     </div>
-                </div>
+                </motion.div>
             </section>
 
             {/* Footer */}
             <footer className="footer">
                 <div className="footer-content">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-primary-500 p-2 rounded-lg" style={{ display: 'flex', padding: '0.375rem' }}>
-                            <Utensils className="w-5 h-5 text-white" />
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary-500 p-2 rounded-xl" style={{ display: 'flex' }}>
+                            <Utensils className="w-5 h-5 text-galaxy" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight text-galaxy">RestoSaaS</span>
+                        <span className="text-2xl font-bold tracking-tighter text-galaxy">Resto<span className="text-primary-500">SaaS</span></span>
                     </div>
-                    <div className="text-galaxy-muted text-sm">
-                        © 2026 RestoSaaS. Built for scale.
+                    <div className="flex gap-8 text-galaxy-muted font-medium">
+                        <span>Status</span>
+                        <span>Terms</span>
+                        <span>Privacy</span>
+                        <span>Security</span>
+                    </div>
+                    <div className="text-galaxy-muted text-sm font-medium">
+                        © 2026 RestoSaaS Platform. Built with Precision.
                     </div>
                 </div>
             </footer>

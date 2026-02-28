@@ -37,28 +37,28 @@ const Login = () => {
 
     return (
         <div className="login-container">
-            {/* Left Side - Info (Consistency with Register) */}
+            {/* Left Side - Brand Sidebar */}
             <div className="login-sidebar">
                 <div className="sidebar-glow"></div>
 
                 <div className="sidebar-content">
-                    <Link to="/" className="logo-link">
-                        <div className="logo-icon-box" style={{ backgroundColor: 'var(--white)' }}>
+                    <Link to="/" className="logo-link no-underline">
+                        <div className="logo-icon-box">
                             <Utensils className="w-6 h-6 text-galaxy" />
                         </div>
-                        <span className="logo-text" style={{ color: 'var(--galaxy-black)' }}>RestoSaaS</span>
+                        <span className="logo-text">Resto<span className="text-white">SaaS</span></span>
                     </Link>
 
-                    <h2 className="sidebar-title">Manage your restaurant <span className="text-white">With Ease</span></h2>
+                    <h2 className="sidebar-title">Access your ecosystem <br /><span className="text-white">With ease.</span></h2>
                     <p className="sidebar-desc">
-                        Log in to access your dashboard, track sales, and manage your staff and inventory in real-time.
+                        Sign in to monitor branch performance, update global menus, and access real-time analytics.
                     </p>
 
                     <div className="benefit-list">
                         {[
-                            { icon: <Shield />, text: "Secure Authentication" },
-                            { icon: <Store />, text: "Centralized Dashboard" },
-                            { icon: <Info />, text: "24/7 Priority Support" }
+                            { icon: <Shield size={24} />, text: "Encrypted Secure Login" },
+                            { icon: <Store size={24} />, text: "Full Franchise Control" },
+                            { icon: <Info size={24} />, text: "24/7 Ecosystem Support" }
                         ].map((item, i) => (
                             <div key={i} className="benefit-item">
                                 <div className="sidebar-icon-box">
@@ -67,6 +67,16 @@ const Login = () => {
                                 <p>{item.text}</p>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                <div className="testimonial-box">
+                    <p>"The real-time insights provided by RestoSaaS have completely transformed how we manage our chain of restaurants."</p>
+                    <div className="testimonial-author">
+                        <div className="author-info">
+                            <h4>Rahul M.</h4>
+                            <span>Operations Director, SpiceRoute</span>
+                        </div>
                     </div>
                 </div>
             </div>
