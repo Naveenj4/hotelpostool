@@ -143,20 +143,6 @@
     display: none;
 }
 
-.sidebar-footer {
-    padding: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logout-btn {
-    color: #ef4444;
-}
-
-.logout-btn:hover {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: #f87171;
-}
-
 
 /* Main Layout */
 .dashboard-main {
@@ -320,6 +306,22 @@
 .icon-btn:hover {
     color: var(--primary-600);
     background-color: var(--primary-50);
+}
+
+.header-divider {
+    width: 1px;
+    height: 24px;
+    background-color: #e2e8f0;
+    margin: 0 0.75rem;
+}
+
+.logout-header-btn {
+    color: #ef4444 !important;
+}
+
+.logout-header-btn:hover {
+    color: #dc2626 !important;
+    background-color: #fef2f2 !important;
 }
 
 /* Stats Widgets - Refined */

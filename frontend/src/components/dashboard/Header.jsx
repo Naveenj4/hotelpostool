@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Menu, User, Calendar, Clock, Bell } from 'lucide-react';
+import { Menu, User, Calendar, Clock, Bell, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Header = ({ toggleSidebar, restaurantName }) => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -53,9 +53,10 @@ const Header = ({ toggleSidebar, restaurantName }) => {
             </div>
 
             <div className="header-right">
-                <button className="icon-btn">
+                <button className="icon-btn" title="Notifications">
                     <Bell size={20} />
                 </button>
+
                 <div className="user-profile">
                     <div className="user-info">
                         <span className="user-name">{user?.name}</span>
@@ -65,6 +66,16 @@ const Header = ({ toggleSidebar, restaurantName }) => {
                         <User size={20} />
                     </div>
                 </div>
+
+                <div className="header-divider"></div>
+
+                <button
+                    className="icon-btn logout-header-btn"
+                    onClick={logout}
+                    title="Logout"
+                >
+                    <LogOut size={20} />
+                </button>
             </div>
         </header>
     );

@@ -123,12 +123,6 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 ))}
             </nav>
 
-            <div className="sidebar-footer">
-                <button onClick={logout} className="nav-item logout-btn">
-                    <span className="nav-icon"><LogOut size={20} /></span>
-                    {!isCollapsed && <span className="nav-label">Logout</span>}
-                </button>
-            </div>
         </aside>
     );
 };
