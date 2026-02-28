@@ -10,7 +10,8 @@ import {
     Layers,
     ShieldCheck,
     Cpu,
-    CheckCircle2
+    CheckCircle2,
+    Users
 } from 'lucide-react';
 import './LandingPage.css';
 
