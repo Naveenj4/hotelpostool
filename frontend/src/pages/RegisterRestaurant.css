@@ -13,9 +13,17 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    position: relative;
-    overflow: hidden;
+    position: sticky;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
     color: var(--white);
+    z-index: 100;
+}
+
+.auth-sidebar::-webkit-scrollbar {
+    display: none;
 }
 
 .sidebar-glow {

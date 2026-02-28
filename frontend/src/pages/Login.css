@@ -9,13 +9,21 @@
 .auth-sidebar {
     width: 40%;
     background: var(--primary-500);
-    padding: 2rem 4rem;
+    padding: 3rem 4rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
-    position: relative;
-    overflow: hidden;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
     color: var(--white);
+    z-index: 100;
+}
+
+.auth-sidebar::-webkit-scrollbar {
+    display: none;
 }
 
 .sidebar-glow {
@@ -58,10 +66,10 @@
 }
 
 .sidebar-tagline {
-    font-size: 3.25rem;
+    font-size: 3rem;
     font-weight: 950;
     line-height: 1.1;
-    margin-bottom: 2.5rem;
+    margin-bottom: 3.5rem;
     letter-spacing: -2px;
 }
 
