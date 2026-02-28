@@ -123,6 +123,32 @@ export const AuthProvider = ({ children }) => {
         return user && (user.role === 'OWNER' || user.role === 'ADMIN' || user.role === 'SUPER_ADMIN');
     };
 
+    // Get the first accessible route for this user
+    const getLandingPage = () => {
+        if (!user) return '/login';
+        if (isAdmin()) return '/dashboard/self-service/home';
+        if (!permissions || permissions.length === 0) return '/login';
+
+        // Find first page with has_access = true
+        const firstPage = permissions.find(p => p.has_access);
+        if (firstPage) {
+            // Map keys to actual routes
+            const routeMap = {
+                dashboard: '/dashboard/self-service/home',
+                billing: '/dashboard/self-service/billing',
+                bills_sales: '/dashboard/self-service/bills-sales',
+                products: '/dashboard/self-service/products',
+                categories: '/dashboard/self-service/categories',
+                counters: '/dashboard/self-service/counters',
+                stock: '/dashboard/self-service/stock',
+                reports: '/dashboard/self-service/reports',
+                settings: '/dashboard/self-service/settings'
+            };
+            return routeMap[firstPage.page_key] || '/dashboard/self-service/home';
+        }
+        return '/login';
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -133,7 +159,8 @@ export const AuthProvider = ({ children }) => {
             logout,
             hasPageAccess,
             hasFeatureAccess,
-            isAdmin
+            isAdmin,
+            getLandingPage
         }}>
             {children}
         </AuthContext.Provider>

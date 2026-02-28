@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
-    const { login } = useAuth();
+    const { login, getLandingPage } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -28,9 +28,7 @@ const Login = () => {
         const res = await login(formData);
 
         if (res.success) {
-            const rType = res.data.restaurant_type;
-            const target = (rType === 'SMART' || rType === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining';
-            navigate(target);
+            navigate(getLandingPage());
         } else {
             setError(res.error);
         }
@@ -157,8 +155,6 @@ const Login = () => {
         </div>
     );
 };
-
-
 
 export default Login;
 

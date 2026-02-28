@@ -31,31 +31,31 @@ const ProtectedRoute = ({ children, adminOnly }) => {
 
 // Route guard that checks page-level permission
 const PermissionRoute = ({ children, pageKey }) => {
-    const { user, loading, hasPageAccess } = useAuth();
+    const { user, loading, hasPageAccess, getLandingPage } = useAuth();
 
     if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
     if (!user) return <Navigate to="/login" />;
 
     if (!hasPageAccess(pageKey)) {
-        return <Navigate to="/dashboard/self-service/home" replace />;
+        return <Navigate to={getLandingPage()} replace />;
     }
 
     return children;
 };
 
 function AppRoutes() {
-    const { user } = useAuth();
+    const { user, getLandingPage } = useAuth();
 
     return (
         <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route
                 path="/register"
-                element={user ? <Navigate to={(user.restaurant_type === 'SMART' || user.restaurant_type === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining'} /> : <RegisterRestaurant />}
+                element={user ? <Navigate to={getLandingPage()} /> : <RegisterRestaurant />}
             />
             <Route
                 path="/login"
-                element={user ? <Navigate to={(user.restaurant_type === 'SMART' || user.restaurant_type === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining'} /> : <Login />}
+                element={user ? <Navigate to={getLandingPage()} /> : <Login />}
             />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -68,6 +68,7 @@ function AppRoutes() {
                             <Route path="home" element={
                                 <PermissionRoute pageKey="dashboard"><SelfServiceDashboard /></PermissionRoute>
                             } />
+                            {/* Rest of routes... */}
                             <Route path="products" element={
                                 <PermissionRoute pageKey="products"><ProductMaster /></PermissionRoute>
                             } />
@@ -95,7 +96,7 @@ function AppRoutes() {
                             <Route path="access-control" element={
                                 <ProtectedRoute adminOnly><AccessControlPage /></ProtectedRoute>
                             } />
-                            <Route path="*" element={<Navigate to="home" replace />} />
+                            <Route path="*" element={<Navigate to={getLandingPage()} replace />} />
                         </Routes>
                     </ProtectedRoute>
                 }
