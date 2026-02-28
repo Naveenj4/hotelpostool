@@ -181,6 +181,8 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--slate-400);
+    pointer-events: none;
+    z-index: 5;
 }
 
 .input-field-professional {
@@ -194,6 +196,9 @@
     font-size: 1rem;
     font-weight: 600;
     transition: all 0.3s ease;
+    color: var(--galaxy-black);
+    display: block;
+    line-height: normal;
 }
 
 .input-field-professional:focus {
