@@ -353,17 +353,16 @@ const BillingPage = () => {
                     <button className="nav-icon-btn" onClick={() => navigate('/dashboard/self-service/home')}>
                         <ArrowLeft size={24} />
                     </button>
-                    <div className="nav-brand">
+                    <div className="pos-brand-compact">
                         <h2>{restaurantName}</h2>
-                        <span className="nav-subtitle">POS Terminal</span>
+                        <span>POS Terminal</span>
                     </div>
                 </div>
 
                 <div className="nav-center">
-                    <div className="pos-timer-display">
-                        <span className="pos-date">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                        <span className="pos-separator">|</span>
-                        <span className="pos-time">{currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}</span>
+                    <div className="pos-timer-compact">
+                        <div className="timer-v-date">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
+                        <div className="timer-v-time">{currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}</div>
                     </div>
 
                     <div className="mode-selector">
@@ -380,13 +379,15 @@ const BillingPage = () => {
                 </div>
 
                 <div className="nav-right">
-                    <div className="nav-stat">
-                        <span className="label">Bill No:</span>
-                        <span className="value">{billNumber}</span>
-                    </div>
-                    <div className="nav-stat">
-                        <span className="label">Counter:</span>
-                        <span className="value">{counters.find(c => c._id === selectedCounter)?.name || '...'}</span>
+                    <div className="pos-status-info">
+                        <div className="status-row">
+                            <span className="status-label">B:</span>
+                            <span className="status-value">{billNumber}</span>
+                        </div>
+                        <div className="status-row">
+                            <span className="status-label">C:</span>
+                            <span className="status-value">{counters.find(c => c._id === selectedCounter)?.name || '...'}</span>
+                        </div>
                     </div>
 
                     {/* Layout Toggle Button */}
