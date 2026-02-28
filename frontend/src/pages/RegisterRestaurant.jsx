@@ -58,7 +58,7 @@ const RegisterRestaurant = () => {
 
         if (res.success) {
             const rType = res.data.restaurant_type;
-            const target = (rType === 'SMART' || rType === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining';
+            const target = (rType === 'SMART' || rType === 'SELF_SERVICE') ? '/dashboard/self-service/home' : '/dashboard/dining';
             navigate(target);
         } else {
             setError(res.error);
