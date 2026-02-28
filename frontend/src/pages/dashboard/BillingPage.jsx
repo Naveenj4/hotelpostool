@@ -21,11 +21,14 @@ import {
     Printer,
     Menu as MenuIcon,
     LayoutGrid,
-    Columns
+    Columns,
+    LogOut
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const BillingPage = () => {
     const navigate = useNavigate();
+    const { logout, user } = useAuth();
     const [categories, setCategories] = useState([]);
     const [products, setProducts] = useState([]);
     const [activeCategory, setActiveCategory] = useState("ALL");
@@ -152,6 +155,14 @@ const BillingPage = () => {
         } catch (error) {
             console.error("Create bill error", error);
         }
+    };
+
+    const createManualNewBill = async () => {
+        if (!window.confirm("Start a manual new bill? This will clear current items.")) return;
+        setBillItems([]);
+        setCurrentBillId(null);
+        setBillNumber('Generating...');
+        await createNewBill();
     };
 
     useEffect(() => {
@@ -390,8 +401,19 @@ const BillingPage = () => {
                         </span>
                     </button>
 
-                    <button className="reset-btn" onClick={() => window.location.reload()}>
+                    <button className="reset-btn" onClick={() => window.location.reload()} title="Hard Reload">
                         <RotateCcw size={18} />
+                    </button>
+
+                    <button className="new-bill-btn" onClick={createManualNewBill} title="Generate New Bill">
+                        <Plus size={20} />
+                        <span className="btn-label">New Bill</span>
+                    </button>
+
+                    <div className="nav-divider"></div>
+
+                    <button className="logout-btn-pos" onClick={logout} title="Logout">
+                        <LogOut size={20} />
                     </button>
                 </div>
             </div>
