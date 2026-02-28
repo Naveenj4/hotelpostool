@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     Store, Mail, Phone, Lock, Hash, MapPin,
-    ArrowRight, Loader2, Utensils, CheckCircle2,
-    Calendar, Shield, Info, AlertCircle
+    ArrowRight, Loader2, Utensils, Shield, Info, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './RegisterRestaurant.css';
@@ -57,7 +56,7 @@ const RegisterRestaurant = () => {
 
         const registrationData = {
             ...formData,
-            owner_name: formData.company_name // Use company name as owner name since input was removed
+            owner_name: formData.company_name
         };
 
         const res = await register(registrationData);
@@ -73,292 +72,194 @@ const RegisterRestaurant = () => {
     };
 
     return (
-        <div className="register-container">
-            {/* Left Side - Brand Sidebar */}
-            <div className="register-sidebar">
-                <div className="sidebar-glow"></div>
+        <div className="auth-page">
+            {/* Mesmerizing Background Animation */}
+            <div className="animated-bg">
+                <div className="orb orb-1"></div>
+                <div className="orb orb-2"></div>
+            </div>
 
-                <div className="sidebar-brand">
-                    <Link to="/" className="logo-link no-underline">
-                        <div className="logo-icon-box">
-                            <Utensils className="w-6 h-6 text-galaxy" />
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="auth-card"
+                style={{ maxWidth: '800px' }}
+            >
+                <div className="auth-header">
+                    <Link to="/" className="auth-logo no-underline">
+                        <div className="auth-logo-icon">
+                            <Utensils className="w-8 h-8 text-black" />
                         </div>
-                        <span className="logo-text">Resto<span className="text-white">SaaS</span></span>
+                        <span className="auth-logo-text">Resto<span className="text-primary-500">SaaS</span></span>
                     </Link>
-
-                    <h2 className="sidebar-title">Scale your workspace <br /><span className="text-white">With Precision.</span></h2>
-                    <p className="sidebar-desc">
-                        Join 500+ global brands managing their entire restaurant ecosystem with our modular POS platform.
-                    </p>
-
-                    <div className="benefit-list">
-                        {[
-                            { icon: <Shield size={24} />, text: "Enterprise-grade Security" },
-                            { icon: <Store size={24} />, text: "Automated Multi-tier Management" },
-                            { icon: <Info size={24} />, text: "Biological UX/UI Patterns" }
-                        ].map((item, i) => (
-                            <div key={i} className="benefit-item">
-                                <div className="sidebar-icon-box">
-                                    {item.icon}
-                                </div>
-                                <span className="text-galaxy-black">{item.text}</span>
-                            </div>
-                        ))}
-                    </div>
+                    <h1 className="auth-title">Initialize Workspace.</h1>
+                    <p className="auth-subtitle">Define your restaurant's digital DNA today.</p>
                 </div>
 
-                <div className="testimonial-box">
-                    <p>"The most intuitive POS system we have ever deployed. Scaling our franchise from 10 to 50 locations became effortless."</p>
-                    <div className="testimonial-author">
-                        <div className="author-info">
-                            <h4>Naveen J.</h4>
-                            <span>Founder, Global Dining Co.</span>
+                {error && (
+                    <div className="error-box mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-center font-bold">
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="form-group">
+                            <label className="input-label">Company Entity</label>
+                            <input
+                                type="text"
+                                name="company_name"
+                                required
+                                placeholder="The Grand Palace Inc."
+                                className="input-field"
+                                value={formData.company_name}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Sort Alias</label>
+                            <input
+                                type="text"
+                                name="store_name"
+                                required
+                                placeholder="Sort Identifier"
+                                className="input-field"
+                                value={formData.store_name}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Print Branding</label>
+                            <input
+                                type="text"
+                                name="print_name"
+                                required
+                                placeholder="Name on Invoices"
+                                className="input-field"
+                                value={formData.print_name}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Ecosystem Node</label>
+                            <select
+                                name="restaurant_type"
+                                className="input-field"
+                                style={{ background: 'rgba(255,255,255,0.03)', appearance: 'none' }}
+                                value={formData.restaurant_type}
+                                onChange={handleChange}
+                            >
+                                <option value="SMART" style={{ background: '#0f172a' }}>SMART - Global Analytics</option>
+                                <option value="EFFICIENT" style={{ background: '#0f172a' }}>EFFICIENT - Ultra High Speed</option>
+                            </select>
+                        </div>
+                        <div className="form-group md:col-span-2">
+                            <label className="input-label">Geographic Coordinates</label>
+                            <input
+                                type="text"
+                                name="address"
+                                required
+                                placeholder="Street, City, Building..."
+                                className="input-field"
+                                value={formData.address}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Neural Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                required
+                                placeholder="owner@domain.com"
+                                className="input-field"
+                                value={formData.email}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Comm Line</label>
+                            <input
+                                type="text"
+                                name="mobile"
+                                required
+                                placeholder="Phone connection"
+                                className="input-field"
+                                value={formData.mobile}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">FSSAI ID</label>
+                            <input
+                                type="text"
+                                name="fssai_no"
+                                placeholder="Optional"
+                                className="input-field"
+                                value={formData.fssai_no}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">GSTIN Mapping</label>
+                            <input
+                                type="text"
+                                name="gstin"
+                                placeholder="Optional"
+                                className="input-field"
+                                value={formData.gstin}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Security Key</label>
+                            <input
+                                type="password"
+                                name="password"
+                                required
+                                placeholder="Min 8 chars"
+                                className="input-field"
+                                value={formData.password}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Verify Key</label>
+                            <input
+                                type="password"
+                                name="confirm_password"
+                                required
+                                placeholder="Re-enter key"
+                                className="input-field"
+                                value={formData.confirm_password}
+                                onChange={handleChange}
+                            />
                         </div>
                     </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="auth-btn flex items-center justify-center gap-4 mt-12"
+                    >
+                        {loading ? (
+                            <Loader2 className="animate-spin" />
+                        ) : (
+                            <>
+                                Activate Ecosystem <ArrowRight size={24} />
+                            </>
+                        )}
+                    </button>
+                </form>
+
+                <div className="auth-footer mt-12">
+                    Already a member?
+                    <Link to="/login" className="auth-link">Resume Access</Link>
                 </div>
-            </div>
-
-            {/* Right Side - Form */}
-            <div className="register-main">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="form-wrapper"
-                >
-                    <div className="form-header">
-                        <h1>Create Workspace</h1>
-                        <p>Begin your restaurant's digital transformation in minutes.</p>
-                    </div>
-
-                    {error && (
-                        <div className="error-box">
-                            <AlertCircle className="w-4 h-4" />
-                            {error}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="register-form">
-                        {/* Section 1: Company Details */}
-                        <div className="form-section">
-                            <h3 className="section-title">
-                                <Store className="w-4 h-4" /> Company Details
-                            </h3>
-                            <div className="input-grid">
-                                <div className="form-group">
-                                    <label className="input-label">Company Name</label>
-                                    <div className="input-relative">
-                                        <Store className="input-icon" />
-                                        <input
-                                            type="text"
-                                            name="company_name"
-                                            required
-                                            placeholder="The Grand Palace Inc."
-                                            className="input-field pad-left"
-                                            value={formData.company_name}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">Sort Name</label>
-                                    <div className="input-relative">
-                                        <Hash className="input-icon" />
-                                        <input
-                                            type="text"
-                                            name="store_name"
-                                            required
-                                            placeholder="Short name for sorting"
-                                            className="input-field pad-left"
-                                            value={formData.store_name}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">Print Name</label>
-                                    <div className="input-relative">
-                                        <Info className="input-icon" />
-                                        <input
-                                            type="text"
-                                            name="print_name"
-                                            required
-                                            placeholder="Name for Bills/Invoices"
-                                            className="input-field pad-left"
-                                            value={formData.print_name}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">Restaurant Type</label>
-                                    <select
-                                        name="restaurant_type"
-                                        className="input-field"
-                                        value={formData.restaurant_type}
-                                        onChange={handleChange}
-                                    >
-                                        <option value="SMART">SMART</option>
-                                        <option value="EFFICIENT">EFFICIENT</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 2: Contact & Legal */}
-                        <div className="form-section">
-                            <h3 className="section-title">
-                                <MapPin className="w-4 h-4" /> Contact & Legal Details
-                            </h3>
-                            <div className="input-grid">
-                                <div className="form-group full-width">
-                                    <label className="input-label">Address</label>
-                                    <textarea
-                                        name="address"
-                                        required
-                                        placeholder="Full address of the restaurant..."
-                                        className="input-field"
-                                        style={{ height: '80px', resize: 'none' }}
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                    ></textarea>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">Cell Number</label>
-                                    <div className="input-relative">
-                                        <Phone className="input-icon" />
-                                        <input
-                                            type="number"
-                                            name="mobile"
-                                            required
-                                            placeholder="10 digit number"
-                                            className="input-field pad-left"
-                                            value={formData.mobile}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group full-width">
-                                    <label className="input-label">Email</label>
-                                    <div className="input-relative">
-                                        <Mail className="input-icon" />
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            required
-                                            placeholder="owner@company.com"
-                                            className="input-field pad-left"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">FSSAI Number</label>
-                                    <input
-                                        type="text"
-                                        name="fssai_no"
-                                        placeholder="Optional"
-                                        className="input-field"
-                                        value={formData.fssai_no}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">GSTIN</label>
-                                    <input
-                                        type="text"
-                                        name="gstin"
-                                        placeholder="Optional"
-                                        className="input-field"
-                                        value={formData.gstin}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 3: Security */}
-                        <div className="form-section">
-                            <h3 className="section-title">
-                                <Shield className="w-4 h-4" /> Security Control
-                            </h3>
-                            <div className="input-grid">
-                                <div className="form-group full-width" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        name="security_control_enabled"
-                                        id="security_control"
-                                        checked={formData.security_control_enabled}
-                                        onChange={handleChange}
-                                        style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-                                    />
-                                    <label htmlFor="security_control" style={{ cursor: 'pointer', fontWeight: 600 }}>Enable Security Control (Default)</label>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">Password</label>
-                                    <div className="input-relative">
-                                        <Lock className="input-icon" />
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            required
-                                            placeholder="Min 8 chars + 1 number"
-                                            className="input-field pad-left"
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="input-label">Confirm Password</label>
-                                    <div className="input-relative">
-                                        <Lock className="input-icon" />
-                                        <input
-                                            type="password"
-                                            name="confirm_password"
-                                            required
-                                            placeholder="Re-enter password"
-                                            className="input-field pad-left"
-                                            value={formData.confirm_password}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4" style={{ marginTop: '2rem', marginBottom: '4rem' }}>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="btn-primary"
-                                style={{ flex: 2, padding: '1rem', fontSize: '1.125rem' }}
-                            >
-                                {loading ? (
-                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                ) : (
-                                    <>
-                                        Save <ArrowRight className="ml-2 w-6 h-6" />
-                                    </>
-                                )}
-                            </button>
-                            <Link
-                                to="/"
-                                className="btn-outline"
-                                style={{ flex: 1, padding: '1rem', fontSize: '1.125rem' }}
-                            >
-                                Exit
-                            </Link>
-                        </div>
-                    </form>
-                </motion.div>
-            </div>
+            </motion.div>
         </div>
     );
 };
 
-
 export default RegisterRestaurant;
-
-

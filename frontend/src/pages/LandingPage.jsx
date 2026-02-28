@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     BarChart3,
     Utensils,
     Zap,
     ArrowRight,
-    Star
+    Star,
+    Layers,
+    ShieldCheck,
+    Cpu
 } from 'lucide-react';
 import './LandingPage.css';
 
@@ -15,155 +18,166 @@ const LandingPage = () => {
 
     useEffect(() => {
         const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
+            setScrolled(window.scrollY > 50);
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const fadeIn = {
-        initial: { opacity: 0, y: 30 },
+    const fadeInUp = {
+        initial: { opacity: 0, y: 60 },
         whileInView: { opacity: 1, y: 0 },
         viewport: { once: true },
-        transition: { duration: 0.8, cubicBezier: [0.16, 1, 0.3, 1] }
+        transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
     };
 
     const features = [
         {
-            title: "Quick-Service Kiosk",
-            desc: "Empower customers with high-speed ordering terminals designed for rapid efficiency.",
-            icon: <Zap size={28} />,
-            color: "#7ea1c4"
+            title: "Neural POS Engine",
+            desc: "A lightning-fast interface built on high-performance architecture for zero-latency operations.",
+            icon: <Zap size={32} />,
+            color: "#60a5fa"
         },
         {
-            title: "Table Side Dining",
-            desc: "Full-service management including KOT, complex billing, and live table occupancy tracking.",
-            icon: <Utensils size={28} />,
-            color: "#fca5a5"
+            title: "Omnichannel Flow",
+            desc: "Synchronize dine-in, delivery, and self-service channels through a single, unified brain.",
+            icon: <Layers size={32} />,
+            color: "#f472b6"
         },
         {
-            title: "Insight Analytics",
-            desc: "Visualise your restaurant's growth with real-time sales data and inventory intelligence.",
-            icon: <BarChart3 size={28} />,
+            title: "Predictive Analytics",
+            desc: "Convert raw transaction data into actionable growth strategies with built-in intelligence.",
+            icon: <BarChart3 size={32} />,
             color: "#fbbf24"
         }
     ];
 
     return (
         <div className="landing-page">
-            {/* Background Decorative Blobs */}
-            <div className="bg-blobs">
-                <div className="blob blob-1"></div>
-                <div className="blob blob-2"></div>
-                <div className="blob blob-3"></div>
+            {/* Mesmerizing Background Animation */}
+            <div className="animated-bg">
+                <div className="orb orb-1"></div>
+                <div className="orb orb-2"></div>
+                <div className="orb orb-3"></div>
             </div>
 
-            {/* Navigation */}
-            <nav className={`navbar ${scrolled ? 'scrolled' : ''} `}>
+            {/* Premium Navigation */}
+            <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
                 <div className="nav-container">
-                    <Link to="/" className="flex items-center gap-3 no-underline">
-                        <div className="bg-primary-500 p-2.5 rounded-xl shadow-lg shadow-primary-500/20" style={{ display: 'flex' }}>
-                            <Utensils className="w-5 h-5 text-galaxy" />
+                    <Link to="/" className="flex items-center gap-4 no-underline">
+                        <div className="bg-white p-2.5 rounded-2xl shadow-2xl" style={{ display: 'flex' }}>
+                            <Utensils className="w-6 h-6 text-galaxy-black" />
                         </div>
                         <span className="logo-text">Resto<span className="text-primary-500">SaaS</span></span>
                     </Link>
-                    <div className="flex items-center gap-8">
-                        <div className="hidden md:flex gap-8">
-                            <Link to="/" className="nav-link">Home</Link>
-                            <Link to="/features" className="nav-link">Features</Link>
-                            <Link to="/pricing" className="nav-link">Pricing</Link>
+                    <div className="flex items-center gap-10">
+                        <div className="hidden lg:flex gap-10">
+                            <Link to="/" className="nav-link">Platform</Link>
+                            <Link to="/features" className="nav-link">Ecosystem</Link>
+                            <Link to="/pricing" className="nav-link">Enterprise</Link>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Link to="/login" className="nav-link">Login</Link>
-                            <Link to="/register" className="btn-primary" style={{ padding: '0.65rem 1.75rem' }}>Join Now</Link>
+                        <div className="flex items-center gap-6">
+                            <Link to="/login" className="nav-link">Sign In</Link>
+                            <Link to="/register" className="btn-primary" style={{
+                                padding: '0.8rem 2.5rem',
+                                borderRadius: '16px',
+                                background: 'white',
+                                color: 'black',
+                                fontWeight: 900
+                            }}>Get Started</Link>
                         </div>
                     </div>
                 </div>
             </nav>
 
-            {/* Hero Section */}
+            {/* High-Impact Hero Section */}
             <section className="hero-section">
-                <div className="hero-container grid">
-                    <motion.div {...fadeIn}>
+                <div className="hero-content">
+                    <motion.div {...fadeInUp}>
                         <div className="feature-tag">
-                            <Star size={14} fill="currentColor" /> Multi-Tenant POS Platform
+                            <Cpu size={16} /> Autonomous Restaurant Infrastructure
                         </div>
                         <h1 className="hero-title">
-                            The Operating System <br />
-                            <span className="text-primary-500">for Modern Restaurants.</span>
+                            The future of dining,<br />
+                            engineered today.
                         </h1>
                         <p className="hero-subtitle">
-                            RestoSaaS is a modular, high-performance POS platform designed for scale. Manage single outlets or global franchises with unparalleled speed and biological simplicity.
+                            RestoSaaS is a sophisticated multi-tenant ecosystem built to handle the complexity of modern restaurant operations with biological ease.
                         </p>
-                        <div className="flex gap-4" style={{ flexWrap: 'wrap' }}>
-                            <Link to="/register" className="btn-primary flex items-center gap-3 py-4 px-8 text-lg">
-                                Get Started Free <ArrowRight size={20} />
+                        <div className="flex gap-6 justify-center" style={{ flexWrap: 'wrap' }}>
+                            <Link to="/register" className="cta-btn flex items-center gap-4 no-underline">
+                                Deploy Workspace <ArrowRight size={24} />
                             </Link>
-                            <button className="btn-outline py-4 px-8 text-lg">Watch Ecosystem Tour</button>
+                            <button className="btn-outline py-5 px-10 text-xl" style={{
+                                borderColor: 'rgba(255,255,255,0.2)',
+                                color: 'white',
+                                borderRadius: '20px'
+                            }}>
+                                Explore Ecosystem
+                            </button>
                         </div>
                     </motion.div>
 
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9, x: 40 }}
-                        whileInView={{ opacity: 1, scale: 1, x: 0 }}
+                        initial={{ opacity: 0, rotateX: 20, scale: 0.9 }}
+                        whileInView={{ opacity: 1, rotateX: 10, scale: 1 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 1, ease: 'easeOut' }}
-                        className="hero-image-container"
+                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                        className="hero-image-wrapper"
                     >
-                        <div className="hero-image-glow"></div>
                         <img
-                            src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=800"
-                            alt="RestoSaaS Dashboard"
+                            src="https://images.unsplash.com/photo-1556742044-3c52d6e88c02?auto=format&fit=crop&q=80&w=1200"
+                            alt="RestoSaaS Professional Dashboard"
                             className="hero-image"
                         />
                     </motion.div>
                 </div>
             </section>
 
-            {/* Features Section */}
+            {/* Advanced Capabilities Section */}
             <section className="features-section">
                 <div className="max-w-7xl mx-auto">
-                    <motion.div {...fadeIn} className="text-center mb-16">
-                        <span className="text-primary-500 font-bold uppercase tracking-widest text-sm">Capabilities</span>
-                        <h2 className="text-5xl font-bold text-galaxy mt-4 mb-6">Engineered for Excellence</h2>
-                        <p className="text-galaxy-secondary max-w-2xl mx-auto text-lg">Our suite of tools eliminates friction from every touchpoint of your restaurant's lifecycle.</p>
+                    <motion.div {...fadeInUp} className="text-center mb-24">
+                        <span className="text-primary-500 font-black uppercase tracking-[0.3em] text-sm">Architecture</span>
+                        <h2 className="text-6xl font-black text-white mt-6 mb-8 tracking-tighter">Beyond POS.</h2>
+                        <p className="text-slate-400 max-w-2xl mx-auto text-xl leading-relaxed">We don't just process orders; we manage the entire neural tissue of your business.</p>
                     </motion.div>
 
-                    <div className="features-grid grid">
+                    <div className="grid lg:grid-cols-3 gap-10">
                         {features.map((f, i) => (
                             <motion.div
                                 key={i}
-                                {...fadeIn}
-                                transition={{ delay: i * 0.15 }}
+                                {...fadeInUp}
+                                transition={{ delay: i * 0.15 + 0.2 }}
                                 className="feature-card"
                             >
                                 <div className="feature-icon-wrapper" style={{ color: f.color }}>
                                     {f.icon}
                                 </div>
                                 <h3>{f.title}</h3>
-                                <p className="text-galaxy-secondary leading-relaxed">{f.desc}</p>
+                                <p>{f.desc}</p>
                             </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* How it works */}
+            {/* Logic & Workflow Section */}
             <section className="how-it-works">
-                <div className="steps-container">
-                    <motion.div {...fadeIn} className="text-center mb-20">
-                        <h2 className="text-5xl font-bold text-galaxy mb-4">Three Steps to Scale</h2>
+                <div className="max-w-5xl mx-auto">
+                    <motion.div {...fadeInUp} className="text-center mb-24">
+                        <h2 className="text-6xl font-black text-white mb-6 tracking-tighter">Seamless Onboarding.</h2>
                     </motion.div>
 
-                    <div className="steps-list" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                    <div className="flex flex-col gap-10">
                         {[
-                            { title: "Define Your Space", desc: "Create your restaurant profile with advanced multi-tier configuration." },
-                            { title: "Select Your Interface", desc: "Deploy specialized self-service or table-side terminals instantly." },
-                            { title: "Activate Growth", desc: "Start processing orders and watch your data transform into revenue." }
+                            { title: "Define Neural Profile", desc: "Configure your restaurant's DNA with multi-outlet hierarchy and intelligent menu mapping." },
+                            { title: "Zero-Latency Deploy", desc: "Instantly activate specialized terminal nodes for self-service or elite table dining." },
+                            { title: "Scale with Intelligence", desc: "Start receiving traffic and let our engine optimize your revenue streams automatically." }
                         ].map((step, i) => (
                             <motion.div
                                 key={i}
-                                {...fadeIn}
+                                {...fadeInUp}
                                 transition={{ delay: i * 0.2 }}
                                 className="step-card"
                             >
@@ -171,8 +185,8 @@ const LandingPage = () => {
                                     {i + 1}
                                 </div>
                                 <div>
-                                    <h4 className="text-2xl font-bold text-galaxy mb-2">{step.title}</h4>
-                                    <p className="text-galaxy-secondary text-lg">{step.desc}</p>
+                                    <h4 className="text-3xl font-black text-white mb-3 tracking-tight">{step.title}</h4>
+                                    <p className="text-slate-400 text-xl">{step.desc}</p>
                                 </div>
                             </motion.div>
                         ))}
@@ -180,44 +194,40 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* CTA Section */}
+            {/* Final Conversion Section */}
             <section className="cta-section">
                 <motion.div
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     className="cta-banner"
                 >
-                    <div className="cta-glow-1"></div>
-                    <div className="cta-glow-2"></div>
-
-                    <h2 className="text-5xl font-bold text-white mb-6 relative z-10">Scale your restaurant to infinity.</h2>
-                    <p className="text-white opacity-80 mb-12 text-xl relative z-10">Start your journey with the world's most modular POS ecosystem.</p>
-                    <div className="relative z-10">
-                        <Link to="/register" className="cta-btn">
-                            Create Free Workspace <ArrowRight size={24} />
+                    <h2 className="text-6xl font-black text-white mb-8 tracking-tighter">Join the elite.</h2>
+                    <p className="text-slate-400 mb-16 text-2xl max-w-2xl mx-auto">Elevate your brand with the most sophisticated restaurant operating system ever built.</p>
+                    <div>
+                        <Link to="/register" className="cta-btn no-underline">
+                            Activate Your Workspace
                         </Link>
                     </div>
                 </motion.div>
             </section>
 
-            {/* Footer */}
+            {/* Premium Footer */}
             <footer className="footer">
-                <div className="footer-content">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-primary-500 p-2 rounded-xl" style={{ display: 'flex' }}>
-                            <Utensils className="w-5 h-5 text-galaxy" />
+                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-12">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white p-2 rounded-2xl" style={{ display: 'flex' }}>
+                            <Utensils className="w-8 h-8 text-black" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tighter text-galaxy">Resto<span className="text-primary-500">SaaS</span></span>
+                        <span className="text-3xl font-black tracking-tighter text-white">Resto<span className="text-primary-500">SaaS</span></span>
                     </div>
-                    <div className="flex gap-8 text-galaxy-muted font-medium">
-                        <span>Status</span>
-                        <span>Terms</span>
-                        <span>Privacy</span>
-                        <span>Security</span>
+                    <div className="flex gap-12 text-slate-500 font-bold text-lg">
+                        <span className="hover:text-white cursor-pointer transition-colors">Safety</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">Privacy</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">Open Source</span>
                     </div>
-                    <div className="text-galaxy-muted text-sm font-medium">
-                        © 2026 RestoSaaS Platform. Built with Precision.
+                    <div className="text-slate-600 font-bold">
+                        © 2026 RestoSaaS Labs. Engineered for Performance.
                     </div>
                 </div>
             </footer>

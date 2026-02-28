@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Utensils, Mail, Lock, ArrowRight, Loader2, AlertCircle, Shield, Store, Info } from 'lucide-react';
+import { Mail, Lock, Loader2, Utensils, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
-    const { login, getLandingPage } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-
     const [formData, setFormData] = useState({
-        username: '',
+        email: '',
         password: ''
     });
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -25,10 +27,12 @@ const Login = () => {
         setLoading(true);
         setError('');
 
-        const res = await login(formData);
+        const res = await login(formData.email, formData.password);
 
         if (res.success) {
-            navigate(getLandingPage());
+            const rType = res.data.restaurant_type;
+            const target = (rType === 'SMART' || rType === 'SELF_SERVICE') ? '/dashboard/self-service' : '/dashboard/dining';
+            navigate(target);
         } else {
             setError(res.error);
         }
@@ -36,135 +40,87 @@ const Login = () => {
     };
 
     return (
-        <div className="login-container">
-            {/* Left Side - Brand Sidebar */}
-            <div className="login-sidebar">
-                <div className="sidebar-glow"></div>
+        <div className="auth-page">
+            {/* Mesmerizing Background Animation */}
+            <div className="animated-bg">
+                <div className="orb orb-1"></div>
+                <div className="orb orb-2"></div>
+            </div>
 
-                <div className="sidebar-content">
-                    <Link to="/" className="logo-link no-underline">
-                        <div className="logo-icon-box">
-                            <Utensils className="w-6 h-6 text-galaxy" />
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="auth-card"
+            >
+                <div className="auth-header">
+                    <Link to="/" className="auth-logo no-underline">
+                        <div className="auth-logo-icon">
+                            <Utensils className="w-8 h-8 text-black" />
                         </div>
-                        <span className="logo-text">Resto<span className="text-white">SaaS</span></span>
+                        <span className="auth-logo-text">Resto<span className="text-primary-500">SaaS</span></span>
                     </Link>
-
-                    <h2 className="sidebar-title">Access your ecosystem <br /><span className="text-white">With ease.</span></h2>
-                    <p className="sidebar-desc">
-                        Sign in to monitor branch performance, update global menus, and access real-time analytics.
-                    </p>
-
-                    <div className="benefit-list">
-                        {[
-                            { icon: <Shield size={24} />, text: "Encrypted Secure Login" },
-                            { icon: <Store size={24} />, text: "Full Franchise Control" },
-                            { icon: <Info size={24} />, text: "24/7 Ecosystem Support" }
-                        ].map((item, i) => (
-                            <div key={i} className="benefit-item">
-                                <div className="sidebar-icon-box">
-                                    {item.icon}
-                                </div>
-                                <p>{item.text}</p>
-                            </div>
-                        ))}
-                    </div>
+                    <h1 className="auth-title">Welcome Back.</h1>
+                    <p className="auth-subtitle">Elevate your workspace with a single click.</p>
                 </div>
 
-                <div className="testimonial-box">
-                    <p>"The real-time insights provided by RestoSaaS have completely transformed how we manage our chain of restaurants."</p>
-                    <div className="testimonial-author">
-                        <div className="author-info">
-                            <h4>Rahul M.</h4>
-                            <span>Operations Director, SpiceRoute</span>
+                {error && (
+                    <div className="error-box mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-center font-bold">
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label className="input-label">Email Architecture</label>
+                        <input
+                            type="email"
+                            name="email"
+                            required
+                            placeholder="admin@yourdomain.com"
+                            className="input-field"
+                            value={formData.email}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="input-label">Security Key</label>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Right Side - Form */}
-            <div className="login-main">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="form-wrapper"
-                >
-                    <div className="form-header">
-                        <h1 className="text-title">Welcome Back</h1>
-                        <p className="text-muted">Enter your credentials to access your restaurant dashboard.</p>
+                        <input
+                            type="password"
+                            name="password"
+                            required
+                            placeholder="••••••••••••"
+                            className="input-field"
+                            value={formData.password}
+                            onChange={handleChange}
+                        />
                     </div>
 
-                    <div className="login-form-card">
-                        {error && (
-                            <div className="error-box">
-                                <AlertCircle className="w-4 h-4" style={{ flexShrink: 0 }} />
-                                {error}
-                            </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="auth-btn flex items-center justify-center gap-4"
+                    >
+                        {loading ? (
+                            <Loader2 className="animate-spin" />
+                        ) : (
+                            <>
+                                Access Dashboard <ArrowRight size={24} />
+                            </>
                         )}
+                    </button>
+                </form>
 
-                        <form onSubmit={handleSubmit} className="login-form">
-                            <div className="form-group">
-                                <label className="input-label">Email or Mobile Number</label>
-                                <div className="input-relative">
-                                    <Mail className="input-icon" size={18} />
-                                    <input
-                                        type="text"
-                                        name="username"
-                                        required
-                                        className="input-field pad-left"
-                                        placeholder="admin@restaurant.com"
-                                        value={formData.username}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <div className="flex justify-between items-center mb-1">
-                                    <label className="input-label">Password</label>
-                                    <Link to="/forgot-password" style={{ color: 'var(--primary-500)', fontSize: '0.875rem', fontWeight: 600 }}>
-                                        Forgot Password?
-                                    </Link>
-                                </div>
-                                <div className="input-relative">
-                                    <Lock className="input-icon" size={18} />
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        required
-                                        className="input-field pad-left"
-                                        placeholder="••••••••"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-4 mt-8">
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="btn-primary flex-1 py-3 text-lg"
-                                >
-                                    {loading ? <Loader2 className="animate-spin" /> : 'Login'}
-                                </button>
-                                <Link
-                                    to="/"
-                                    className="btn-outline px-8 py-3 text-lg"
-                                >
-                                    Exit
-                                </Link>
-                            </div>
-                        </form>
-
-                        <div className="login-footer">
-                            New to RestoSaaS? <Link to="/register" className="footer-link">Create an account</Link>
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
+                <div className="auth-footer">
+                    New to the ecosystem?
+                    <Link to="/register" className="auth-link">Initialize Workspace</Link>
+                </div>
+            </motion.div>
         </div>
     );
 };
 
 export default Login;
-
