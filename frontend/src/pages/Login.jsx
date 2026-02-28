@@ -14,7 +14,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
-        email: '',
+        username: '',
         password: ''
     });
 
@@ -30,7 +30,7 @@ const Login = () => {
         setLoading(true);
         setError('');
 
-        const res = await login({ email: formData.email, password: formData.password });
+        const res = await login({ username: formData.username, password: formData.password });
 
         if (res.success) {
             const rType = res.data.restaurant_type;
@@ -111,16 +111,16 @@ const Login = () => {
 
                     <form onSubmit={handleSubmit} className="auth-card-clean">
                         <div className="input-group">
-                            <label className="input-header">Email Architecture</label>
+                            <label className="input-header">Access Identifier</label>
                             <div className="input-wrapper">
                                 <Mail className="input-icon-left" size={20} />
                                 <input
-                                    type="email"
-                                    name="email"
+                                    type="text"
+                                    name="username"
                                     required
-                                    placeholder="admin@workspace.com"
+                                    placeholder="Email, Mobile or Username"
                                     className="input-field-professional"
-                                    value={formData.email}
+                                    value={formData.username}
                                     onChange={handleChange}
                                 />
                             </div>
