@@ -496,12 +496,32 @@
 }
 
 /* Responsive */
+/* ── Tablet (1024px) ── */
 @media (max-width: 1024px) {
     .dashboard-bottom-grid {
         grid-template-columns: 1fr;
     }
+
+    .dashboard-header {
+        height: 64px;
+        padding: 0 1.25rem;
+    }
+
+    .date-time-display {
+        padding: 0.4rem 0.9rem;
+    }
+
+    .widgets-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.9rem;
+    }
 }
 
+/* ── Mobile (768px) ── */
 @media (max-width: 768px) {
     .dashboard-sidebar {
         position: fixed;
@@ -519,7 +539,6 @@
 
     .dashboard-sidebar.collapsed {
         width: 260px;
-        /* Reset on mobile */
     }
 
     .dashboard-main {
@@ -527,27 +546,68 @@
         max-width: 100vw;
     }
 
+    /* Compact header */
     .dashboard-header {
-        padding: 0 1rem;
+        height: 56px;
+        padding: 0 0.75rem;
+        gap: 0.5rem;
     }
 
+    .header-left {
+        gap: 0.5rem;
+    }
+
+    .header-right {
+        gap: 0.4rem;
+    }
+
+    /* Hide date/time and restaurant badge on tiny screens */
     .header-center {
         display: none;
-        /* Hide date/time on mobile header to save space */
     }
 
+    .restaurant-badge {
+        display: none;
+    }
+
+    /* Always show user avatar but hide text */
     .user-info {
         display: none;
-        /* Hide user name/role, avatar is enough */
+    }
+
+    /* ★ FIX: Always show logout button on mobile */
+    .logout-header-btn {
+        display: flex !important;
+        background: #fef2f2;
+        border-radius: 10px;
+        padding: 0.5rem;
+        color: #ef4444 !important;
+    }
+
+    .header-divider {
+        display: none;
     }
 
     .dashboard-content {
-        padding: 1rem;
+        padding: 0.75rem;
     }
 
     .widgets-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.6rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
     }
 
     .data-card {
@@ -559,7 +619,12 @@
     }
 
     .dashboard-bottom-grid {
-        gap: 1rem;
+        gap: 0.75rem;
+    }
+
+    .card-title {
+        font-size: 1.05rem;
+        padding: 1rem 1.25rem;
     }
 
     .mobile-overlay {
@@ -568,5 +633,30 @@
         background: rgba(0, 0, 0, 0.5);
         z-index: 900;
         backdrop-filter: blur(2px);
+    }
+}
+
+/* ── Small Mobile (480px) ── */
+@media (max-width: 480px) {
+    .widgets-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+
+    .stat-card {
+        padding: 0.85rem;
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+    }
+
+    .stat-icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    .brand-name {
+        font-size: 1.05rem;
     }
 }
