@@ -615,7 +615,12 @@ const BillingPage = () => {
                                     </div>
                                 )}
 
-                                {/* Loyalty Section */}
+                                <div className="sum-row">
+                                    <span>Tax ({parsedGst}%)</span>
+                                    <span>₹{tax.toFixed(2)}</span>
+                                </div>
+
+                                {/* Loyalty Section — below Tax */}
                                 {showLoyalty && (
                                     <div className="loyalty-promo-row">
                                         <input
@@ -628,10 +633,6 @@ const BillingPage = () => {
                                     </div>
                                 )}
 
-                                <div className="sum-row">
-                                    <span>Tax ({parsedGst}%)</span>
-                                    <span>₹{tax.toFixed(2)}</span>
-                                </div>
                                 <div className="sum-total">
                                     <span>Total Payable</span>
                                     <span>₹{grandTotal.toFixed(2)}</span>
