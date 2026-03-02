@@ -564,114 +564,117 @@ const BillingPage = () => {
                         <span className="col-amt">AMT</span>
                     </div>
 
-                    <div className="order-items-list">
-                        {billItems.length === 0 ? (
-                            <div className="empty-cart">
-                                <ShoppingBag size={48} />
-                                <p>Order is empty</p>
-                            </div>
-                        ) : billItems.map((item, idx) => (
-                            <div key={idx} className="order-item-row">
-                                <div className="item-name-cell">
-                                    <button className="remove-btn" onClick={() => removeFromBill(idx)}><Trash2 size={14} /></button>
-                                    <span>{item.name}</span>
+                    {/* Scrollable area: items list + bill footer together */}
+                    <div className="bill-scroll-area">
+                        <div className="order-items-list">
+                            {billItems.length === 0 ? (
+                                <div className="empty-cart">
+                                    <ShoppingBag size={48} />
+                                    <p>Order is empty</p>
                                 </div>
-                                <div className="item-qty-cell">
-                                    <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
-                                    <span>{item.quantity}</span>
-                                    <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
-                                </div>
-                                <div className="item-rate">{item.unit_price}</div>
-                                <div className="item-amt">{item.total_price}</div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Bill Footer */}
-                    <div className="order-footer">
-                        <div className="summary-section">
-                            <div className="sum-row">
-                                <span>Subtotal ({billItems.length} items)</span>
-                                <span>₹{subTotal.toFixed(2)}</span>
-                            </div>
-
-                            {/* Expanded "More" Options */}
-                            {showMoreOptions && (
-                                <div className="more-options-grid">
-                                    <div className="opt-field">
-                                        <label>GST %</label>
-                                        <input type="number" value={gstPercentage} onChange={(e) => setGstPercentage(e.target.value)} />
+                            ) : billItems.map((item, idx) => (
+                                <div key={idx} className="order-item-row">
+                                    <div className="item-name-cell">
+                                        <button className="remove-btn" onClick={() => removeFromBill(idx)}><Trash2 size={14} /></button>
+                                        <span>{item.name}</span>
                                     </div>
-                                    <div className="opt-field">
-                                        <label>Disc (₹)</label>
-                                        <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+                                    <div className="item-qty-cell">
+                                        <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
+                                        <span>{item.quantity}</span>
+                                        <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
                                     </div>
-                                    <div className="opt-field">
-                                        <label>Addl Chg</label>
-                                        <input type="number" value={extraCharges} onChange={(e) => setExtraCharges(e.target.value)} />
-                                    </div>
+                                    <div className="item-rate">{item.unit_price}</div>
+                                    <div className="item-amt">{item.total_price}</div>
                                 </div>
-                            )}
-
-                            {/* Loyalty Section */}
-                            {showLoyalty && (
-                                <div className="loyalty-promo-row">
-                                    <input
-                                        type="text"
-                                        placeholder="Enter promo/loyalty code"
-                                        value={promoCode}
-                                        onChange={(e) => setPromoCode(e.target.value)}
-                                    />
-                                    <button className="apply-btn">Apply</button>
-                                </div>
-                            )}
-
-                            <div className="sum-row">
-                                <span>Tax ({parsedGst}%)</span>
-                                <span>₹{tax.toFixed(2)}</span>
-                            </div>
-                            <div className="sum-total">
-                                <span>Total Payable</span>
-                                <span>₹{grandTotal.toFixed(2)}</span>
-                            </div>
+                            ))}
                         </div>
 
-                        {/* Top Control Buttons */}
-                        <div className="panel-controls">
-                            <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
-                                Loyalty
-                            </button>
-                            <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
-                                More
-                            </button>
-                            {!stepProceeded && (
-                                <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
-                                    Check Out (Next)
+                        {/* Bill Footer */}
+                        <div className="order-footer">
+                            <div className="summary-section">
+                                <div className="sum-row">
+                                    <span>Subtotal ({billItems.length} items)</span>
+                                    <span>₹{subTotal.toFixed(2)}</span>
+                                </div>
+
+                                {/* Expanded "More" Options */}
+                                {showMoreOptions && (
+                                    <div className="more-options-grid">
+                                        <div className="opt-field">
+                                            <label>GST %</label>
+                                            <input type="number" value={gstPercentage} onChange={(e) => setGstPercentage(e.target.value)} />
+                                        </div>
+                                        <div className="opt-field">
+                                            <label>Disc (₹)</label>
+                                            <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+                                        </div>
+                                        <div className="opt-field">
+                                            <label>Addl Chg</label>
+                                            <input type="number" value={extraCharges} onChange={(e) => setExtraCharges(e.target.value)} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Loyalty Section */}
+                                {showLoyalty && (
+                                    <div className="loyalty-promo-row">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter promo/loyalty code"
+                                            value={promoCode}
+                                            onChange={(e) => setPromoCode(e.target.value)}
+                                        />
+                                        <button className="apply-btn">Apply</button>
+                                    </div>
+                                )}
+
+                                <div className="sum-row">
+                                    <span>Tax ({parsedGst}%)</span>
+                                    <span>₹{tax.toFixed(2)}</span>
+                                </div>
+                                <div className="sum-total">
+                                    <span>Total Payable</span>
+                                    <span>₹{grandTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {/* Top Control Buttons */}
+                            <div className="panel-controls">
+                                <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
+                                    Loyalty
                                 </button>
-                            )}
-                        </div>
-
-                        {/* Fast Payment - Show only after Check Out/Proceed */}
-                        {stepProceeded && (
-                            <div className="fast-payment fade-in">
-                                <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
-                                <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
-                                <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
+                                <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
+                                    More
+                                </button>
+                                {!stepProceeded && (
+                                    <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
+                                        Check Out (Next)
+                                    </button>
+                                )}
                             </div>
-                        )}
 
-                        <div className="footer-actions">
-                            <button className="save-btn" onClick={handlePayment} disabled={billItems.length === 0}>
-                                <Save size={18} /> SAVE
-                            </button>
-                            <button className="print-btn" onClick={handlePayment} disabled={billItems.length === 0}>
-                                <Printer size={18} /> SAVE & PRINT
-                            </button>
+                            {/* Fast Payment - Show only after Check Out/Proceed */}
                             {stepProceeded && (
-                                <button className="back-btn" onClick={() => setStepProceeded(false)}>
-                                    Back
-                                </button>
+                                <div className="fast-payment fade-in">
+                                    <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
+                                    <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
+                                    <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
+                                </div>
                             )}
+
+                            <div className="footer-actions">
+                                <button className="save-btn" onClick={handlePayment} disabled={billItems.length === 0}>
+                                    <Save size={18} /> SAVE
+                                </button>
+                                <button className="print-btn" onClick={handlePayment} disabled={billItems.length === 0}>
+                                    <Printer size={18} /> SAVE & PRINT
+                                </button>
+                                {stepProceeded && (
+                                    <button className="back-btn" onClick={() => setStepProceeded(false)}>
+                                        Back
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

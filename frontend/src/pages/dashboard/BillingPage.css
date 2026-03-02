@@ -760,6 +760,31 @@
     flex-direction: column;
     width: 400px;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+/* Scrollable wrapper: items list + footer scroll together */
+.bill-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    /* Nice thin scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.bill-scroll-area::-webkit-scrollbar {
+    width: 4px;
+}
+
+.bill-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.bill-scroll-area::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
 }
 
 .order-meta {
@@ -801,8 +826,8 @@
 }
 
 .order-items-list {
-    flex: 1;
-    overflow-y: auto;
+    min-height: 80px;
+    overflow-y: visible;
 }
 
 .empty-cart {
@@ -868,11 +893,13 @@
     text-align: right;
 }
 
-/* Bill Footer */
+/* Bill Footer — always visible at bottom of scroll area */
 .order-footer {
     padding: 1rem;
     background: #ffffff;
     border-top: 2px solid #7ea1c4;
+    /* Stick footer at bottom of scroll container */
+    margin-top: auto;
 }
 
 .summary-section {
@@ -1866,6 +1893,10 @@
         height: 50vh;
         width: 100%;
         /* Fixed height for the bill sidebar on tablet */
+    }
+
+    .bill-scroll-area {
+        max-height: 100%;
     }
 
     .product-area {
