@@ -537,33 +537,7 @@ const BillingPage = () => {
                                 ))}
                             </div>
 
-                            {/* Bottom Category List (Horizontal) - Only if Layout 1 */}
-                            {billingLayout === 'SIDEBAR' && (
-                                <div className="bottom-category-bar">
-                                    <button
-                                        className={`bottom-cat-chip ${activeCategory === "ALL" ? 'active' : ''}`}
-                                        onClick={() => setActiveCategory("ALL")}
-                                    >
-                                        All
-                                    </button>
-                                    {categories.map(cat => (
-                                        <button
-                                            key={cat._id}
-                                            className={`bottom-cat-chip ${activeCategory === cat.name ? 'active' : ''}`}
-                                            onClick={() => setActiveCategory(cat.name)}
-                                        >
-                                            {cat.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
 
-                            {/* Bottom Action Bar */}
-                            <div className="pos-bottom-actions">
-                                <button className="action-btn">Alter</button>
-                                <button className="action-btn">Sales Return</button>
-                                <button className="action-btn">Transfer</button>
-                            </div>
                         </>
                     )}
                 </div>
