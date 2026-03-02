@@ -99,6 +99,12 @@ const Login = () => {
                     className="auth-form-wrapper"
                 >
                     <div className="form-header">
+                        <Link to="/" className="mobile-auth-logo">
+                            <div className="logo-icon-primary">
+                                <Utensils size={24} />
+                            </div>
+                            <span className="logo-text-primary">Resto<span>SaaS</span></span>
+                        </Link>
                         <h1 className="form-title">Welcome back.</h1>
                         <p className="form-subtitle">Enter your enterprise keys to resume operations.</p>
                     </div>

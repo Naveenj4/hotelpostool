@@ -114,6 +114,12 @@ const RegisterRestaurant = () => {
                     className="auth-form-wrapper-wide"
                 >
                     <div className="form-header text-center" style={{ marginBottom: '4rem' }}>
+                        <Link to="/" className="mobile-auth-logo" style={{ justifyContent: 'center', marginBottom: '1.5rem' }}>
+                            <div className="logo-icon-primary">
+                                <Utensils size={24} />
+                            </div>
+                            <span className="logo-text-primary">Resto<span>SaaS</span></span>
+                        </Link>
                         <h1 className="form-title">Initialize Ecosystem.</h1>
                         <p className="form-subtitle">Define your restaurant's digital DNA.</p>
                     </div>
