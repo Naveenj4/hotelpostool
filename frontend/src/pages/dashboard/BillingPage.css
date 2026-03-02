@@ -758,7 +758,7 @@
     border-left: 2px solid #e0e6ed;
     display: flex;
     flex-direction: column;
-    width: 400px;
+    width: 450px;
     flex-shrink: 0;
     overflow: hidden;
 }
