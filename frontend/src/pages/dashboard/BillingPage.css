@@ -14,13 +14,13 @@
    =================================================== */
 .pos-nav {
     height: 90px;
-    background: #ffffff;
-    border-bottom: 2px solid #e2e8f0;
+    background: #0F172A !important;
+    border-bottom: 2px solid #1E293B;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 1.5rem;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     gap: 1.5rem;
 }
@@ -33,12 +33,12 @@
 }
 
 .nav-icon-btn {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 8px;
-    color: #475569;
+    color: #94A3B8;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -48,9 +48,9 @@
 }
 
 .nav-icon-btn:hover {
-    background-color: #e2e8f0;
-    border-color: #cbd5e1;
-    color: #0F172A;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
 }
 
 .pos-brand-compact {
@@ -64,7 +64,7 @@
     font-size: 1rem;
     font-weight: 800;
     line-height: 1;
-    color: #0F172A;
+    color: #ffffff;
     letter-spacing: -0.5px;
 }
 
@@ -88,7 +88,7 @@
 
 .nav-center .mode-selector {
     display: flex;
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.08);
     padding: 4px;
     border-radius: 10px;
     flex-shrink: 0;
@@ -101,8 +101,8 @@
     justify-content: center;
     align-items: center;
     padding: 0.5rem 1rem;
-    background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     height: 54px;
     flex-shrink: 0;
@@ -121,7 +121,7 @@
 
 .timer-v-time {
     font-size: 0.85rem;
-    color: #0F172A;
+    color: #ffffff;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-weight: 900;
     line-height: 1;
@@ -134,7 +134,7 @@
     background: transparent;
     font-size: 0.75rem;
     font-weight: 700;
-    color: #64748B;
+    color: #94A3B8;
     border-radius: 8px;
     cursor: pointer;
     transition: 0.2s;
@@ -142,9 +142,14 @@
 }
 
 .mode-btn.active {
-    background: #7ea1c4;
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(126, 161, 196, 0.3);
+    background: #f97316 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+}
+
+.mode-btn:hover:not(.active) {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
 }
 
 .nav-right {
@@ -161,7 +166,7 @@
     flex-direction: column;
     gap: 4px;
     padding: 0.25rem 1rem;
-    border-left: 2.5px solid #f1f5f9;
+    border-left: 2.5px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
     justify-content: center;
 }
@@ -175,14 +180,14 @@
 
 .status-label {
     font-size: 0.65rem;
-    color: #94A3B8;
+    color: #64748B;
     font-weight: 800;
     text-transform: uppercase;
 }
 
 .status-value {
     font-size: 0.85rem;
-    color: #0F172A;
+    color: #ffffff;
     font-weight: 800;
     line-height: 1;
 }
@@ -354,9 +359,9 @@
    TOP HEADER LAYOUT OVERRIDES — Dark Navy Header
    =================================================== */
 .layout-top-header .pos-nav {
-    background: #0F172A;
+    background: #0F172A !important;
     border-bottom: 2px solid #1E293B;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .layout-top-header .nav-icon-btn {
