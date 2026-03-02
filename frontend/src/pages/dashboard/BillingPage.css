@@ -758,6 +758,8 @@
     border-left: 2px solid #e0e6ed;
     display: flex;
     flex-direction: column;
+    width: 400px;
+    flex-shrink: 0;
 }
 
 .order-meta {
@@ -1862,6 +1864,7 @@
         border-left: none;
         border-top: 2px solid #e0e6ed;
         height: 50vh;
+        width: 100%;
         /* Fixed height for the bill sidebar on tablet */
     }
 
