@@ -51,12 +51,9 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
     };
 
     const handlePrint = () => {
-        const printContent = document.getElementById('bill-print-content');
-        const originalContent = document.body.innerHTML;
-        document.body.innerHTML = printContent.innerHTML;
         window.print();
-        document.body.innerHTML = originalContent;
-        window.location.reload();
+        // Since we are using @media print in the style block below, 
+        // it will automatically only print the receipt area without reloads.
     };
 
     if (!isOpen) return null;
@@ -66,7 +63,7 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
             <div className="bpm-modal">
 
                 {/* Header */}
-                <div className="bpm-header">
+                <div className="bpm-header no-print">
                     <div className="bpm-header-left">
                         <div className="bpm-success-icon">
                             <CheckCircle2 size={22} />
@@ -84,88 +81,101 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                 {/* Body */}
                 <div className="bpm-body">
                     {loading ? (
-                        <div className="bpm-loading">
+                        <div className="bpm-loading no-print">
                             <Loader2 size={32} className="bpm-spinner" />
                             <p>Generating receipt...</p>
                         </div>
                     ) : (
                         <>
-                            {/* Receipt */}
-                            <div id="bill-print-content" className="bpm-receipt">
-                                {/* Restaurant Header */}
-                                <div className="bpm-receipt-header">
-                                    <h2 className="bpm-rest-name">{restaurantData?.name || 'RESTOBOARD'}</h2>
-                                    <p className="bpm-rest-addr">{restaurantData?.address || 'Main Branch'}</p>
-                                    <p className="bpm-rest-phone">Ph: {restaurantData?.phone || '9988776655'}</p>
-                                </div>
+                            {/* Receipt Container */}
+                            <div className="bpm-receipt-container">
+                                <div id="bill-print-content" className="bpm-receipt">
+                                    {/* Restaurant Header */}
+                                    <div className="bpm-receipt-header">
+                                        <h2 className="bpm-rest-name">{restaurantData?.name || 'RESTOBOARD'}</h2>
+                                        <p className="bpm-rest-addr">{restaurantData?.address || 'Main Branch'}</p>
+                                        <p className="bpm-rest-phone">Ph: {restaurantData?.phone || '9988776655'}</p>
+                                    </div>
 
-                                {/* Bill Meta */}
-                                <div className="bpm-divider-dashed" />
-                                <div className="bpm-meta">
-                                    <div className="bpm-meta-row">
-                                        <span className="bpm-meta-label">Bill No</span>
-                                        <span className="bpm-meta-val">{billData?.bill_number}</span>
-                                    </div>
-                                    <div className="bpm-meta-row">
-                                        <span className="bpm-meta-label">Date</span>
-                                        <span className="bpm-meta-val">{formatDate(billData?.createdAt)}</span>
-                                    </div>
-                                    <div className="bpm-meta-row">
-                                        <span className="bpm-meta-label">Time</span>
-                                        <span className="bpm-meta-val">{formatTime(billData?.createdAt)}</span>
-                                    </div>
-                                    <div className="bpm-meta-row">
-                                        <span className="bpm-meta-label">Payment</span>
-                                        <span className="bpm-meta-val bpm-pay-badge">{formatPaymentMethod(paymentModes)}</span>
-                                    </div>
-                                </div>
-                                <div className="bpm-divider-dashed" />
-
-                                {/* Items */}
-                                <div className="bpm-items-header">
-                                    <span>ITEM</span>
-                                    <span>QTY</span>
-                                    <span>AMT</span>
-                                </div>
-                                <div className="bpm-items-list">
-                                    {billData?.items?.map((item, idx) => (
-                                        <div key={idx} className="bpm-item-row">
-                                            <span className="bpm-item-name">{item.name}</span>
-                                            <span className="bpm-item-qty">×{item.quantity}</span>
-                                            <span className="bpm-item-amt">₹{item.total_price.toFixed(2)}</span>
+                                    {/* Bill Meta */}
+                                    <div className="bpm-divider-dashed" />
+                                    <div className="bpm-meta">
+                                        <div className="bpm-meta-row">
+                                            <span className="bpm-meta-label">Bill No:</span>
+                                            <span className="bpm-meta-val">{billData?.bill_number}</span>
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* Totals */}
-                                <div className="bpm-divider-solid" />
-                                <div className="bpm-totals">
-                                    <div className="bpm-total-row">
-                                        <span>Subtotal</span>
-                                        <span>₹{billData?.sub_total?.toFixed(2)}</span>
+                                        <div className="bpm-meta-row">
+                                            <span className="bpm-meta-label">Date:</span>
+                                            <span className="bpm-meta-val">{formatDate(billData?.createdAt)}</span>
+                                        </div>
+                                        <div className="bpm-meta-row">
+                                            <span className="bpm-meta-label">Time:</span>
+                                            <span className="bpm-meta-val">{formatTime(billData?.createdAt)}</span>
+                                        </div>
+                                        <div className="bpm-meta-row">
+                                            <span className="bpm-meta-label">Payment:</span>
+                                            <span className="bpm-meta-val bpm-pay-badge">{formatPaymentMethod(paymentModes)}</span>
+                                        </div>
                                     </div>
-                                    {billData?.tax_amount > 0 && (
+                                    <div className="bpm-divider-dashed" />
+
+                                    {/* Items */}
+                                    <table className="bpm-items-table">
+                                        <thead>
+                                            <tr>
+                                                <th className="th-item">ITEM</th>
+                                                <th className="th-qty">QTY</th>
+                                                <th className="th-amt">AMOUNT</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {billData?.items?.map((item, idx) => (
+                                                <React.Fragment key={idx}>
+                                                    <tr className="tr-item">
+                                                        <td className="td-name">
+                                                            <div>{item.name}</div>
+                                                            {item.variation && <div className="td-var">({item.variation})</div>}
+                                                        </td>
+                                                        <td className="td-qty">{item.quantity}</td>
+                                                        <td className="td-amt">₹{item.total_price.toFixed(2)}</td>
+                                                    </tr>
+                                                </React.Fragment>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+                                    {/* Totals */}
+                                    <div className="bpm-divider-solid" />
+                                    <div className="bpm-totals">
                                         <div className="bpm-total-row">
-                                            <span>Tax</span>
-                                            <span>₹{billData?.tax_amount?.toFixed(2)}</span>
+                                            <span>Subtotal</span>
+                                            <span className="bpm-mono">₹{billData?.sub_total?.toFixed(2)}</span>
                                         </div>
-                                    )}
-                                    <div className="bpm-grand-total-row">
-                                        <span>TOTAL</span>
-                                        <span>₹{billData?.grand_total?.toFixed(2)}</span>
+                                        {billData?.tax_amount > 0 && (
+                                            <div className="bpm-total-row">
+                                                <span>Tax</span>
+                                                <span className="bpm-mono">₹{billData?.tax_amount?.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                        <div className="bpm-grand-total-row">
+                                            <span>GRAND TOTAL</span>
+                                            <span className="bpm-mono">₹{billData?.grand_total?.toFixed(2)}</span>
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Thank You */}
-                                <div className="bpm-thankyou">
-                                    <span>★</span> Thank You! Visit Again <span>★</span>
+                                    {/* Footer */}
+                                    <div className="bpm-divider-dashed" />
+                                    <div className="bpm-thankyou">
+                                        <p>Thank You For Your Order!</p>
+                                        <p className="bpm-visit-again">★ VISIT AGAIN ★</p>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="bpm-actions">
+                            <div className="bpm-actions no-print">
                                 <button className="bpm-print-btn" onClick={handlePrint}>
-                                    <Printer size={18} /> Print Receipt
+                                    <Printer size={18} /> Print POS Receipt
                                 </button>
                                 <button className="bpm-done-btn" onClick={onClose}>
                                     Done
@@ -180,14 +190,14 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                 .bpm-overlay {
                     position: fixed;
                     inset: 0;
-                    background: rgba(15, 23, 42, 0.65);
-                    backdrop-filter: blur(8px);
+                    background: rgba(15, 23, 42, 0.75);
+                    backdrop-filter: blur(12px);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 3000;
                     padding: 1rem;
-                    animation: bpmFadeIn 0.25s ease;
+                    animation: bpmFadeIn 0.3s ease;
                 }
 
                 @keyframes bpmFadeIn {
@@ -197,28 +207,27 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
 
                 .bpm-modal {
                     background: #ffffff;
-                    border-radius: 20px;
+                    border-radius: 24px;
                     width: 100%;
-                    max-width: 420px;
+                    max-width: 440px;
                     max-height: 90vh;
                     display: flex;
                     flex-direction: column;
-                    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.1);
-                    animation: bpmSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.4);
+                    animation: bpmSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
                     overflow: hidden;
                 }
 
                 @keyframes bpmSlideUp {
-                    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+                    from { opacity: 0; transform: translateY(40px) scale(0.95); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
 
-                /* Header */
                 .bpm-header {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 1.25rem 1.5rem;
+                    padding: 1.5rem;
                     border-bottom: 1px solid #f1f5f9;
                     background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
                 }
@@ -226,43 +235,42 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                 .bpm-header-left {
                     display: flex;
                     align-items: center;
-                    gap: 0.75rem;
+                    gap: 1rem;
                 }
 
                 .bpm-success-icon {
-                    width: 42px;
-                    height: 42px;
-                    border-radius: 50%;
-                    background: #dcfce7;
-                    color: #16a34a;
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #16a34a;
+                    color: #ffffff;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    flex-shrink: 0;
-                    box-shadow: 0 0 0 4px #bbf7d0;
+                    box-shadow: 0 8px 16px -4px rgba(22, 163, 74, 0.4);
                 }
 
                 .bpm-title {
-                    font-size: 1.05rem;
-                    font-weight: 800;
+                    font-size: 1.15rem;
+                    font-weight: 900;
                     color: #0f172a;
                     margin: 0;
-                    line-height: 1.2;
+                    letter-spacing: -0.02em;
                 }
 
                 .bpm-subtitle {
-                    font-size: 0.75rem;
+                    font-size: 0.85rem;
                     color: #64748b;
                     margin: 0;
-                    font-weight: 600;
+                    font-weight: 700;
                 }
 
                 .bpm-close-btn {
                     background: #f8fafc;
                     border: 1px solid #e2e8f0;
-                    border-radius: 10px;
-                    width: 36px;
-                    height: 36px;
+                    border-radius: 12px;
+                    width: 40px;
+                    height: 40px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -277,284 +285,268 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                     color: #fff;
                 }
 
-                /* Body */
                 .bpm-body {
                     flex: 1;
                     overflow-y: auto;
-                    padding: 1.5rem;
+                    padding: 2rem;
                     display: flex;
                     flex-direction: column;
-                    gap: 1.25rem;
+                    gap: 1.5rem;
                     scrollbar-width: thin;
                     scrollbar-color: #cbd5e1 transparent;
                 }
 
-                /* Loading */
-                .bpm-loading {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 0.75rem;
-                    padding: 3rem;
-                    color: #64748b;
-                    font-size: 0.9rem;
-                    font-weight: 600;
+                .bpm-receipt-container {
+                    perspective: 1000px;
                 }
 
-                .bpm-spinner {
-                    animation: spin 1s linear infinite;
-                    color: #7ea1c4;
-                }
-
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-
-                /* Receipt Styles */
                 .bpm-receipt {
-                    background: #fafafa;
+                    background: #ffffff;
                     border: 1px solid #e2e8f0;
-                    border-radius: 14px;
-                    padding: 1.5rem 1.25rem;
-                    font-family: 'Inter', -apple-system, sans-serif;
-                    color: #1e293b;
+                    border-radius: 4px; /* Flatter for receipt feel */
+                    padding: 2rem 1.5rem;
+                    font-family: 'Inter', system-ui, sans-serif;
+                    color: #000;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                    position: relative;
                 }
+
+                .bpm-receipt::before,
+                .bpm-receipt::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    height: 4px;
+                    background-image: radial-gradient(circle, #e2e8f0 1.5px, transparent 1.5px);
+                    background-size: 8px 4px;
+                }
+                .bpm-receipt::before { top: 0; }
+                .bpm-receipt::after { bottom: 0; }
 
                 .bpm-receipt-header {
                     text-align: center;
-                    margin-bottom: 1rem;
+                    margin-bottom: 1.5rem;
                 }
 
                 .bpm-rest-name {
-                    font-size: 1.1rem;
+                    font-size: 1.25rem;
                     font-weight: 900;
-                    letter-spacing: -0.5px;
-                    color: #0f172a;
-                    margin: 0 0 4px 0;
+                    color: #000;
+                    margin: 0 0 6px 0;
                     text-transform: uppercase;
+                    letter-spacing: 1px;
                 }
 
-                .bpm-rest-addr {
+                .bpm-rest-addr, .bpm-rest-phone {
                     font-size: 0.75rem;
-                    color: #64748b;
+                    color: #475569;
                     margin: 2px 0;
-                }
-
-                .bpm-rest-phone {
-                    font-size: 0.75rem;
-                    color: #64748b;
-                    margin: 2px 0;
+                    font-weight: 600;
                 }
 
                 .bpm-divider-dashed {
                     border: none;
-                    border-top: 1.5px dashed #cbd5e1;
-                    margin: 0.75rem 0;
+                    border-top: 1.5px dashed #94a3b8;
+                    margin: 1rem 0;
                 }
 
                 .bpm-divider-solid {
                     border: none;
-                    border-top: 1.5px solid #cbd5e1;
-                    margin: 0.75rem 0;
+                    border-top: 2px solid #000;
+                    margin: 1rem 0;
                 }
 
-                /* Bill Meta */
                 .bpm-meta {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 5px;
-                }
-
-                .bpm-meta-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-
-                .bpm-meta-label {
-                    font-size: 0.75rem;
-                    font-weight: 700;
-                    color: #64748b;
-                    text-transform: uppercase;
-                    letter-spacing: 0.3px;
-                }
-
-                .bpm-meta-val {
-                    font-size: 0.8rem;
-                    font-weight: 700;
-                    color: #1e293b;
-                }
-
-                .bpm-pay-badge {
-                    background: #eff6ff;
-                    color: #2563eb;
-                    padding: 2px 10px;
-                    border-radius: 20px;
-                    font-size: 0.7rem;
-                    font-weight: 800;
-                    letter-spacing: 0.5px;
-                }
-
-                /* Items */
-                .bpm-items-header {
-                    display: grid;
-                    grid-template-columns: 1fr 40px 80px;
-                    font-size: 0.65rem;
-                    font-weight: 800;
-                    color: #94a3b8;
-                    letter-spacing: 0.5px;
-                    text-transform: uppercase;
-                    margin-bottom: 6px;
-                }
-
-                .bpm-items-header span:last-child,
-                .bpm-item-amt {
-                    text-align: right;
-                }
-
-                .bpm-item-row {
-                    display: grid;
-                    grid-template-columns: 1fr 40px 80px;
-                    align-items: center;
-                    padding: 5px 0;
-                    border-bottom: 1px solid #f1f5f9;
-                }
-
-                .bpm-item-name {
-                    font-size: 0.82rem;
-                    font-weight: 600;
-                    color: #1e293b;
-                }
-
-                .bpm-item-qty {
-                    font-size: 0.78rem;
-                    color: #64748b;
-                    font-weight: 600;
-                    text-align: center;
-                }
-
-                .bpm-item-amt {
-                    font-size: 0.82rem;
-                    font-weight: 700;
-                    color: #0f172a;
-                }
-
-                /* Totals */
-                .bpm-totals {
                     display: flex;
                     flex-direction: column;
                     gap: 6px;
                 }
 
+                .bpm-meta-row {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                }
+
+                .bpm-meta-label {
+                    color: #64748b;
+                    text-transform: uppercase;
+                }
+
+                .bpm-pay-badge {
+                    background: #000;
+                    color: #fff;
+                    padding: 1px 8px;
+                    border-radius: 4px;
+                    font-size: 0.7rem;
+                }
+                .bpm-items-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 0.5rem 0;
+                }
+
+                .bpm-items-table th {
+                    border-bottom: 1px solid #000;
+                    padding: 6px 0;
+                    font-size: 0.75rem;
+                    font-weight: 900;
+                    text-align: left;
+                    color: #64748b;
+                }
+
+                .th-qty { text-align: center !important; }
+                .th-amt { text-align: right !important; }
+
+                .tr-item {
+                    border-bottom: 1px dashed #f1f5f9;
+                }
+
+                .td-name {
+                    padding: 8px 0;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    max-width: 160px;
+                    line-height: 1.3;
+                }
+
+                .td-var {
+                    font-size: 0.7rem;
+                    color: #64748b;
+                    font-weight: 600;
+                }
+
+                .td-qty {
+                    text-align: center;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                }
+
+                .td-amt {
+                    text-align: right;
+                    font-size: 0.85rem;
+                    font-weight: 900;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+
+                .bpm-totals {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
                 .bpm-total-row {
                     display: flex;
                     justify-content: space-between;
-                    font-size: 0.82rem;
-                    font-weight: 600;
-                    color: #64748b;
+                    font-size: 0.9rem;
+                    font-weight: 700;
                 }
 
                 .bpm-grand-total-row {
                     display: flex;
                     justify-content: space-between;
-                    font-size: 1rem;
+                    font-size: 1.25rem;
                     font-weight: 900;
-                    color: #0f172a;
-                    background: #0f172a;
-                    color: #fff;
-                    padding: 8px 12px;
-                    border-radius: 8px;
+                    border-top: 2px solid #000;
+                    border-bottom: 2px solid #000;
+                    padding: 8px 0;
                     margin-top: 4px;
                 }
 
-                /* Thank You */
+                .bpm-mono { font-family: 'JetBrains Mono', monospace; }
+
                 .bpm-thankyou {
                     text-align: center;
-                    margin-top: 1rem;
-                    font-size: 0.75rem;
-                    color: #64748b;
-                    font-style: italic;
-                    letter-spacing: 0.5px;
+                    padding: 0.5rem 0;
+                    font-size: 0.8rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
                 }
 
-                /* Actions */
+                .bpm-visit-again {
+                    font-size: 0.7rem;
+                    color: #64748b;
+                    margin-top: 4px;
+                }
+
                 .bpm-actions {
                     display: flex;
-                    gap: 0.75rem;
+                    gap: 1rem;
+                    margin-top: 0.5rem;
                 }
 
                 .bpm-print-btn {
-                    flex: 2;
+                    flex: 1.5;
+                    height: 56px;
+                    background: #0f172a;
+                    color: #fff;
+                    border-radius: 16px;
+                    border: none;
+                    font-weight: 900;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    gap: 8px;
-                    padding: 14px;
-                    background: #0f172a;
-                    color: #fff;
-                    border: none;
-                    border-radius: 12px;
-                    font-size: 0.9rem;
-                    font-weight: 800;
+                    gap: 10px;
                     cursor: pointer;
                     transition: all 0.2s;
+                    box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.4);
                 }
 
-                .bpm-print-btn:hover {
-                    background: #1e293b;
-                    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.3);
-                    transform: translateY(-1px);
-                }
+                .bpm-print-btn:hover { background: #000; transform: translateY(-2px); }
 
                 .bpm-done-btn {
                     flex: 1;
-                    padding: 14px;
-                    background: #f8fafc;
-                    color: #475569;
+                    height: 56px;
+                    background: #f1f5f9;
+                    color: #334155;
+                    border-radius: 16px;
                     border: 2px solid #e2e8f0;
-                    border-radius: 12px;
-                    font-size: 0.9rem;
-                    font-weight: 800;
+                    font-weight: 900;
                     cursor: pointer;
                     transition: all 0.2s;
                 }
 
-                .bpm-done-btn:hover {
-                    background: #e2e8f0;
-                    border-color: #cbd5e1;
-                }
+                .bpm-done-btn:hover { background: #e2e8f0; }
 
-                /* Mobile */
-                @media (max-width: 480px) {
-                    .bpm-modal {
-                        border-radius: 16px;
-                        max-height: 95vh;
+                /* ── PRINT STYLES ── */
+                @media print {
+                    body * {
+                        visibility: hidden;
                     }
-
-                    .bpm-header {
-                        padding: 1rem;
+                    .bpm-receipt, .bpm-receipt * {
+                        visibility: visible;
                     }
-
-                    .bpm-body {
-                        padding: 1rem;
-                    }
-
                     .bpm-receipt {
-                        padding: 1rem;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 80mm; /* Standard Thermal Receipt Width */
+                        padding: 0;
+                        border: none;
+                        box-shadow: none;
+                        background: white;
                     }
-
-                    .bpm-actions {
-                        flex-direction: column;
+                    .no-print {
+                        display: none !important;
                     }
-
-                    .bpm-print-btn,
-                    .bpm-done-btn {
-                        width: 100%;
-                        padding: 12px;
+                    @page {
+                        margin: 0;
+                        size: auto;
                     }
                 }
+
+                @media (max-width: 480px) {
+                    .bpm-modal { max-height: 98vh; width: 95%; }
+                    .bpm-body { padding: 1.25rem; }
+                    .bpm-receipt { padding: 1.25rem 1rem; }
+                    .bpm-actions { flex-direction: column; }
+                }
+
+                .bpm-loading { padding: 4rem; text-align: center; }
+                .bpm-spinner { animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+                @keyframes spin { to { transform: rotate(360deg); } }
             `}</style>
         </div>
     );
