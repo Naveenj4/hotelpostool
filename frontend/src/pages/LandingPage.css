@@ -219,8 +219,36 @@
 
 @media (max-width: 768px) {
     .features-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+        /* ── Horizontal scroll on mobile ── */
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 1rem;
+        padding-bottom: 1rem;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        /* Hide scrollbar but keep scroll */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .features-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .features-grid .feature-card {
+        /* Each card is a fixed-width slide */
+        flex: 0 0 78vw;
+        min-width: 260px;
+        max-width: 320px;
+        scroll-snap-align: start;
+        padding: 1.75rem 1.5rem;
+        border-radius: 20px;
+    }
+
+    .feature-card h3 {
+        font-size: 1.2rem;
     }
 
     .hero-section {
@@ -298,19 +326,56 @@
         font-size: 1rem;
     }
 
-    /* Trust box */
+    /* Trust box — horizontal scroll */
     .trust-section {
-        padding: 3rem 1rem;
+        padding: 3rem 0;
+        overflow: hidden;
+    }
+
+    .trust-section>div {
+        padding: 0 1rem;
     }
 
     .trust-box {
-        padding: 2rem 1.5rem;
-        border-radius: 24px;
-        gap: 1.5rem;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 0;
+        border-radius: 20px;
+        padding: 2rem 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        grid-template-columns: unset;
+    }
+
+    .trust-box::-webkit-scrollbar {
+        display: none;
+    }
+
+    .trust-col {
+        flex: 0 0 55vw;
+        min-width: 160px;
+        scroll-snap-align: center;
+        padding: 1.5rem 1rem;
+        border-right: 1px solid var(--border-light);
+        text-align: center;
+    }
+
+    .trust-col:last-child {
+        border-right: none;
     }
 
     .trust-number {
-        font-size: 2.5rem;
+        font-size: 2.25rem;
+        letter-spacing: -1px;
+    }
+
+    .trust-label {
+        font-size: 0.75rem;
+        letter-spacing: 1px;
     }
 
     /* CTA */
@@ -333,13 +398,39 @@
         font-size: 1rem;
     }
 
-    /* Footer */
+    /* Footer grid — horizontal scroll on mobile */
     .footer {
         padding: 4rem 1rem 2rem;
     }
 
     .footer-grid {
-        gap: 2.5rem;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 2rem;
+        padding-bottom: 1.5rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .footer-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .footer-brand {
+        flex: 0 0 72vw;
+        min-width: 240px;
+        scroll-snap-align: start;
+        max-width: 300px;
+    }
+
+    .footer-nav-col {
+        flex: 0 0 45vw;
+        min-width: 150px;
+        scroll-snap-align: start;
     }
 }
 
