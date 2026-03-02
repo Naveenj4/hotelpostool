@@ -512,54 +512,112 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
 
                 /* ── PRINT STYLES ── */
                 @media print {
-                    /* Hide EVERYTHING in the body */
-                    body * {
-                        visibility: hidden !important;
-                    }
-                    
-                    /* Show specifically the receipt and ALL its children precisely */
-                    #bill-print-content,
-                    #bill-print-content *,
-                    #bill-print-content div,
-                    #bill-print-content span,
-                    #bill-print-content p,
-                    #bill-print-content h2,
-                    #bill-print-content table,
-                    #bill-print-content tr,
-                    #bill-print-content th,
-                    #bill-print-content td {
-                        visibility: visible !important;
-                    }
-
-                    /* Position the to-be-printed content at the absolute top-left */
-                    #bill-print-content {
-                        position: fixed !important;
-                        left: 0 !important;
-                        top: 0 !important;
-                        width: 76mm !important; /* Slightly narrower to avoid clipping on cheap printers */
-                        margin: 0 !important;
-                        padding: 10mm 5mm !important;
-                        border: none !important;
-                        box-shadow: none !important;
-                        background: white !important;
-                        display: block !important;
-                        height: auto !important;
-                        page-break-after: avoid;
-                    }
-
-                    /* Fix for Chromium based browsers printing tables */
-                    table { page-break-inside: auto; }
-                    tr    { page-break-inside: avoid; page-break-after: auto; }
-                    thead { display: table-header-group; }
-                    tfoot { display: table-footer-group; }
-
-                    .no-print {
-                        display: none !important;
-                    }
-
+                    /* Reset everything */
                     @page {
                         margin: 0;
                         size: auto;
+                    }
+
+                    /* General hiding */
+                    html, body {
+                        height: auto !important;
+                        overflow: visible !important;
+                        background: #fff !important;
+                    }
+
+                    /* Hide everything EXCEPT the modal overlay and its children */
+                    body > * {
+                        display: none !important;
+                    }
+
+                    body > .bpm-overlay {
+                        display: block !important;
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100% !important;
+                        background: white !important;
+                        visibility: visible !important;
+                        backdrop-filter: none !important;
+                    }
+
+                    /* Reset Modal appearance for Paper */
+                    .bpm-modal {
+                        position: static !important;
+                        width: 80mm !important;
+                        margin: 0 auto !important;
+                        box-shadow: none !important;
+                        border: none !important;
+                        display: block !important;
+                        max-width: none !important;
+                        max-height: none !important;
+                        visibility: visible !important;
+                    }
+
+                    .bpm-body {
+                        padding: 0 !important;
+                        display: block !important;
+                        visibility: visible !important;
+                        overflow: visible !important;
+                    }
+
+                    .bpm-receipt-container {
+                        display: block !important;
+                        visibility: visible !important;
+                    }
+
+                    /* Force ALL Receipt parts to be visible */
+                    .bpm-receipt, 
+                    .bpm-receipt *,
+                    .bpm-receipt-header,
+                    .bpm-meta,
+                    .bpm-items-table,
+                    .bpm-totals,
+                    .bpm-thankyou {
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                    }
+
+                    .bpm-items-table {
+                        display: table !important;
+                        width: 100% !important;
+                    }
+                    
+                    .bpm-items-table tr {
+                        display: table-row !important;
+                    }
+                    
+                    .bpm-items-table th, .bpm-items-table td {
+                        display: table-cell !important;
+                    }
+
+                    .tr-item {
+                        border-bottom: 1px dashed #000 !important;
+                    }
+
+                    .bpm-pay-badge {
+                        background: #000 !important;
+                        color: #fff !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+
+                    .bpm-grand-total-row {
+                        background: #000 !important;
+                        color: #fff !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                        display: flex !important;
+                    }
+
+                    /* Specifically hide the UI components */
+                    .no-print, 
+                    .bpm-header, 
+                    .bpm-actions,
+                    .bpm-success-icon,
+                    button {
+                        display: none !important;
                     }
                 }
 
