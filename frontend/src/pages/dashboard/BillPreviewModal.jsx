@@ -512,25 +512,51 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
 
                 /* ── PRINT STYLES ── */
                 @media print {
+                    /* Hide EVERYTHING in the body */
                     body * {
-                        visibility: hidden;
+                        visibility: hidden !important;
                     }
-                    .bpm-receipt, .bpm-receipt * {
-                        visibility: visible;
+                    
+                    /* Show specifically the receipt and ALL its children precisely */
+                    #bill-print-content,
+                    #bill-print-content *,
+                    #bill-print-content div,
+                    #bill-print-content span,
+                    #bill-print-content p,
+                    #bill-print-content h2,
+                    #bill-print-content table,
+                    #bill-print-content tr,
+                    #bill-print-content th,
+                    #bill-print-content td {
+                        visibility: visible !important;
                     }
-                    .bpm-receipt {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 80mm; /* Standard Thermal Receipt Width */
-                        padding: 0;
-                        border: none;
-                        box-shadow: none;
-                        background: white;
+
+                    /* Position the to-be-printed content at the absolute top-left */
+                    #bill-print-content {
+                        position: fixed !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 76mm !important; /* Slightly narrower to avoid clipping on cheap printers */
+                        margin: 0 !important;
+                        padding: 10mm 5mm !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: white !important;
+                        display: block !important;
+                        height: auto !important;
+                        page-break-after: avoid;
                     }
+
+                    /* Fix for Chromium based browsers printing tables */
+                    table { page-break-inside: auto; }
+                    tr    { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+
                     .no-print {
                         display: none !important;
                     }
+
                     @page {
                         margin: 0;
                         size: auto;
