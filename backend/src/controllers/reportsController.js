@@ -1,5 +1,9 @@
 const Bill = require('../models/Bill');
 const Product = require('../models/Product');
+const Supplier = require('../models/Supplier');
+const Customer = require('../models/Customer');
+const Ledger = require('../models/Ledger');
+const Purchase = require('../models/Purchase');
 
 // @desc    Get daily/range sales report
 // @route   GET /api/reports/daily?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
@@ -7,18 +11,18 @@ const Product = require('../models/Product');
 exports.getDailyReport = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        
+
         // Parse dates or use today as default
         let start = new Date();
         let end = new Date();
-        
+
         if (startDate) {
             start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
         } else {
             start.setHours(0, 0, 0, 0);
         }
-        
+
         if (endDate) {
             end = new Date(endDate);
             end.setHours(23, 59, 59, 999);
@@ -84,9 +88,9 @@ exports.getDailyReport = async (req, res) => {
 exports.getWeeklyReport = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        
+
         let start, end;
-        
+
         if (startDate && endDate) {
             start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
@@ -110,7 +114,7 @@ exports.getWeeklyReport = async (req, res) => {
         // Group by day
         const dailySales = {};
         const currentDate = new Date(start);
-        
+
         // Initialize all dates in range
         while (currentDate <= end) {
             const dateKey = currentDate.toISOString().split('T')[0];
@@ -121,7 +125,7 @@ exports.getWeeklyReport = async (req, res) => {
             };
             currentDate.setDate(currentDate.getDate() + 1);
         }
-        
+
         // Populate with actual data
         bills.forEach(bill => {
             const dateKey = bill.createdAt.toISOString().split('T')[0];
@@ -154,9 +158,9 @@ exports.getWeeklyReport = async (req, res) => {
 exports.getMonthlyReport = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        
+
         let start, end;
-        
+
         if (startDate && endDate) {
             start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
@@ -214,9 +218,9 @@ exports.getMonthlyReport = async (req, res) => {
 exports.getSalesByCategory = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        
+
         let start, end;
-        
+
         if (startDate && endDate) {
             start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
@@ -274,9 +278,9 @@ exports.getSalesByCategory = async (req, res) => {
 exports.getTopProducts = async (req, res) => {
     try {
         const { limit = 10, startDate, endDate } = req.query;
-        
+
         let start, end;
-        
+
         if (startDate && endDate) {
             start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
@@ -325,5 +329,94 @@ exports.getTopProducts = async (req, res) => {
     } catch (error) {
         console.error('Top products error:', error);
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get supplier outstanding balances
+// @route   GET /api/reports/supplier-outstanding
+exports.getSupplierOutstanding = async (req, res) => {
+    try {
+        const suppliers = await Supplier.find({ company_id: req.user.restaurant_id });
+        const outstanding = suppliers.map(s => ({
+            name: s.name,
+            contact: s.contact_person,
+            balance: s.opening_balance // Using opening_balance as the living balance field
+        })).filter(s => s.balance > 0).sort((a, b) => b.balance - a.balance);
+
+        res.status(200).json({ success: true, data: outstanding });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// @desc    Get customer outstanding balances
+// @route   GET /api/reports/customer-outstanding
+exports.getCustomerOutstanding = async (req, res) => {
+    try {
+        const customers = await Customer.find({ company_id: req.user.restaurant_id });
+        const outstanding = customers.map(c => ({
+            name: c.name,
+            phone: c.phone,
+            balance: c.opening_balance
+        })).filter(c => c.balance > 0).sort((a, b) => b.balance - a.balance);
+
+        res.status(200).json({ success: true, data: outstanding });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// @desc    Get stock valuation report
+// @route   GET /api/reports/stock-valuation
+exports.getStockValuation = async (req, res) => {
+    try {
+        const products = await Product.find({ company_id: req.user.restaurant_id, current_stock: { $gt: 0 } });
+        const valuation = products.map(p => ({
+            name: p.name,
+            stock: p.current_stock,
+            purchase_price: p.purchase_price || 0,
+            value: (p.current_stock * (p.purchase_price || 0))
+        })).sort((a, b) => b.value - a.value);
+
+        const totalValue = valuation.reduce((sum, item) => sum + item.value, 0);
+
+        res.status(200).json({ success: true, data: { items: valuation, totalValue } });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// @desc    Get basic Profit & Loss report
+// @route   GET /api/reports/profit-loss
+exports.getProfitLoss = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
+        let end = new Date(endDate || new Date());
+
+        // 1. Total Sales (Revenue)
+        const bills = await Bill.find({ company_id: req.user.restaurant_id, status: 'PAID', createdAt: { $gte: start, $lte: end } });
+        const totalRevenue = bills.reduce((sum, b) => sum + b.grand_total, 0);
+
+        // 2. Total Purchases (Cost of Goods Sold - Approx)
+        const purchases = await Purchase.find({ company_id: req.user.restaurant_id, purchase_date: { $gte: start, $lte: end } });
+        const totalPurchases = purchases.reduce((sum, p) => sum + p.grand_total, 0);
+
+        // 3. Operating Expenses (From Vouchers)
+        const Voucher = require('../models/Voucher');
+        const vouchers = await Voucher.find({ company_id: req.user.restaurant_id, voucher_type: 'PAYMENT', date: { $gte: start, $lte: end } });
+        const totalExpenses = vouchers.reduce((sum, v) => sum + v.amount, 0);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                revenue: totalRevenue,
+                purchases: totalPurchases,
+                expenses: totalExpenses,
+                netProfit: totalRevenue - (totalPurchases + totalExpenses)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 };

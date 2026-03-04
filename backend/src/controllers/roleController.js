@@ -58,6 +58,109 @@ const DEFAULT_PAGES_CONFIG = [
         ]
     },
     {
+        page_key: 'brands',
+        page_label: 'Brands',
+        features: [
+            { feature_key: 'view_brands', feature_label: 'View Brands' },
+            { feature_key: 'add_brand', feature_label: 'Add Brand' },
+            { feature_key: 'edit_brand', feature_label: 'Edit Brand' },
+            { feature_key: 'delete_brand', feature_label: 'Delete Brand' }
+        ]
+    },
+    {
+        page_key: 'tables',
+        page_label: 'Tables',
+        features: [
+            { feature_key: 'view_tables', feature_label: 'View Tables' },
+            { feature_key: 'add_table', feature_label: 'Add Table' },
+            { feature_key: 'edit_table', feature_label: 'Edit Table' },
+            { feature_key: 'delete_table', feature_label: 'Delete Table' }
+        ]
+    },
+    {
+        page_key: 'captains',
+        page_label: 'Captains',
+        features: [
+            { feature_key: 'view_captains', feature_label: 'View Captains' },
+            { feature_key: 'add_captain', feature_label: 'Add Captain' },
+            { feature_key: 'edit_captain', feature_label: 'Edit Captain' },
+            { feature_key: 'delete_captain', feature_label: 'Delete Captain' }
+        ]
+    },
+    {
+        page_key: 'waiters',
+        page_label: 'Waiters',
+        features: [
+            { feature_key: 'view_waiters', feature_label: 'View Waiters' },
+            { feature_key: 'add_waiter', feature_label: 'Add Waiter' },
+            { feature_key: 'edit_waiter', feature_label: 'Edit Waiter' },
+            { feature_key: 'delete_waiter', feature_label: 'Delete Waiter' }
+        ]
+    },
+    {
+        page_key: 'suppliers',
+        page_label: 'Suppliers',
+        features: [
+            { feature_key: 'view_suppliers', feature_label: 'View Suppliers' },
+            { feature_key: 'add_supplier', feature_label: 'Add Supplier' },
+            { feature_key: 'edit_supplier', feature_label: 'Edit Supplier' },
+            { feature_key: 'delete_supplier', feature_label: 'Delete Supplier' }
+        ]
+    },
+    {
+        page_key: 'customers',
+        page_label: 'Customers',
+        features: [
+            { feature_key: 'view_customers', feature_label: 'View Customers' },
+            { feature_key: 'add_customer', feature_label: 'Add Customer' },
+            { feature_key: 'edit_customer', feature_label: 'Edit Customer' },
+            { feature_key: 'delete_customer', feature_label: 'Delete Customer' }
+        ]
+    },
+    {
+        page_key: 'ledgers',
+        page_label: 'Ledger Management',
+        features: [
+            { feature_key: 'view_ledgers', feature_label: 'View Ledgers' },
+            { feature_key: 'add_ledger', feature_label: 'Add Ledger' },
+            { feature_key: 'edit_ledger', feature_label: 'Edit Ledger' },
+            { feature_key: 'delete_ledger', feature_label: 'Delete Ledger' }
+        ]
+    },
+    {
+        page_key: 'purchase',
+        page_label: 'Purchase Entry',
+        features: [
+            { feature_key: 'view_purchases', feature_label: 'View Purchases' },
+            { feature_key: 'add_purchase', feature_label: 'Add Purchase' },
+            { feature_key: 'delete_purchase', feature_label: 'Delete Purchase' }
+        ]
+    },
+    {
+        page_key: 'purchase_history',
+        page_label: 'Purchase Bill History',
+        features: [
+            { feature_key: 'view_history', feature_label: 'View Purchase History' },
+            { feature_key: 'delete_history', feature_label: 'Delete Purchase History' }
+        ]
+    },
+    {
+        page_key: 'advanced_reports',
+        page_label: 'Advanced Admin Reports',
+        features: [
+            { feature_key: 'view_advanced', feature_label: 'View Advanced Reports' }
+        ]
+    },
+    {
+        page_key: 'vouchers',
+        page_label: 'Voucher Management',
+        features: [
+            { feature_key: 'view_vouchers', feature_label: 'View Vouchers' },
+            { feature_key: 'add_voucher', feature_label: 'Add Voucher' },
+            { feature_key: 'delete_voucher', feature_label: 'Delete Voucher' }
+        ]
+    },
+    {
         page_key: 'counters',
         page_label: 'Counters',
         features: [

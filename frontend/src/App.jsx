@@ -7,6 +7,17 @@ import ForgotPassword from './pages/ForgotPassword';
 import SelfServiceDashboard from './pages/dashboard/SelfServiceDashboard';
 import ProductMaster from './pages/dashboard/ProductMaster';
 import CategoryMaster from './pages/dashboard/CategoryMaster';
+import BrandMaster from './pages/dashboard/BrandMaster';
+import TableMaster from './pages/dashboard/TableMaster';
+import CaptainMaster from './pages/dashboard/CaptainMaster';
+import WaiterMaster from './pages/dashboard/WaiterMaster';
+import SupplierMaster from './pages/dashboard/SupplierMaster';
+import CustomerMaster from './pages/dashboard/CustomerMaster';
+import LedgerMaster from './pages/dashboard/LedgerMaster';
+import PurchaseEntry from './pages/dashboard/PurchaseEntry';
+import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement';
+import AdvancedReports from './pages/dashboard/AdvancedReports';
+import VoucherManagement from './pages/dashboard/VoucherManagement';
 import CounterMaster from './pages/dashboard/CounterMaster';
 import BillingPage from './pages/dashboard/BillingPage';
 import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage';
@@ -74,6 +85,39 @@ function AppRoutes() {
                             } />
                             <Route path="categories" element={
                                 <PermissionRoute pageKey="categories"><CategoryMaster /></PermissionRoute>
+                            } />
+                            <Route path="brands" element={
+                                <PermissionRoute pageKey="brands"><BrandMaster /></PermissionRoute>
+                            } />
+                            <Route path="tables" element={
+                                <PermissionRoute pageKey="tables"><TableMaster /></PermissionRoute>
+                            } />
+                            <Route path="captains" element={
+                                <PermissionRoute pageKey="captains"><CaptainMaster /></PermissionRoute>
+                            } />
+                            <Route path="waiters" element={
+                                <PermissionRoute pageKey="waiters"><WaiterMaster /></PermissionRoute>
+                            } />
+                            <Route path="suppliers" element={
+                                <PermissionRoute pageKey="suppliers"><SupplierMaster /></PermissionRoute>
+                            } />
+                            <Route path="customers" element={
+                                <PermissionRoute pageKey="customers"><CustomerMaster /></PermissionRoute>
+                            } />
+                            <Route path="ledgers" element={
+                                <PermissionRoute pageKey="ledgers"><LedgerMaster /></PermissionRoute>
+                            } />
+                            <Route path="purchase" element={
+                                <PermissionRoute pageKey="purchase"><PurchaseEntry /></PermissionRoute>
+                            } />
+                            <Route path="purchase-history" element={
+                                <PermissionRoute pageKey="purchase_history"><PurchaseBillManagement /></PermissionRoute>
+                            } />
+                            <Route path="advanced-reports" element={
+                                <PermissionRoute pageKey="advanced_reports"><AdvancedReports /></PermissionRoute>
+                            } />
+                            <Route path="vouchers" element={
+                                <PermissionRoute pageKey="vouchers"><VoucherManagement /></PermissionRoute>
                             } />
                             <Route path="counters" element={
                                 <PermissionRoute pageKey="counters"><CounterMaster /></PermissionRoute>

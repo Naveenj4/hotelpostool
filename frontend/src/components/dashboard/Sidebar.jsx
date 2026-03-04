@@ -12,7 +12,17 @@ import {
     LogOut,
     Utensils,
     Store,
-    Shield
+    Shield,
+    Tag,
+    Users,
+    Pocket,
+    UserCircle,
+    User,
+    Book,
+    ShoppingCart,
+    Wallet,
+    History,
+    BarChart
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../pages/dashboard/Dashboard.css';
@@ -58,6 +68,72 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             icon: <Layers size={20} />,
             route: "/dashboard/self-service/categories",
             pageKey: "categories"
+        },
+        {
+            label: "Brands",
+            icon: <Tag size={20} />,
+            route: "/dashboard/self-service/brands",
+            pageKey: "brands"
+        },
+        {
+            label: "Tables",
+            icon: <Grid size={20} />,
+            route: "/dashboard/self-service/tables",
+            pageKey: "tables"
+        },
+        {
+            label: "Captains",
+            icon: <Pocket size={20} />,
+            route: "/dashboard/self-service/captains",
+            pageKey: "captains"
+        },
+        {
+            label: "Waiters",
+            icon: <UserCircle size={20} />,
+            route: "/dashboard/self-service/waiters",
+            pageKey: "waiters"
+        },
+        {
+            label: "Suppliers",
+            icon: <Users size={20} />,
+            route: "/dashboard/self-service/suppliers",
+            pageKey: "suppliers"
+        },
+        {
+            label: "Customers",
+            icon: <User size={20} />,
+            route: "/dashboard/self-service/customers",
+            pageKey: "customers"
+        },
+        {
+            label: "Ledgers",
+            icon: <Book size={20} />,
+            route: "/dashboard/self-service/ledgers",
+            pageKey: "ledgers"
+        },
+        {
+            label: "Purchase",
+            icon: <ShoppingCart size={20} />,
+            route: "/dashboard/self-service/purchase",
+            pageKey: "purchase"
+        },
+        {
+            label: "Purchase Bills",
+            icon: <History size={20} />,
+            route: "/dashboard/self-service/purchase-history",
+            pageKey: "purchase_history"
+        },
+        {
+            label: "Admin Reports",
+            icon: <BarChart size={20} />,
+            route: "/dashboard/self-service/advanced-reports",
+            pageKey: "advanced_reports"
+        },
+        {
+            label: "Vouchers",
+            icon: <Wallet size={20} />,
+            route: "/dashboard/self-service/vouchers",
+            pageKey: "vouchers"
         },
         {
             label: "Counters",
