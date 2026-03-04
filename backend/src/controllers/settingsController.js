@@ -35,7 +35,10 @@ exports.getUserSettings = async (req, res) => {
                 },
                 printer: {
                     enabled: restaurant.printer_enabled || false,
-                    width: restaurant.printer_width || '58mm'
+                    width: restaurant.printer_width || '58mm',
+                    kot_printer_ip: restaurant.kot_printer_ip || '',
+                    bill_printer_ip: restaurant.bill_printer_ip || '',
+                    kitchen_mapping: restaurant.kitchen_mapping || []
                 },
                 billFormat: {
                     header: restaurant.bill_header || '',
@@ -49,6 +52,19 @@ exports.getUserSettings = async (req, res) => {
         console.error('Get settings error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
+};
+
+// @desc    Update Advanced Settings (Printers, etc)
+exports.updateAdvancedSettings = async (req, res) => {
+    try {
+        const { kot_printer_ip, bill_printer_ip, kitchen_mapping } = req.body;
+        const restaurant = await Restaurant.findByIdAndUpdate(
+            req.user.restaurant_id,
+            { kot_printer_ip, bill_printer_ip, kitchen_mapping },
+            { new: true }
+        );
+        res.status(200).json({ success: true, data: restaurant });
+    } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
 // @desc    Update profile information

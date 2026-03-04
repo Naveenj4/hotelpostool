@@ -38,18 +38,22 @@ exports.createPurchase = async (req, res) => {
         }], { session });
 
         // 2. Update stock for each product
+        const StockTransaction = require('../models/StockTransaction');
         for (const item of items) {
-            await Product.findOneAndUpdate(
-                { _id: item.product_id, company_id },
-                {
-                    $inc: { current_stock: item.quantity },
-                    $set: {
-                        purchase_price: item.purchase_rate,
-                        gst_purchase: item.gst_percent
-                    }
-                },
-                { session }
-            );
+            const product = await Product.findOne({ _id: item.product_id, company_id }).session(session);
+            if (product) {
+                const prev = product.current_stock;
+                product.current_stock += item.quantity;
+                product.purchase_price = item.purchase_rate;
+                product.gst_purchase = item.gst_percent;
+                await product.save({ session });
+
+                await StockTransaction.create([{
+                    company_id, product_id: product._id, type: 'IN', quantity: item.quantity,
+                    previous_stock: prev, new_stock: product.current_stock,
+                    reference_type: 'PURCHASE', reference_id: purchase[0]._id, remark: `Purchase Inv ${invoice_number}`
+                }], { session });
+            }
         }
 
         // 3. Update supplier balance (Amount we owe them)
@@ -78,12 +82,27 @@ exports.deletePurchase = async (req, res) => {
         if (!purchase) return res.status(404).json({ success: false, error: 'Purchase not found' });
 
         // Reverse stock updates
+        const StockTransaction = require('../models/StockTransaction');
+        const company_id = req.user.restaurant_id;
+
         for (const item of purchase.items) {
-            await Product.findOneAndUpdate(
-                { _id: item.product_id, company_id: req.user.restaurant_id },
-                { $inc: { current_stock: -item.quantity } },
-                { session }
-            );
+            const product = await Product.findOne({ _id: item.product_id, company_id }).session(session);
+            if (product) {
+                const prev = product.current_stock;
+                product.current_stock -= item.quantity;
+                await product.save({ session });
+
+                await StockTransaction.create([{
+                    company_id,
+                    product_id: product._id,
+                    type: 'OUT',
+                    quantity: item.quantity,
+                    previous_stock: prev,
+                    new_stock: product.current_stock,
+                    reference_type: 'PURCHASE',
+                    remark: `Purchase Cancelled: ${purchase.invoice_number}`
+                }], { session });
+            }
         }
 
         // Reverse supplier balance

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createBill, addItemToBill, getBill, processPayment, removeItemFromBill, getAllBills } = require('../controllers/billController');
+const { createBill, addItemToBill, getBill, processPayment, removeItemFromBill, getAllBills, cancelBill } = require('../controllers/billController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
@@ -11,5 +11,6 @@ router.post('/:id/items', addItemToBill);
 router.delete('/:id/items/:productId', removeItemFromBill);
 router.get('/:id', getBill);
 router.put('/:id/pay', processPayment);
+router.delete('/:id', authorize('ADMIN', 'OWNER'), cancelBill);
 
 module.exports = router;

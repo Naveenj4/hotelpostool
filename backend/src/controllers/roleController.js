@@ -152,6 +152,13 @@ const DEFAULT_PAGES_CONFIG = [
         ]
     },
     {
+        page_key: 'ledger_statement',
+        page_label: 'General Ledger Statement',
+        features: [
+            { feature_key: 'view_statement', feature_label: 'View Ledger Statement' }
+        ]
+    },
+    {
         page_key: 'vouchers',
         page_label: 'Voucher Management',
         features: [

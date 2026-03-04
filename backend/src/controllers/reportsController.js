@@ -420,3 +420,230 @@ exports.getProfitLoss = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+// @desc    Get sales by brand
+exports.getSalesByBrand = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
+        let end = new Date(endDate || new Date());
+        end.setHours(23, 59, 59, 999);
+
+        const bills = await Bill.find({
+            company_id: req.user.restaurant_id,
+            status: 'PAID',
+            createdAt: { $gte: start, $lte: end }
+        });
+
+        const brandSales = {};
+        bills.forEach(bill => {
+            bill.items.forEach(item => {
+                const brand = item.brand || 'No Brand';
+                if (!brandSales[brand]) brandSales[brand] = { brand, amount: 0, qty: 0 };
+                brandSales[brand].amount += item.total_price;
+                brandSales[brand].qty += item.quantity;
+            });
+        });
+
+        res.status(200).json({ success: true, data: Object.values(brandSales).sort((a, b) => b.amount - a.amount) });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get sales by captain
+exports.getSalesByCaptain = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
+        let end = new Date(endDate || new Date());
+        end.setHours(23, 59, 59, 999);
+
+        const bills = await Bill.find({
+            company_id: req.user.restaurant_id,
+            status: 'PAID',
+            createdAt: { $gte: start, $lte: end }
+        });
+
+        const captainSales = {};
+        bills.forEach(bill => {
+            const captain = bill.captain_name || 'Direct / Walk-in';
+            if (!captainSales[captain]) captainSales[captain] = { captain, amount: 0, count: 0 };
+            captainSales[captain].amount += bill.grand_total;
+            captainSales[captain].count += 1;
+        });
+
+        res.status(200).json({ success: true, data: Object.values(captainSales).sort((a, b) => b.amount - a.amount) });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get purchase summary (Grouped by various filters)
+exports.getPurchaseSummary = async (req, res) => {
+    try {
+        const { startDate, endDate, groupBy = 'SUPPLIER' } = req.query;
+        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
+        let end = new Date(endDate || new Date());
+        end.setHours(23, 59, 59, 999);
+
+        const purchases = await Purchase.find({
+            company_id: req.user.restaurant_id,
+            purchase_date: { $gte: start, $lte: end }
+        }).populate('supplier_id', 'name');
+
+        const summary = {};
+        purchases.forEach(p => {
+            if (groupBy === 'SUPPLIER') {
+                const name = p.supplier_id?.name || 'Unknown';
+                if (!summary[name]) summary[name] = { name, amount: 0, paid: 0, due: 0 };
+                summary[name].amount += p.grand_total;
+                summary[name].paid += p.paid_amount;
+                summary[name].due += p.due_amount;
+            } else if (groupBy === 'ITEM') {
+                p.items.forEach(item => {
+                    const name = item.product_id; // Need proper name if possible, or just ID
+                    if (!summary[name]) summary[name] = { name, qty: 0, amount: 0 };
+                    summary[name].qty += item.quantity;
+                    summary[name].amount += item.total_amount;
+                });
+            }
+        });
+
+        res.status(200).json({ success: true, data: Object.values(summary).sort((a, b) => b.amount - a.amount) });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get Daybook (All transactions for a specific day)
+exports.getDaybook = async (req, res) => {
+    try {
+        const { date } = req.query;
+        let start = new Date(date || new Date());
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(date || new Date());
+        end.setHours(23, 59, 59, 999);
+
+        const [bills, purchases, vouchers] = await Promise.all([
+            Bill.find({ company_id: req.user.restaurant_id, status: 'PAID', createdAt: { $gte: start, $lte: end } }),
+            Purchase.find({ company_id: req.user.restaurant_id, purchase_date: { $gte: start, $lte: end } }).populate('supplier_id', 'name'),
+            require('../models/Voucher').find({ company_id: req.user.restaurant_id, date: { $gte: start, $lte: end } }).populate('debit_ledger credit_ledger', 'name')
+        ]);
+
+        const transactions = [
+            ...bills.map(b => ({ time: b.createdAt, type: 'SALE', ref: b.bill_number, desc: `Sales Bill`, amount: b.grand_total, side: 'IN' })),
+            ...purchases.map(p => ({ time: p.purchase_date, type: 'PURCHASE', ref: p.invoice_number, desc: `Purchase from ${p.supplier_id?.name}`, amount: p.grand_total, side: 'OUT' })),
+            ...vouchers.map(v => ({ time: v.date, type: v.voucher_type, ref: v.voucher_number, desc: `${v.debit_ledger?.name} / ${v.credit_ledger?.name}`, amount: v.amount, side: v.voucher_type === 'RECEIPT' ? 'IN' : (v.voucher_type === 'PAYMENT' ? 'OUT' : 'TRANS') }))
+        ].sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        res.status(200).json({ success: true, data: transactions });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get Ledger Statement
+exports.getLedgerStatement = async (req, res) => {
+    try {
+        const { ledgerId, startDate, endDate } = req.query;
+        if (!ledgerId) return res.status(400).json({ success: false, error: 'Ledger ID required' });
+
+        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date());
+        end.setHours(23, 59, 59, 999);
+
+        const Voucher = require('../models/Voucher');
+        const transactions = await Voucher.find({
+            company_id: req.user.restaurant_id,
+            $or: [{ debit_ledger: ledgerId }, { credit_ledger: ledgerId }],
+            date: { $gte: start, $lte: end }
+        }).populate('debit_ledger credit_ledger', 'name').sort({ date: 1 });
+
+        const ledger = await Ledger.findById(ledgerId);
+
+        let runningBalance = ledger.opening_balance;
+        const statement = transactions.map(t => {
+            const isDebit = t.debit_ledger?._id.toString() === ledgerId;
+            const dr = isDebit ? t.amount : 0;
+            const cr = isDebit ? 0 : t.amount;
+            runningBalance += (dr - cr);
+            return {
+                date: t.date,
+                voucher_no: t.voucher_number,
+                type: t.voucher_type,
+                particulars: isDebit ? `To ${t.credit_ledger?.name}` : `By ${t.debit_ledger?.name}`,
+                debit: dr,
+                credit: cr,
+                balance: runningBalance
+            };
+        });
+
+        res.status(200).json({ success: true, ledger: ledger.name, opening_balance: ledger.opening_balance, data: statement });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get Aging Report
+exports.getAgingReport = async (req, res) => {
+    try {
+        const { type = 'SUPPLIER' } = req.query;
+        const now = new Date();
+        const ranges = {
+            '0-30': 0,
+            '30-60': 0,
+            '60+': 0
+        };
+
+        if (type === 'SUPPLIER') {
+            const purchases = await Purchase.find({ company_id: req.user.restaurant_id, due_amount: { $gt: 0 } });
+            purchases.forEach(p => {
+                const diffDays = Math.ceil((now - new Date(p.purchase_date)) / (1000 * 60 * 60 * 24));
+                if (diffDays <= 30) ranges['0-30'] += p.due_amount;
+                else if (diffDays <= 60) ranges['30-60'] += p.due_amount;
+                else ranges['60+'] += p.due_amount;
+            });
+        } else {
+            // Customers - Assuming we track customer due in Bills (need to check Bill model for due amount)
+            const bills = await Bill.find({ company_id: req.user.restaurant_id, status: 'DUE' });
+            bills.forEach(b => {
+                const diffDays = Math.ceil((now - new Date(b.createdAt)) / (1000 * 60 * 60 * 24));
+                if (diffDays <= 30) ranges['0-30'] += b.grand_total;
+                else if (diffDays <= 60) ranges['30-60'] += b.grand_total;
+                else ranges['60+'] += b.grand_total;
+            });
+        }
+
+        res.status(200).json({ success: true, data: ranges });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get Profit & Loss Report
+exports.getProfitLoss = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
+        let end = new Date(endDate || new Date());
+        end.setHours(23, 59, 59, 999);
+
+        const company_id = req.user.restaurant_id;
+
+        const [bills, purchases, expenseVouchers] = await Promise.all([
+            Bill.find({ company_id, status: 'PAID', createdAt: { $gte: start, $lte: end } }),
+            Purchase.find({ company_id, purchase_date: { $gte: start, $lte: end } }),
+            require('../models/Voucher').find({ company_id, voucher_type: 'PAYMENT', date: { $gte: start, $lte: end } }).populate({ path: 'debit_ledger', match: { group: 'EXPENSE' } })
+        ]);
+
+        const totalSales = bills.reduce((sum, b) => sum + b.grand_total, 0);
+        const totalPurchases = purchases.reduce((sum, p) => sum + p.grand_total, 0);
+
+        // Only count vouchers where the debit ledger is an EXPENSE
+        const indirectExpenses = expenseVouchers.filter(v => v.debit_ledger).reduce((sum, v) => sum + v.amount, 0);
+
+        const grossProfit = totalSales - totalPurchases;
+        const netProfit = grossProfit - indirectExpenses;
+
+        res.status(200).json({
+            success: true,
+            data: {
+                income: { sales: totalSales, total: totalSales },
+                direct_expenses: { purchases: totalPurchases, total: totalPurchases },
+                indirect_expenses: { expenses: indirectExpenses, total: indirectExpenses },
+                gross_profit: grossProfit,
+                net_profit: netProfit
+            }
+        });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};

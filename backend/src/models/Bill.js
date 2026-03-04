@@ -24,7 +24,7 @@ const billSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['DRAFT', 'OPEN', 'PAID', 'CANCELLED'],
+        enum: ['DRAFT', 'OPEN', 'PAID', 'CANCELLED', 'DUE', 'CREDIT'],
         default: 'OPEN'
     },
     type: {

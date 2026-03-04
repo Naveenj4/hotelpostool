@@ -4,7 +4,8 @@ const {
     getStockItems,
     getLowStockItems,
     updateStock,
-    bulkUpdateStock
+    bulkUpdateStock,
+    getStockHistory
 } = require('../controllers/stockController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -14,6 +15,9 @@ router.use(authorize('ADMIN', 'OWNER'));
 
 // Get all stock items
 router.get('/', getStockItems);
+
+// Get stock history
+router.get('/history', getStockHistory);
 
 // Get low stock items
 router.get('/low-stock', getLowStockItems);

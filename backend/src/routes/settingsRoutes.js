@@ -6,7 +6,8 @@ const {
     changePassword,
     updatePrinterSettings,
     updateBillFormat,
-    updateBillingLayout
+    updateBillingLayout,
+    updateAdvancedSettings
 } = require('../controllers/settingsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -16,6 +17,9 @@ router.use(authorize('ADMIN', 'OWNER'));
 
 // Get all settings
 router.get('/', getUserSettings);
+
+// Update advanced settings
+router.put('/advanced', updateAdvancedSettings);
 
 // Update profile
 router.put('/profile', updateProfile);

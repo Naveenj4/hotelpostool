@@ -9,7 +9,13 @@ const {
     getSupplierOutstanding,
     getCustomerOutstanding,
     getStockValuation,
-    getProfitLoss
+    getProfitLoss,
+    getSalesByBrand,
+    getSalesByCaptain,
+    getPurchaseSummary,
+    getDaybook,
+    getLedgerStatement,
+    getAgingReport
 } = require('../controllers/reportsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -43,5 +49,23 @@ router.get('/stock-valuation', getStockValuation);
 
 // Profit & Loss
 router.get('/profit-loss', getProfitLoss);
+
+// Sales by brand
+router.get('/sales-by-brand', getSalesByBrand);
+
+// Sales by captain
+router.get('/sales-by-captain', getSalesByCaptain);
+
+// Purchase summary
+router.get('/purchase-summary', getPurchaseSummary);
+
+// Daybook
+router.get('/daybook', getDaybook);
+
+// Ledger Statement
+router.get('/ledger-statement', getLedgerStatement);
+
+// Aging Report
+router.get('/aging-report', getAgingReport);
 
 module.exports = router;

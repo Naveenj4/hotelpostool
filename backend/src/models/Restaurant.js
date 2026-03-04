@@ -74,7 +74,13 @@ const restaurantSchema = new mongoose.Schema({
     auto_print: {
         type: Boolean,
         default: false
-    }
+    },
+    kot_printer_ip: { type: String, default: '' },
+    bill_printer_ip: { type: String, default: '' },
+    kitchen_mapping: [{
+        category: String,
+        printer_ip: String
+    }]
 }, {
     timestamps: true
 });

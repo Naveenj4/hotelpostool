@@ -223,11 +223,26 @@ exports.processPayment = async (req, res) => {
         }
 
         // Decrement Stock Logic (Secured with company_id)
+        const StockTransaction = require('../models/StockTransaction');
         for (const item of bill.items) {
             const product = await Product.findOne({ _id: item.product_id, company_id: req.user.restaurant_id });
-            if (product && (product.opening_stock > 0 || product.current_stock > 0)) {
+            if (product) {
+                const prev = product.current_stock;
                 product.current_stock -= item.quantity;
                 await product.save();
+
+                // Log Stock Transaction
+                await StockTransaction.create({
+                    company_id: req.user.restaurant_id,
+                    product_id: product._id,
+                    type: 'OUT',
+                    quantity: -item.quantity,
+                    previous_stock: prev,
+                    new_stock: product.current_stock,
+                    reference_type: 'SALE',
+                    reference_id: bill._id,
+                    remark: `Sale Bill ${bill.bill_number}`
+                });
             }
         }
 
@@ -276,5 +291,53 @@ exports.getAllBills = async (req, res) => {
     } catch (error) {
         console.error("Get Bills Error:", error);
         res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+
+// @desc    Cancel/Delete Bill and revert stock
+// @route   DELETE /api/bills/:id
+// @access  Admin/Owner
+exports.cancelBill = async (req, res) => {
+    const mongoose = require('mongoose');
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
+
+        if (bill.status === 'PAID') {
+            const StockTransaction = require('../models/StockTransaction');
+            // Revert Stock
+            for (const item of bill.items) {
+                const product = await Product.findOne({ _id: item.product_id, company_id: req.user.restaurant_id }).session(session);
+                if (product) {
+                    const prev = product.current_stock;
+                    product.current_stock += item.quantity;
+                    await product.save({ session });
+
+                    // Log Reversal
+                    await StockTransaction.create([{
+                        company_id: req.user.restaurant_id,
+                        product_id: product._id,
+                        type: 'IN',
+                        quantity: item.quantity,
+                        previous_stock: prev,
+                        new_stock: product.current_stock,
+                        reference_type: 'SALE',
+                        remark: `Bill Cancelled: ${bill.bill_number}`
+                    }], { session });
+                }
+            }
+        }
+
+        await Bill.findByIdAndDelete(req.params.id).session(session);
+
+        await session.commitTransaction();
+        res.status(200).json({ success: true, message: 'Bill cancelled and stock reverted' });
+    } catch (error) {
+        await session.abortTransaction();
+        res.status(500).json({ success: false, error: error.message });
+    } finally {
+        session.endSession();
     }
 };
