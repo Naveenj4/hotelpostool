@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import Sidebar from '../components/dashboard/Sidebar';
-import Header from '../components/dashboard/Header';
+import Sidebar from '../../components/dashboard/Sidebar';
+import Header from '../../components/dashboard/Header';
 import {
     Chart as ChartJS,
     CategoryScale,

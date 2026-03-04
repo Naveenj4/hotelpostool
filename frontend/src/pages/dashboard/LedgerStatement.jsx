@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import Sidebar from '../components/dashboard/Sidebar';
-import Header from '../components/dashboard/Header';
+import Sidebar from '../../components/dashboard/Sidebar';
+import Header from '../../components/dashboard/Header';
 import { Search, Download, Calendar, ArrowLeft, Loader2, FileText, Printer } from 'lucide-react';
 
 const LedgerStatement = () => {
