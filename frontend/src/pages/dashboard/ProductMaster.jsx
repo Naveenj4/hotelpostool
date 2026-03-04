@@ -19,7 +19,9 @@ import {
     ShoppingCart,
     Tag,
     Image as ImageIcon,
-    Check
+    Check,
+    Download,
+    Upload
 } from 'lucide-react';
 import { TableSkeleton } from '../../components/Skeleton';
 
@@ -112,6 +114,56 @@ const ProductMaster = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    // Export to CSV
+    const exportCSV = () => {
+        if (!products.length) return;
+        const headers = Object.keys(products[0]).filter(k => typeof products[0][k] !== 'object').join(',');
+        const rows = products.map(p => Object.keys(p).filter(k => typeof p[k] !== 'object').map(k => p[k]).join(',')).join('\n');
+        const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "Products_Master.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Bulk Import Logic
+    const handleCSVImport = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setLoading(true);
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const text = event.target.result;
+            const lines = text.split('\n');
+            const headers = lines[0].split(',');
+            const items = lines.slice(1).map(line => {
+                const values = line.split(',');
+                const obj = {};
+                headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim());
+                return obj;
+            }).filter(i => i.name);
+
+            try {
+                const savedUser = localStorage.getItem('user');
+                const { token } = JSON.parse(savedUser);
+                const results = await Promise.all(items.map(item =>
+                    fetch(`${import.meta.env.VITE_API_URL}/products`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ ...initialFormState, ...item })
+                    })
+                ));
+                alert(`Processed ${results.length} items.`);
+                fetchData();
+            } catch (err) { alert("Import failed: " + err.message); }
+            finally { setLoading(false); }
+        };
+        reader.readAsText(file);
+    };
 
     // Auto-calculate stock value
     useEffect(() => {
@@ -294,9 +346,16 @@ const ProductMaster = () => {
                             <h2>Item Creation</h2>
                             <p>Manage your menu items, pricing, and stock levels.</p>
                         </div>
-                        <button className="btn-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={18} /> Add New Item
-                        </button>
+                        <div className="flex gap-2">
+                            <label className="btn-outline cursor-pointer flex items-center gap-2">
+                                <Upload size={18} /> Bulk Import
+                                <input type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
+                            </label>
+                            <button className="btn-outline" onClick={exportCSV}><Download size={18} /> Export CSV</button>
+                            <button className="btn-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                                <PlusCircle size={18} /> Add New Item
+                            </button>
+                        </div>
                     </div>
 
                     <div className="product-toolbar">

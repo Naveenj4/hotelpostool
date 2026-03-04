@@ -22,7 +22,8 @@ import {
     ShoppingCart,
     Wallet,
     History,
-    BarChart
+    BarChart,
+    FileText
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../pages/dashboard/Dashboard.css';
@@ -128,6 +129,12 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             icon: <BarChart size={20} />,
             route: "/dashboard/self-service/advanced-reports",
             pageKey: "advanced_reports"
+        },
+        {
+            label: "Ledger Statement",
+            icon: <FileText size={20} />,
+            route: "/dashboard/self-service/ledger-statement",
+            pageKey: "ledger_statement"
         },
         {
             label: "Vouchers",

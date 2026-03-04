@@ -9,7 +9,8 @@ import {
     Wallet,
     DollarSign,
     Smartphone,
-    Calendar
+    Calendar,
+    Trash2
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -118,6 +119,26 @@ const BillsAndSalesPage = () => {
         }
     };
 
+    const handleDeleteBill = async (id) => {
+        if (!window.confirm("Are you sure you want to cancel this bill? Stock will be reverted.")) return;
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/bills/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.success) {
+                fetchData();
+            } else {
+                alert(result.error);
+            }
+        } catch (err) {
+            alert("Failed to delete bill");
+        }
+    };
+
     useEffect(() => {
         fetchData();
     }, [dateRange]);
@@ -159,15 +180,17 @@ const BillsAndSalesPage = () => {
                     'rgba(16, 185, 129, 0.7)',
                     'rgba(126, 161, 196, 0.7)',
                     '#ef4444',
-                    '#f59e0b'
+                    '#f59e0b',
+                    '#8b5cf6',
+                    '#06b6d4'
                 ],
                 borderColor: [
                     '#10b981',
                     '#7ea1c4',
-                    '#8b5cf6',
-                    '#7ea1c4',
                     '#ef4444',
-                    '#f59e0b'
+                    '#f59e0b',
+                    '#8b5cf6',
+                    '#06b6d4'
                 ],
                 borderWidth: 1
             }
@@ -219,9 +242,9 @@ const BillsAndSalesPage = () => {
         return (
             <div className="dashboard-layout">
                 <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-            {isMobileSidebarOpen && window.innerWidth <= 768 && (
-                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
-            )}
+                {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                    <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+                )}
                 <main className="dashboard-main">
                     <Header toggleSidebar={toggleSidebar} />
                     <div className="dashboard-content">
@@ -444,6 +467,7 @@ const BillsAndSalesPage = () => {
                                             <th className="text-left">Item Names</th>
                                             <th className="col-qty">Qty</th>
                                             <th className="col-total">Total</th>
+                                            <th className="col-actions">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -467,6 +491,15 @@ const BillsAndSalesPage = () => {
                                                     </td>
                                                     <td className="col-qty text-center">{totalQty}</td>
                                                     <td className="col-total">₹{bill.grand_total?.toLocaleString() || '0'}</td>
+                                                    <td className="col-actions text-center">
+                                                        <button
+                                                            onClick={() => handleDeleteBill(bill._id)}
+                                                            className="action-btn delete"
+                                                            title="Cancel Bill"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             );
                                         })}

@@ -149,6 +149,7 @@ export const AuthProvider = ({ children }) => {
                 purchase: '/dashboard/self-service/purchase',
                 purchase_history: '/dashboard/self-service/purchase-history',
                 advanced_reports: '/dashboard/self-service/advanced-reports',
+                ledger_statement: '/dashboard/self-service/ledger-statement',
                 vouchers: '/dashboard/self-service/vouchers',
                 counters: '/dashboard/self-service/counters',
                 stock: '/dashboard/self-service/stock',

@@ -177,3 +177,25 @@
         min-width: 600px;
     }
 }
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--slate-200);
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn.delete {
+    color: #ef4444;
+}
+
+.action-btn.delete:hover {
+    background: #fef2f2;
+    border-color: #fee2e2;
+}

@@ -174,50 +174,51 @@ const SelfServiceDashboard = () => {
                             label="Today's Sales"
                             value={`₹${dashboardData?.todaySales?.toLocaleString()}`}
                             icon={<TrendingUp size={24} />}
-                            color="#7ea1c4"
-                            trend="+12.5%"
-                        />
-                        <StatCard
-                            label="Total Bills"
-                            value={dashboardData?.totalBills}
-                            icon={<FileText size={24} />}
-                            color="#7ea1c4"
-                        />
-                        <StatCard
-                            label="Cash Collected"
-                            value={getPaymentAmount('CASH')}
-                            icon={<CreditCard size={24} />}
                             color="#10b981"
                         />
                         <StatCard
-                            label="UPI / Online"
-                            value={getPaymentAmount('UPI')}
+                            label="Today's Purchases"
+                            value={`₹${dashboardData?.todayPurchases?.toLocaleString()}`}
+                            icon={<ShoppingBag size={24} />}
+                            color="#ef4444"
+                        />
+                        <StatCard
+                            label="Supplier O/S"
+                            value={`₹${dashboardData?.supplierOutstanding?.toLocaleString()}`}
                             icon={<CreditCard size={24} />}
-                            color="#8b5cf6"
+                            color="#f59e0b"
+                        />
+                        <StatCard
+                            label="Customer O/S"
+                            value={`₹${dashboardData?.customerOutstanding?.toLocaleString()}`}
+                            icon={<Wallet size={24} />}
+                            color="#3b82f6"
                         />
                     </div>
 
                     <div className="dashboard-bottom-grid">
-                        {/* Top Selling Products */}
+                        {/* Latest Vouchers */}
                         <div className="data-card">
                             <h3 className="card-title">
-                                <ArrowUpRight size={20} color="var(--primary-500)" />
-                                Top 5 Selling Products
+                                <FileText size={20} color="var(--primary-500)" />
+                                Latest Transactions
                             </h3>
                             <table className="custom-table">
                                 <thead>
                                     <tr>
-                                        <th>Product Name</th>
-                                        <th>Qty</th>
-                                        <th>Sales</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Particulars</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {dashboardData?.topProducts?.map((product, i) => (
+                                    {dashboardData?.latestVouchers?.map((v, i) => (
                                         <tr key={i}>
-                                            <td style={{ fontWeight: 500 }}>{product.name}</td>
-                                            <td>{product.quantity}</td>
-                                            <td style={{ fontWeight: 600 }}>₹{product.sales}</td>
+                                            <td>{new Date(v.date).toLocaleDateString()}</td>
+                                            <td><span className={`badge badge-${v.type.toLowerCase()}`} style={{ fontSize: '0.7rem' }}>{v.type}</span></td>
+                                            <td style={{ fontWeight: 700 }}>₹{v.amount}</td>
+                                            <td style={{ fontSize: '0.8rem' }}>{v.dr} / {v.cr}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -242,21 +243,15 @@ const SelfServiceDashboard = () => {
                                     {dashboardData?.lowStockItems?.length > 0 ? (
                                         dashboardData.lowStockItems.map((alert, i) => (
                                             <tr key={i}>
-                                                <td style={{ fontWeight: 600, color: '#1e293b' }}>{alert.item}</td>
-                                                <td style={{ color: '#ef4444', fontWeight: 700, fontFamily: 'monospace' }}>
+                                                <td style={{ fontWeight: 600 }}>{alert.item}</td>
+                                                <td style={{ color: '#ef4444', fontWeight: 700 }}>
                                                     {alert.remaining} {alert.unit}
                                                 </td>
-                                                <td>
-                                                    <span className="badge badge-low">Critical</span>
-                                                </td>
+                                                <td><span className="badge badge-low">Reorder</span></td>
                                             </tr>
                                         ))
                                     ) : (
-                                        <tr>
-                                            <td colSpan="3" style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>
-                                                No stock alerts
-                                            </td>
-                                        </tr>
+                                        <tr><td colSpan="3" style={{ textAlign: 'center', padding: '2rem' }}>No stock alerts</td></tr>
                                     )}
                                 </tbody>
                             </table>

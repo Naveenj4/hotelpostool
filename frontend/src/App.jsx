@@ -17,6 +17,7 @@ import LedgerMaster from './pages/dashboard/LedgerMaster';
 import PurchaseEntry from './pages/dashboard/PurchaseEntry';
 import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement';
 import AdvancedReports from './pages/dashboard/AdvancedReports';
+import LedgerStatement from './pages/dashboard/LedgerStatement';
 import VoucherManagement from './pages/dashboard/VoucherManagement';
 import CounterMaster from './pages/dashboard/CounterMaster';
 import BillingPage from './pages/dashboard/BillingPage';
@@ -115,6 +116,9 @@ function AppRoutes() {
                             } />
                             <Route path="advanced-reports" element={
                                 <PermissionRoute pageKey="advanced_reports"><AdvancedReports /></PermissionRoute>
+                            } />
+                            <Route path="ledger-statement" element={
+                                <PermissionRoute pageKey="ledger_statement"><LedgerStatement /></PermissionRoute>
                             } />
                             <Route path="vouchers" element={
                                 <PermissionRoute pageKey="vouchers"><VoucherManagement /></PermissionRoute>
