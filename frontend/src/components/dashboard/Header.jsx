@@ -32,7 +32,7 @@ const Header = ({ toggleSidebar, restaurantName }) => {
         <header className="dashboard-header">
             <div className="header-left">
                 <button className="icon-btn menu-toggle" onClick={toggleSidebar}>
-                    <Menu size={24} />
+                    <Menu size={22} />
                 </button>
                 <div className="restaurant-badge">
                     <span className="restaurant-name">{restaurantName || "RestoSaaS Partner"}</span>
@@ -42,9 +42,12 @@ const Header = ({ toggleSidebar, restaurantName }) => {
             <div className="header-center">
                 <div className="date-time-display">
                     <div className="display-item">
+                        <Calendar size={13} />
                         <span>{formatDate(currentTime)}</span>
                     </div>
+                    <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 300, fontSize: '0.8rem' }}>|</span>
                     <div className="display-item">
+                        <Clock size={13} />
                         <span>{formatTime(currentTime)}</span>
                     </div>
                 </div>
@@ -52,16 +55,16 @@ const Header = ({ toggleSidebar, restaurantName }) => {
 
             <div className="header-right">
                 <button className="icon-btn" title="Notifications">
-                    <Bell size={20} />
+                    <Bell size={18} />
                 </button>
 
                 <div className="user-profile">
                     <div className="user-info">
-                        <span className="user-name">{user?.name}</span>
-                        <span className="user-role">{user?.role}</span>
+                        <span className="user-name">{user?.name || 'OWNER'}</span>
+                        <span className="user-role">{user?.role || 'Admin'}</span>
                     </div>
                     <div className="user-avatar">
-                        <User size={20} />
+                        <User size={17} />
                     </div>
                 </div>
 
@@ -72,7 +75,7 @@ const Header = ({ toggleSidebar, restaurantName }) => {
                     onClick={logout}
                     title="Logout"
                 >
-                    <LogOut size={20} />
+                    <LogOut size={18} />
                 </button>
             </div>
         </header>

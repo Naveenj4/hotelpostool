@@ -64,6 +64,55 @@ exports.createPurchase = async (req, res) => {
             { session }
         );
 
+        // --- ACCOUNTING INTEGRATION ---
+        const Ledger = require('../models/Ledger');
+        const AccountTransaction = require('../models/AccountTransaction');
+
+        // 1. Find Purchase Account Ledger
+        const purchaseLedger = await Ledger.findOne({ company_id, name: 'Purchase Account' }).session(session);
+        const supplierDoc = await Supplier.findById(supplier_id).session(session);
+        const supplierLedger = await Ledger.findOne({ company_id, name: `${supplierDoc.name} (Supplier)` }).session(session);
+
+        if (purchaseLedger && supplierLedger) {
+            // DEBIT Purchase Account
+            await AccountTransaction.create([{
+                company_id, ledger_id: purchaseLedger._id, type: 'DEBIT', amount: grand_total,
+                voucher_type: 'PURCHASE', voucher_number: invoice_number, reference_id: purchase[0]._id,
+                narration: `Purchase - Inv ${invoice_number}`, date: purchase_date || Date.now()
+            }], { session });
+            await Ledger.findByIdAndUpdate(purchaseLedger._id, { $inc: { opening_balance: grand_total } }, { session });
+
+            // CREDIT Supplier Ledger
+            await AccountTransaction.create([{
+                company_id, ledger_id: supplierLedger._id, type: 'CREDIT', amount: grand_total,
+                voucher_type: 'PURCHASE', voucher_number: invoice_number, reference_id: purchase[0]._id,
+                narration: `Purchase - Inv ${invoice_number}`, date: purchase_date || Date.now()
+            }], { session });
+            await Ledger.findByIdAndUpdate(supplierLedger._id, { $inc: { opening_balance: -grand_total } }, { session });
+
+            // If Paid, Record Payment
+            if (paid_amount > 0) {
+                const cashLedger = await Ledger.findOne({ company_id, name: 'Cash in Hand' }).session(session);
+                if (cashLedger) {
+                    // DEBIT Supplier Ledger
+                    await AccountTransaction.create([{
+                        company_id, ledger_id: supplierLedger._id, type: 'DEBIT', amount: paid_amount,
+                        voucher_type: 'PAYMENT', voucher_number: `PAY-${invoice_number}`, reference_id: purchase[0]._id,
+                        narration: `Payment for Inv ${invoice_number}`, date: purchase_date || Date.now()
+                    }], { session });
+                    await Ledger.findByIdAndUpdate(supplierLedger._id, { $inc: { opening_balance: paid_amount } }, { session });
+
+                    // CREDIT Cash/Bank Ledger
+                    await AccountTransaction.create([{
+                        company_id, ledger_id: cashLedger._id, type: 'CREDIT', amount: paid_amount,
+                        voucher_type: 'PAYMENT', voucher_number: `PAY-${invoice_number}`, reference_id: purchase[0]._id,
+                        narration: `Payment for Inv ${invoice_number}`, date: purchase_date || Date.now()
+                    }], { session });
+                    await Ledger.findByIdAndUpdate(cashLedger._id, { $inc: { opening_balance: -paid_amount } }, { session });
+                }
+            }
+        }
+
         await session.commitTransaction();
         res.status(201).json({ success: true, data: purchase[0] });
     } catch (error) {

@@ -13,15 +13,17 @@ exports.getSuppliers = async (req, res) => {
     }
 };
 
-// @desc    Create new supplier
-// @route   POST /api/suppliers
-// @access  Admin/Owner
+// @desc    Create new supplier and its ledger
 exports.createSupplier = async (req, res) => {
+    const mongoose = require('mongoose');
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         const { name, contact_person, contact_number, email, gst_number, address, opening_balance } = req.body;
+        const company_id = req.user.restaurant_id;
 
         const existingSupplier = await Supplier.findOne({
-            company_id: req.user.restaurant_id,
+            company_id,
             name: { $regex: new RegExp(`^${name}$`, 'i') }
         });
 
@@ -29,7 +31,7 @@ exports.createSupplier = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Supplier already exists' });
         }
 
-        const supplier = await Supplier.create({
+        const supplier = await Supplier.create([{
             name,
             contact_person,
             contact_number,
@@ -37,14 +39,30 @@ exports.createSupplier = async (req, res) => {
             gst_number,
             address,
             opening_balance,
-            company_id: req.user.restaurant_id
-        });
+            company_id
+        }], { session });
 
-        res.status(201).json({ success: true, data: supplier });
+        // CREATE A CORRESPONDING LEDGER
+        const Ledger = require('../models/Ledger');
+        await Ledger.create([{
+            company_id,
+            name: `${name} (Supplier)`,
+            group: 'SUNDRY_CREDITORS',
+            opening_balance: opening_balance || 0,
+            balance_type: (opening_balance || 0) >= 0 ? 'CR' : 'DR',
+            description: `Auto-generated ledger for supplier ${name}`
+        }], { session });
+
+        await session.commitTransaction();
+        res.status(201).json({ success: true, data: supplier[0] });
     } catch (error) {
+        await session.abortTransaction();
         res.status(500).json({ success: false, error: error.message });
+    } finally {
+        session.endSession();
     }
 };
+
 
 // @desc    Update supplier
 // @route   PUT /api/suppliers/:id

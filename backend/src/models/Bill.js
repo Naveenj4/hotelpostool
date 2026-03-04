@@ -107,7 +107,11 @@ const billSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    cancellation_reason: String
+    cancellation_reason: String,
+    is_deleted: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true
 });

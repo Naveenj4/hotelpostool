@@ -133,6 +133,10 @@ const productSchema = new mongoose.Schema({
     image: {
         type: String,
         default: ''
+    },
+    is_deleted: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

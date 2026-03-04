@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
-import './ProductMaster.css'; // Reusing ProductMaster styles for consistency
+import './Dashboard.css';
 import {
     PlusCircle,
     Search,
@@ -9,7 +9,11 @@ import {
     Loader2,
     Store,
     AlertCircle,
-    XCircle
+    XCircle,
+    Monitor,
+    Activity,
+    Cpu,
+    CheckCircle2
 } from 'lucide-react';
 
 const CounterMaster = () => {
@@ -122,80 +126,109 @@ const CounterMaster = () => {
     return (
         <div className="dashboard-layout">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
+
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
-                <div className="dashboard-content">
-                    <div className="page-header">
-                        <div className="page-title">
+
+                <div className="master-content-layout fade-in">
+                    <div className="master-header-premium">
+                        <div className="master-title-premium">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Monitor className="text-indigo-600" size={18} />
+                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Terminal Topology</span>
+                            </div>
                             <h2>Counter Master</h2>
-                            <p>Manage billing counters and kiosks.</p>
+                            <p>Manage billing workstations and kiosk deployments.</p>
                         </div>
-                        <button
-                            className="btn-primary"
-                            style={{ gap: '0.5rem' }}
-                            onClick={() => { resetForm(); setShowDrawer(true); }}
-                        >
-                            <PlusCircle size={18} /> Add Counter
+                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={20} /> Initialize Terminal
                         </button>
                     </div>
 
-                    <div className="product-toolbar">
-                        <div className="search-wrapper">
-                            <Search className="search-icon" size={18} />
+                    <div className="toolbar-premium">
+                        <div className="search-premium">
+                            <Search size={20} />
                             <input
                                 type="text"
-                                placeholder="Search counters..."
-                                className="input-field pad-left"
+                                placeholder="Search terminal identifiers..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <span className="count-badge">
-                            Showing {filteredCounters.length} counters
-                        </span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 italic">
+                                Active Nodes: {filteredCounters.length}
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="table-card">
-                        <table className="custom-table">
+                    <div className="table-container-premium">
+                        <table className="table-premium">
                             <thead>
                                 <tr>
-                                    <th>Counter Name</th>
-                                    <th>Code</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th>Terminal Identity</th>
+                                    <th>Link Code</th>
+                                    <th>Classification</th>
+                                    <th>Network Status</th>
+                                    <th style={{ textAlign: 'right' }}>Management</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="5" className="empty-state"><Loader2 className="animate-spin mb-2 mx-auto" /> Loading...</td></tr>
+                                    <tr>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '100px 0' }}>
+                                            <Loader2 className="animate-spin text-indigo-600 mx-auto mb-4" size={48} />
+                                            <p className="font-black text-slate-300 uppercase tracking-[0.2em] text-xs">Scanning Terminal Network...</p>
+                                        </td>
+                                    </tr>
                                 ) : filteredCounters.length === 0 ? (
-                                    <tr><td colSpan="5" className="empty-state">No counters found.</td></tr>
+                                    <tr>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '100px 0' }}>
+                                            <Monitor size={64} className="text-slate-100 mx-auto mb-4" />
+                                            <p className="font-bold text-slate-400">No terminal definitions found.</p>
+                                        </td>
+                                    </tr>
                                 ) : filteredCounters.map((counter) => (
-                                    <tr key={counter._id}>
-                                        <td style={{ fontWeight: 600 }}>{counter.name}</td>
-                                        <td><span className="count-badge" style={{ backgroundColor: '#f3f4f6', color: '#4b5563' }}>{counter.code}</span></td>
+                                    <tr key={counter._id} className="group">
                                         <td>
-                                            <span className="type-badge" style={{
-                                                backgroundColor: counter.type === 'BILLING' ? '#e0e7ff' : '#fce7f3',
-                                                color: counter.type === 'BILLING' ? '#3730a3' : '#9d174d'
-                                            }}>
-                                                {counter.type}
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg shadow-slate-900/10 group-hover:bg-indigo-600 transition-all">
+                                                    <Cpu size={20} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-lg font-black text-slate-800 uppercase tracking-tight leading-none group-hover:text-indigo-600 transition-colors">{counter.name}</div>
+                                                    <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 italic">Terminal Instance</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className="font-black text-indigo-600 tracking-widest text-xs bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                                                {counter.code}
                                             </span>
                                         </td>
                                         <td>
-                                            <span className={`status-badge ${counter.is_active ? 'status-active' : 'status-disabled'}`}>
-                                                {counter.is_active ? 'Active' : 'Disabled'}
+                                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${counter.type === 'BILLING' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                    counter.type === 'SELF_SERVICE' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                                                        'bg-amber-50 text-amber-600 border-amber-100'
+                                                }`}>
+                                                {counter.type.replace('_', ' ')}
                                             </span>
                                         </td>
                                         <td>
-                                            <div className="action-btn-group">
-                                                <button onClick={() => handleEdit(counter)} className="action-btn edit">
-                                                    <Edit size={16} />
-                                                </button>
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full ${counter.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${counter.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                    {counter.is_active ? 'Online' : 'Offline'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={() => handleEdit(counter)} className="action-icon-btn edit"><Edit size={18} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -205,71 +238,74 @@ const CounterMaster = () => {
                     </div>
                 </div>
 
-                {/* Drawer */}
                 {showDrawer && (
-                    <div className="drawer-overlay">
-                        <div className="drawer-backdrop" onClick={() => setShowDrawer(false)}></div>
-                        <div className="drawer-container">
-                            <div className="drawer-header">
-                                <h3 className="drawer-title">{isEditing ? 'Edit Counter' : 'Add New Counter'}</h3>
-                                <button onClick={() => setShowDrawer(false)} className="close-btn"><XCircle size={24} /></button>
+                    <>
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999]" onClick={() => setShowDrawer(false)}></div>
+                        <div className="drawer-premium">
+                            <div className="drawer-header-premium">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{isEditing ? 'Modify Terminal' : 'Architect Terminal'}</h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Network Topology Registry</p>
+                                </div>
+                                <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all">
+                                    <XCircle size={24} className="text-slate-300" />
+                                </button>
                             </div>
-                            <div className="drawer-body">
-                                {error && <div className="error-box"><AlertCircle size={16} /> {error}</div>}
-                                <form id="counter-form" onSubmit={handleSubmit}>
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Counter Name *</label>
+                            <div className="drawer-body-premium">
+                                {error && (
+                                    <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-8">
+                                        <AlertCircle size={20} /> {error}
+                                    </div>
+                                )}
+                                <form id="counter-form" onSubmit={handleSubmit} className="space-y-8">
+                                    <div className="form-group-premium">
+                                        <label>Terminal Label *</label>
                                         <input
                                             type="text"
                                             name="name"
                                             required
-                                            className="input-field"
-                                            placeholder="e.g. Main Counter"
+                                            className="input-premium"
+                                            placeholder="e.g. MAIN GATEWAY"
                                             value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                                         />
                                     </div>
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Counter Code *</label>
-                                        <div className="input-relative">
-                                            <Store size={18} className="input-icon" />
+                                    <div className="form-group-premium">
+                                        <label>Unique Link Code *</label>
+                                        <div className="relative">
+                                            <Store size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                                             <input
                                                 type="text"
                                                 name="code"
                                                 required
-                                                className="input-field pad-left uppercase"
-                                                placeholder="e.g. C01"
+                                                className="input-premium !pl-12 uppercase"
+                                                placeholder="e.g. CTR-01"
                                                 value={formData.code}
                                                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                                             />
                                         </div>
                                     </div>
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Type *</label>
-                                        <div className="radio-group">
+                                    <div className="form-group-premium">
+                                        <label>Terminal Logic Classification *</label>
+                                        <div className="grid grid-cols-1 gap-3">
                                             {['BILLING', 'SELF_SERVICE', 'TAKEAWAY'].map(type => (
-                                                <label key={type} className={`radio-option ${formData.type === type ? 'selected-stock' : ''}`}>
-                                                    <input
-                                                        type="radio"
-                                                        name="type"
-                                                        value={type}
-                                                        checked={formData.type === type}
-                                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                                    />
-                                                    {type.replace('_', ' ')}
-                                                </label>
+                                                <button key={type} type="button" onClick={() => setFormData({ ...formData, type })} className={`p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${formData.type === type ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-lg' : 'border-slate-100 text-slate-400'}`}>
+                                                    <span className="font-black text-xs uppercase tracking-widest">{type.replace('_', ' ')}</span>
+                                                    {formData.type === type && <CheckCircle2 size={18} />}
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
                                 </form>
                             </div>
-                            <div className="drawer-footer">
-                                <button type="submit" form="counter-form" disabled={submitting} className="btn-primary w-full p-3">
-                                    {submitting ? 'Saving...' : (isEditing ? 'Update Counter' : 'Save Counter')}
+                            <div className="drawer-footer-premium">
+                                <button type="submit" form="counter-form" disabled={submitting} className="btn-premium-primary flex-1 justify-center py-4">
+                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? 'COMMIT CONFIGURATION' : 'INITIALIZE NODE')}
                                 </button>
+                                <button onClick={() => setShowDrawer(false)} className="btn-premium-outline">TERMINATE</button>
                             </div>
                         </div>
-                    </div>
+                    </>
                 )}
             </main>
         </div>

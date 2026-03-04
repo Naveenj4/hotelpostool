@@ -272,6 +272,10 @@ exports.register = async (req, res) => {
                 role: 'OWNER'
             });
 
+            // Create Default Ledgers
+            const { createDefaultLedgers } = require('../utils/accounting');
+            await createDefaultLedgers(restaurant._id);
+
             res.status(201).json({
                 success: true,
                 token: generateToken(user._id),

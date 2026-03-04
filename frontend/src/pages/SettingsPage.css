@@ -1,89 +1,100 @@
-/* Settings Page Styles */
+/* ================================================================
+   SETTINGS PAGE — RestoBoard Theme
+   ================================================================ */
+
 .settings-layout {
     display: grid;
-    grid-template-columns: 250px 1fr;
-    gap: 2rem;
+    grid-template-columns: 230px 1fr;
+    gap: 1.5rem;
     min-height: 600px;
+    align-items: start;
 }
 
+/* Sidebar */
 .settings-sidebar {
-    background: white;
-    border-radius: 16px;
-    box-shadow: var(--shadow-premium);
-    border: 1px solid var(--border-light);
-    padding: 1rem;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid #E2E8F0;
+    padding: 0.75rem;
     height: fit-content;
+    position: sticky;
+    top: 1rem;
 }
 
 .settings-nav {
     display: flex;
     flex-direction: column;
+    gap: 0.2rem;
 }
 
 .settings-nav .nav-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 0.875rem;
     background: transparent;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     width: 100%;
     text-align: left;
-    color: var(--slate-600);
+    color: #64748B;
     font-weight: 500;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
-    margin-bottom: 0.5rem;
+    font-family: inherit;
 }
 
 .settings-nav .nav-item:hover {
-    background: var(--slate-50);
-    color: var(--slate-900);
+    background: #F1F5F9;
+    color: #0F172A;
 }
 
 .settings-nav .nav-item.active {
-    background: var(--primary-50);
-    color: var(--primary-600);
+    background: var(--primary, #7ea1c4);
+    color: white;
     font-weight: 600;
+    box-shadow: 0 3px 10px rgba(126, 161, 196, 0.25);
 }
 
+/* Main content */
 .settings-main {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .settings-card {
-    background: white;
-    border-radius: 20px;
-    box-shadow: var(--shadow-premium);
-    border: 1px solid var(--border-light);
-    padding: 2rem;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid #E2E8F0;
+    padding: 1.5rem;
 }
 
 .card-title {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    font-size: 1.25rem;
+    gap: 0.6rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--galaxy);
-    margin-bottom: 0.5rem;
+    color: #0F172A;
+    margin-bottom: 0.35rem;
 }
 
 .card-description {
-    color: var(--galaxy-muted);
-    margin-bottom: 1.5rem;
-    font-size: 0.95rem;
+    color: #64748B;
+    margin-bottom: 1.25rem;
+    font-size: 0.875rem;
 }
 
-/* Form Styles */
+/* Forms */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
 }
 
 .form-group {
@@ -93,24 +104,29 @@
 
 .input-label {
     font-weight: 600;
-    color: var(--galaxy);
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    color: #334155;
+    margin-bottom: 0.4rem;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .input-field {
-    padding: 0.875rem 1rem;
-    border: 1px solid var(--slate-200);
-    border-radius: 12px;
+    padding: 0.72rem 0.875rem;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
     font-family: inherit;
     transition: all 0.2s ease;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    background: #F8FAFC;
+    color: #0F172A;
 }
 
 .input-field:focus {
     outline: none;
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 4px var(--primary-100);
+    border-color: var(--primary, #7ea1c4);
+    box-shadow: 0 0 0 3px rgba(126, 161, 196, 0.18);
+    background: white;
 }
 
 textarea.input-field {
@@ -118,35 +134,38 @@ textarea.input-field {
     min-height: 80px;
 }
 
-/* Password Input */
+/* Password input */
 .password-input {
     position: relative;
 }
 
 .password-toggle {
     position: absolute;
-    right: 12px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: var(--galaxy-muted);
+    color: #94A3B8;
     cursor: pointer;
     padding: 4px;
+    display: flex;
+    align-items: center;
 }
 
 .password-toggle:hover {
-    color: var(--primary-500);
+    color: var(--primary, #7ea1c4);
 }
 
-/* Toggle Switch */
+/* Toggle switch */
 .toggle-label {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     cursor: pointer;
     font-weight: 500;
-    color: var(--galaxy);
+    color: #334155;
+    font-size: 0.9rem;
 }
 
 .toggle-label input[type="checkbox"] {
@@ -156,75 +175,85 @@ textarea.input-field {
 .toggle-slider {
     position: relative;
     display: inline-block;
-    width: 50px;
-    height: 24px;
-    background-color: #D9D9D9;
-    border-radius: 24px;
+    width: 44px;
+    height: 22px;
+    background-color: #CBD5E1;
+    border-radius: 22px;
     transition: all 0.3s;
+    flex-shrink: 0;
 }
 
 .toggle-slider::before {
     content: '';
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background-color: white;
+    background: white;
     top: 2px;
     left: 2px;
     transition: all 0.3s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .toggle-label input:checked+.toggle-slider {
-    background-color: var(--primary-500);
+    background: var(--primary, #7ea1c4);
 }
 
 .toggle-label input:checked+.toggle-slider::before {
-    transform: translateX(26px);
+    transform: translateX(22px);
 }
 
-/* Form Actions */
+/* Form actions */
 .form-actions {
     display: flex;
     align-items: center;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-light);
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #E2E8F0;
+    gap: 0.75rem;
 }
 
 /* Messages */
 .error-message {
-    background: #fee2e2;
-    color: #ef4444;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #be123c;
+    padding: 0.72rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    border: 1px solid #fecdd3;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
 .success-message {
-    background: #dcfce7;
-    color: #10b981;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: #f0fdf4;
+    color: #15803d;
+    padding: 0.72rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
     border: 1px solid #bbf7d0;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
-/* Responsive Design */
+/* ----------------------------------------------------------------
+   RESPONSIVE
+   ---------------------------------------------------------------- */
 @media (max-width: 1024px) {
     .settings-layout {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1.25rem;
     }
 
     .settings-sidebar {
+        position: static;
         order: 2;
     }
 
@@ -235,12 +264,12 @@ textarea.input-field {
     .settings-nav {
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: 0.4rem;
     }
 
     .settings-nav .nav-item {
         flex: 1;
-        min-width: 200px;
+        min-width: 160px;
         justify-content: center;
     }
 }
@@ -248,7 +277,7 @@ textarea.input-field {
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;
-        gap: 1rem;
+        gap: 0.875rem;
     }
 
     .settings-nav {
@@ -263,7 +292,7 @@ textarea.input-field {
     .form-actions {
         flex-direction: column;
         align-items: stretch;
-        gap: 0.75rem;
+        gap: 0.6rem;
     }
 
     .form-actions .btn-outline {
@@ -277,11 +306,10 @@ textarea.input-field {
     }
 
     .card-title {
-        font-size: 1.125rem;
+        font-size: 0.9rem;
     }
 
     .settings-nav .nav-item {
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
+        padding: 0.65rem 0.875rem;
     }
 }

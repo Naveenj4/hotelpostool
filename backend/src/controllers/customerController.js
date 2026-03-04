@@ -13,16 +13,18 @@ exports.getCustomers = async (req, res) => {
     }
 };
 
-// @desc    Create new customer
-// @route   POST /api/customers
-// @access  Admin/Owner
+// @desc    Create new customer and its ledger
 exports.createCustomer = async (req, res) => {
+    const mongoose = require('mongoose');
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         const { name, phone, email, address, gst_number, opening_balance, loyalty_points } = req.body;
+        const company_id = req.user.restaurant_id;
 
         if (phone) {
             const existingCustomer = await Customer.findOne({
-                company_id: req.user.restaurant_id,
+                company_id,
                 phone: phone
             });
 
@@ -31,7 +33,7 @@ exports.createCustomer = async (req, res) => {
             }
         }
 
-        const customer = await Customer.create({
+        const customer = await Customer.create([{
             name,
             phone,
             email,
@@ -39,14 +41,30 @@ exports.createCustomer = async (req, res) => {
             gst_number,
             opening_balance,
             loyalty_points,
-            company_id: req.user.restaurant_id
-        });
+            company_id
+        }], { session });
 
-        res.status(201).json({ success: true, data: customer });
+        // CREATE A CORRESPONDING LEDGER
+        const Ledger = require('../models/Ledger');
+        await Ledger.create([{
+            company_id,
+            name: `${name} (Customer)`,
+            group: 'SUNDRY_DEBTORS',
+            opening_balance: opening_balance || 0,
+            balance_type: (opening_balance || 0) >= 0 ? 'DR' : 'CR',
+            description: `Auto-generated ledger for customer ${name}`
+        }], { session });
+
+        await session.commitTransaction();
+        res.status(201).json({ success: true, data: customer[0] });
     } catch (error) {
+        await session.abortTransaction();
         res.status(500).json({ success: false, error: error.message });
+    } finally {
+        session.endSession();
     }
 };
+
 
 // @desc    Update customer
 // @route   PUT /api/customers/:id

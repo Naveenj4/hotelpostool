@@ -1,43 +1,26 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
-import './BillsAndSalesPage.css';
 import {
-    TrendingUp,
-    FileText,
-    CreditCard,
-    Wallet,
-    DollarSign,
-    Smartphone,
-    Calendar,
-    Trash2
+    TrendingUp, FileText, CreditCard, Wallet, DollarSign,
+    Smartphone, Calendar, Trash2, Loader2, RefreshCw,
+    BarChart3, PieChart, Hash
 } from 'lucide-react';
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title,
-    Tooltip,
-    Legend
+    Chart as ChartJS, CategoryScale, LinearScale, PointElement,
+    LineElement, BarElement, ArcElement, Title, Tooltip, Legend
 } from 'chart.js';
-import { Line, Bar, Pie } from 'react-chartjs-2';
+import { Line, Pie } from 'react-chartjs-2';
+import './Dashboard.css';
 
-// Register Chart.js components
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title,
-    Tooltip,
-    Legend
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
+
+const PAYMENT_ICONS = {
+    CASH: { icon: <Wallet size={22} />, color: '#10b981', bg: '#d1fae5' },
+    UPI: { icon: <Smartphone size={22} />, color: '#8b5cf6', bg: '#ede9fe' },
+    CARD: { icon: <CreditCard size={22} />, color: '#ef4444', bg: '#fee2e2' },
+    ONLINE: { icon: <DollarSign size={22} />, color: '#06b6d4', bg: '#cffafe' },
+};
 
 const BillsAndSalesPage = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
@@ -49,32 +32,18 @@ const BillsAndSalesPage = () => {
     const [dateRange, setDateRange] = useState('7');
     const [autoRefresh, setAutoRefresh] = useState(true);
 
-    // Helper function to format local date to YYYY-MM-DD
     const formatLocalDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
     };
 
-    // Helper function to calculate date range
     const getDateRange = (days) => {
-        const endDate = new Date();
-        const startDate = new Date();
-
-        if (days === '0') {
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
-        } else {
-            startDate.setDate(startDate.getDate() - parseInt(days));
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
-        }
-
-        return { startDate, endDate };
+        const end = new Date(), start = new Date();
+        if (days === '0') { start.setHours(0, 0, 0, 0); end.setHours(23, 59, 59, 999); }
+        else { start.setDate(start.getDate() - parseInt(days)); start.setHours(0, 0, 0, 0); end.setHours(23, 59, 59, 999); }
+        return { startDate: start, endDate: end };
     };
 
-    // Fetch all report data
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -82,181 +51,77 @@ const BillsAndSalesPage = () => {
             if (!savedUser) return;
             const { token } = JSON.parse(savedUser);
             const headers = { 'Authorization': `Bearer ${token}` };
-
             const { startDate, endDate } = getDateRange(dateRange);
-            const startDateStr = formatLocalDate(startDate);
-            const endDateStr = formatLocalDate(endDate);
-
-            const queryParams = `?startDate=${startDateStr}&endDate=${endDateStr}`;
-
-            // Fetch daily report (which has payment summary)
-            const dailyRes = await fetch(`${import.meta.env.VITE_API_URL}/reports/daily${queryParams}`, { headers });
-            const dailyData = await dailyRes.json();
-
-            // Fetch weekly for trend chart
-            const weeklyRes = await fetch(`${import.meta.env.VITE_API_URL}/reports/weekly${queryParams}`, { headers });
-            const weeklyData = await weeklyRes.json();
-
-            // Fetch all bills
-            const billsRes = await fetch(`${import.meta.env.VITE_API_URL}/bills${queryParams}`, { headers });
-            const billsData = await billsRes.json();
-
-            if (dailyData.success) {
-                setSalesData(dailyData.data);
-            }
-
-            if (weeklyData.success) {
-                setChartData(weeklyData.data);
-            }
-
-            if (billsData.success) {
-                setAllBills(billsData.data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch report data", err);
-        } finally {
-            setLoading(false);
-        }
+            const q = `?startDate=${formatLocalDate(startDate)}&endDate=${formatLocalDate(endDate)}`;
+            const [dailyRes, weeklyRes, billsRes] = await Promise.all([
+                fetch(`${import.meta.env.VITE_API_URL}/reports/daily${q}`, { headers }),
+                fetch(`${import.meta.env.VITE_API_URL}/reports/weekly${q}`, { headers }),
+                fetch(`${import.meta.env.VITE_API_URL}/bills${q}`, { headers })
+            ]);
+            const [dD, wD, bD] = await Promise.all([dailyRes.json(), weeklyRes.json(), billsRes.json()]);
+            if (dD.success) setSalesData(dD.data);
+            if (wD.success) setChartData(wD.data);
+            if (bD.success) setAllBills(bD.data);
+        } catch (err) { console.error("Failed to fetch report data", err); }
+        finally { setLoading(false); }
     };
 
     const handleDeleteBill = async (id) => {
-        if (!window.confirm("Are you sure you want to cancel this bill? Stock will be reverted.")) return;
+        if (!window.confirm("Cancel this bill? Stock will be reverted.")) return;
         try {
             const savedUser = localStorage.getItem('user');
             const { token } = JSON.parse(savedUser);
             const response = await fetch(`${import.meta.env.VITE_API_URL}/bills/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
+                method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await response.json();
-            if (result.success) {
-                fetchData();
-            } else {
-                alert(result.error);
-            }
-        } catch (err) {
-            alert("Failed to delete bill");
-        }
+            if (result.success) fetchData(); else alert(result.error);
+        } catch { alert("Failed to delete bill"); }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [dateRange]);
-
+    useEffect(() => { fetchData(); }, [dateRange]);
     useEffect(() => {
         if (!autoRefresh) return;
-
-        const interval = setInterval(() => {
-            fetchData();
-        }, 30000); // Refresh every 30 seconds
-
+        const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
     }, [autoRefresh, dateRange]);
 
     const toggleSidebar = () => {
-        if (window.innerWidth <= 768) {
-            setIsMobileSidebarOpen(!isMobileSidebarOpen);
-        } else {
-            const newState = !isCollapsed;
-            setIsCollapsed(newState);
-            localStorage.setItem('sidebarCollapsed', newState);
-        }
+        if (window.innerWidth <= 768) { setIsMobileSidebarOpen(!isMobileSidebarOpen); }
+        else { const n = !isCollapsed; setIsCollapsed(n); localStorage.setItem('sidebarCollapsed', n); }
     };
 
-    // Prepare payment mode breakdown data
     const getPaymentAmount = (mode) => {
         if (!salesData?.paymentSummary) return 0;
         return salesData.paymentSummary.find(p => p.mode?.toUpperCase() === mode?.toUpperCase())?.amount || 0;
     };
 
-    // Chart data for payment modes
     const paymentModeData = salesData?.paymentSummary ? {
         labels: salesData.paymentSummary.map(p => p.mode),
-        datasets: [
-            {
-                label: 'Amount (₹)',
-                data: salesData.paymentSummary.map(p => p.amount),
-                backgroundColor: [
-                    'rgba(16, 185, 129, 0.7)',
-                    'rgba(126, 161, 196, 0.7)',
-                    '#ef4444',
-                    '#f59e0b',
-                    '#8b5cf6',
-                    '#06b6d4'
-                ],
-                borderColor: [
-                    '#10b981',
-                    '#7ea1c4',
-                    '#ef4444',
-                    '#f59e0b',
-                    '#8b5cf6',
-                    '#06b6d4'
-                ],
-                borderWidth: 1
-            }
-        ]
+        datasets: [{
+            data: salesData.paymentSummary.map(p => p.amount),
+            backgroundColor: ['rgba(16,185,129,0.8)', 'rgba(139,92,246,0.8)', 'rgba(239,68,68,0.8)', 'rgba(6,182,212,0.8)', 'rgba(245,158,11,0.8)'],
+            borderColor: ['#10b981', '#8b5cf6', '#ef4444', '#06b6d4', '#f59e0b'],
+            borderWidth: 2
+        }]
     } : null;
 
-    // Chart data for daily trend
     const dailySalesChart = chartData?.dailyBreakdown ? {
-        labels: chartData.dailyBreakdown.map(day => new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })),
-        datasets: [
-            {
-                label: 'Daily Sales (₹)',
-                data: chartData.dailyBreakdown.map(day => day.totalSales),
-                borderColor: '#7ea1c4',
-                backgroundColor: 'rgba(126, 161, 196, 0.1)',
-                tension: 0.4,
-                fill: true
-            }
-        ]
+        labels: chartData.dailyBreakdown.map(d => new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })),
+        datasets: [{
+            label: 'Daily Revenue (₹)',
+            data: chartData.dailyBreakdown.map(d => d.totalSales),
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.08)',
+            tension: 0.4, fill: true, pointBackgroundColor: '#6366f1', pointRadius: 5
+        }]
     } : null;
 
     const chartOptions = {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-            title: {
-                display: false
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
+        responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { weight: 'bold' }, color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#94a3b8' } } }
     };
-
-    const pieOptions = {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'right',
-            }
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="dashboard-layout">
-                <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-                {isMobileSidebarOpen && window.innerWidth <= 768 && (
-                    <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
-                )}
-                <main className="dashboard-main">
-                    <Header toggleSidebar={toggleSidebar} />
-                    <div className="dashboard-content">
-                        <div className="loading-container">
-                            <div className="loading-spinner"></div>
-                            <p>Loading bills and sales data...</p>
-                        </div>
-                    </div>
-                </main>
-            </div>
-        );
-    }
+    const pieOptions = { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { weight: 'bold' }, padding: 16 } } } };
 
     return (
         <div className="dashboard-layout">
@@ -266,20 +131,21 @@ const BillsAndSalesPage = () => {
             )}
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
-
-                <div className="dashboard-content">
-                    <div className="page-header bills-page-header">
-                        <div className="page-title">
+                <div className="master-content-layout fade-in">
+                    {/* Header */}
+                    <div className="master-header-premium">
+                        <div className="master-title-premium">
+                            <div className="flex items-center gap-2 mb-2">
+                                <BarChart3 className="text-indigo-600" size={18} />
+                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Revenue Intelligence</span>
+                            </div>
                             <h2>Bills & Sales</h2>
-                            <p>Detailed summary of bills and sales by payment mode</p>
+                            <p>Period-based revenue breakdown, payment analysis, and complete bill register.</p>
                         </div>
-                        <div className="date-filter">
-                            <label htmlFor="dateRange">Period:</label>
+                        <div className="flex items-center gap-3">
                             <select
-                                id="dateRange"
-                                className="input-field"
-                                value={dateRange}
-                                onChange={(e) => setDateRange(e.target.value)}
+                                className="px-4 py-2.5 bg-white border border-slate-100 rounded-2xl text-sm font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 shadow-sm cursor-pointer"
+                                value={dateRange} onChange={(e) => setDateRange(e.target.value)}
                             >
                                 <option value="0">Today</option>
                                 <option value="7">Last 7 Days</option>
@@ -287,232 +153,172 @@ const BillsAndSalesPage = () => {
                                 <option value="60">Last 60 Days</option>
                                 <option value="90">Last 90 Days</option>
                             </select>
-                            <button
-                                className="refresh-btn"
-                                onClick={fetchData}
-                                title="Refresh data"
-                                style={{
-                                    marginLeft: '10px',
-                                    padding: '8px 16px',
-                                    backgroundColor: '#7ea1c4',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500'
-                                }}
-                            >
-                                ↻ Refresh
+                            <button onClick={fetchData} className="btn-premium-outline !py-2.5 !px-4 flex items-center gap-2">
+                                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                                Refresh
                             </button>
-                            <label style={{ marginLeft: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={autoRefresh}
-                                    onChange={(e) => setAutoRefresh(e.target.checked)}
-                                    style={{ cursor: 'pointer' }}
-                                />
-                                <span>Auto-refresh (30s)</span>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Live</span>
+                                <div className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} className="sr-only peer" />
+                                    <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                                </div>
                             </label>
                         </div>
                     </div>
 
-                    {/* Summary Cards */}
-                    <div className="widgets-grid">
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Total Sales</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#7ea1c415', color: '#7ea1c4' }}>
-                                    <TrendingUp size={24} />
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-40 bg-white rounded-[3rem] border border-slate-100">
+                            <Loader2 className="animate-spin text-indigo-600 mb-4" size={56} />
+                            <p className="font-black text-slate-300 uppercase tracking-[0.2em] text-xs">Compiling Revenue Intelligence...</p>
+                        </div>
+                    ) : (<>
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            {[
+                                { label: 'Total Revenue', val: `₹${salesData?.totalSales?.toLocaleString('en-IN') || '0'}`, icon: <TrendingUp size={20} />, c: '#6366f1', bg: '#e0e7ff' },
+                                { label: 'Total Bills', val: salesData?.totalBills || '0', icon: <Hash size={20} />, c: '#0ea5e9', bg: '#e0f2fe' },
+                                { label: 'Cash', val: `₹${getPaymentAmount('CASH').toLocaleString('en-IN')}`, icon: <Wallet size={20} />, c: '#10b981', bg: '#d1fae5' },
+                                { label: 'UPI', val: `₹${getPaymentAmount('UPI').toLocaleString('en-IN')}`, icon: <Smartphone size={20} />, c: '#8b5cf6', bg: '#ede9fe' },
+                                { label: 'Card', val: `₹${getPaymentAmount('CARD').toLocaleString('en-IN')}`, icon: <CreditCard size={20} />, c: '#ef4444', bg: '#fee2e2' },
+                                { label: 'Online', val: `₹${getPaymentAmount('ONLINE').toLocaleString('en-IN')}`, icon: <DollarSign size={20} />, c: '#06b6d4', bg: '#cffafe' },
+                            ].map(({ label, val, icon, c, bg }) => (
+                                <div key={label} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.12)] transition-all">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: bg, color: c }}>{icon}</div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                                    <p className="text-xl font-black text-slate-900 tracking-tighter">{val}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Charts Row */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)]">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <Calendar size={18} className="text-indigo-600" />
+                                    <h3 className="font-black text-slate-800 uppercase tracking-tight">Daily Revenue Trend</h3>
+                                </div>
+                                <div style={{ height: '280px' }}>
+                                    {dailySalesChart ? <Line data={dailySalesChart} options={{ ...chartOptions, maintainAspectRatio: false }} /> : (
+                                        <div className="flex items-center justify-center h-full text-slate-300">
+                                            <BarChart3 size={48} />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                            <div className="stat-value">₹{salesData?.totalSales?.toLocaleString() || '0'}</div>
-                        </div>
-
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Total Bills</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#5e81ac15', color: '#5e81ac' }}>
-                                    <FileText size={24} />
+                            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)]">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <PieChart size={18} className="text-indigo-600" />
+                                    <h3 className="font-black text-slate-800 uppercase tracking-tight">Payment Mix</h3>
+                                </div>
+                                <div style={{ height: '280px' }}>
+                                    {paymentModeData ? <Pie data={paymentModeData} options={{ ...pieOptions, maintainAspectRatio: false }} /> : (
+                                        <div className="flex items-center justify-center h-full text-slate-300">
+                                            <PieChart size={48} />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                            <div className="stat-value">{salesData?.totalBills || 0}</div>
                         </div>
 
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Cash</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#10b98115', color: '#10b981' }}>
-                                    <Wallet size={24} />
+                        {/* Payment Summary Table */}
+                        {salesData?.paymentSummary && salesData.paymentSummary.length > 0 && (
+                            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] overflow-hidden">
+                                <div className="flex items-center gap-3 px-10 py-7 border-b border-slate-50">
+                                    <Wallet size={18} className="text-indigo-600" />
+                                    <h3 className="font-black text-slate-800 uppercase tracking-tight">Payment Mode Analysis</h3>
                                 </div>
-                            </div>
-                            <div className="stat-value">
-                                ₹{getPaymentAmount('CASH')?.toLocaleString() || '0'}
-                            </div>
-                        </div>
-
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">UPI</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#8b5cf615', color: '#8b5cf6' }}>
-                                    <Smartphone size={24} />
-                                </div>
-                            </div>
-                            <div className="stat-value">
-                                ₹{getPaymentAmount('UPI')?.toLocaleString() || '0'}
-                            </div>
-                        </div>
-
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Card</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#ef444415', color: '#ef4444' }}>
-                                    <CreditCard size={24} />
-                                </div>
-                            </div>
-                            <div className="stat-value">
-                                ₹{getPaymentAmount('CARD')?.toLocaleString() || '0'}
-                            </div>
-                        </div>
-
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Online</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#06b6d415', color: '#06b6d4' }}>
-                                    <DollarSign size={24} />
-                                </div>
-                            </div>
-                            <div className="stat-value">
-                                ₹{getPaymentAmount('ONLINE')?.toLocaleString() || '0'}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Charts Section */}
-                    <div className="reports-grid">
-                        <div className="data-card chart-card">
-                            <h3 className="card-title">
-                                <Calendar size={20} color="var(--primary-500)" />
-                                Daily Sales Trend
-                            </h3>
-                            <div className="chart-container">
-                                {dailySalesChart && <Line data={dailySalesChart} options={chartOptions} />}
-                            </div>
-                        </div>
-
-                        <div className="data-card chart-card">
-                            <h3 className="card-title">
-                                <Wallet size={20} color="var(--primary-500)" />
-                                Payment Mode Breakdown
-                            </h3>
-                            <div className="chart-container pie-container">
-                                {paymentModeData && <Pie data={paymentModeData} options={pieOptions} />}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Payment Summary Table */}
-                    <div className="data-card">
-                        <h3 className="card-title">
-                            <TrendingUp size={20} color="var(--primary-500)" />
-                            Payment Mode Summary
-                        </h3>
-                        <table className="custom-table">
-                            <thead>
-                                <tr>
-                                    <th>Payment Mode</th>
-                                    <th>Amount</th>
-                                    <th>Percentage</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {salesData?.paymentSummary && salesData.paymentSummary.length > 0 ? (
-                                    salesData.paymentSummary.map((payment, index) => {
-                                        const percentage = (payment.amount / salesData.totalSales * 100).toFixed(2);
+                                <div className="divide-y divide-slate-50">
+                                    {salesData.paymentSummary.map((p, i) => {
+                                        const pct = ((p.amount / salesData.totalSales) * 100).toFixed(1);
+                                        const cfg = PAYMENT_ICONS[p.mode?.toUpperCase()] || { icon: <DollarSign size={20} />, color: '#6366f1', bg: '#e0e7ff' };
                                         return (
-                                            <tr key={index}>
-                                                <td style={{ fontWeight: 600 }}>{payment.mode}</td>
-                                                <td style={{ fontWeight: 700 }}>₹{payment.amount.toLocaleString()}</td>
+                                            <div key={i} className="flex items-center gap-6 px-10 py-5">
+                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg, color: cfg.color }}>{cfg.icon}</div>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="font-black text-slate-700 uppercase tracking-tight text-sm">{p.mode}</span>
+                                                        <span className="font-black text-slate-900">₹{p.amount.toLocaleString('en-IN')}</span>
+                                                    </div>
+                                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: cfg.color }}></div>
+                                                    </div>
+                                                </div>
+                                                <span className="text-sm font-black text-slate-400 w-14 text-right">{pct}%</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Bills Table */}
+                        <div className="table-container-premium">
+                            <div className="flex items-center justify-between px-8 py-6 border-b border-slate-50">
+                                <div className="flex items-center gap-3">
+                                    <FileText size={18} className="text-indigo-600" />
+                                    <h3 className="font-black text-slate-800 uppercase tracking-tight">Bill Register</h3>
+                                    <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full">{allBills.length}</span>
+                                </div>
+                            </div>
+                            <table className="table-premium">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Bill No.</th>
+                                        <th>Date & Time</th>
+                                        <th>Items Ordered</th>
+                                        <th>Qty</th>
+                                        <th className="text-right">Grand Total</th>
+                                        <th className="text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {allBills.length === 0 ? (
+                                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '80px 0' }}>
+                                            <FileText size={56} className="text-slate-100 mx-auto mb-4" />
+                                            <p className="font-bold text-slate-400">No bills found for selected period.</p>
+                                        </td></tr>
+                                    ) : allBills.map((bill, index) => {
+                                        const items = bill.items?.map(i => `${i.name}(${i.quantity})`).join(', ') || '—';
+                                        const qty = bill.items?.reduce((s, i) => s + i.quantity, 0) || 0;
+                                        return (
+                                            <tr key={bill._id} className="group">
+                                                <td className="text-slate-400 font-bold">{index + 1}</td>
                                                 <td>
-                                                    <span className="quantity-badge">{percentage}%</span>
+                                                    <span className="font-black text-slate-800">{bill.bill_number}</span>
+                                                </td>
+                                                <td>
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar size={14} className="text-slate-300" />
+                                                        <span className="text-sm font-bold text-slate-600">
+                                                            {new Date(bill.createdAt).toLocaleDateString('en-IN', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="text-xs font-bold text-slate-500 max-w-xs truncate block" title={items}>{items}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-black text-slate-600">{qty}</span>
+                                                </td>
+                                                <td className="text-right">
+                                                    <span className="font-black text-slate-900 text-base">₹{(bill.grand_total || 0).toLocaleString('en-IN')}</span>
+                                                </td>
+                                                <td>
+                                                    <div className="flex justify-end">
+                                                        <button onClick={() => handleDeleteBill(bill._id)} className="action-icon-btn delete" title="Cancel Bill">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td colSpan="3" className="empty-state">
-                                            <p>No sales data available for the selected period</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* All Bills Section */}
-                    <div className="data-card" style={{ marginTop: '2rem' }}>
-                        <h3 className="card-title">
-                            <FileText size={20} color="var(--primary-500)" />
-                            All Bills ({allBills.length})
-                        </h3>
-                        <div style={{ overflowX: 'auto' }}>
-                            {allBills.length > 0 ? (
-                                <table className="custom-table bills-table">
-                                    <thead>
-                                        <tr>
-                                            <th className="col-sno">S.NO</th>
-                                            <th className="col-bill-no">Bill No</th>
-                                            <th className="col-date">Date & Time</th>
-                                            <th className="text-left">Item Names</th>
-                                            <th className="col-qty">Qty</th>
-                                            <th className="col-total">Total</th>
-                                            <th className="col-actions">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {allBills.map((bill, index) => {
-                                            const itemNames = bill.items?.map(item => `${item.name}(${item.quantity})`).join(', ') || '-';
-                                            const totalQty = bill.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-                                            return (
-                                                <tr key={bill._id}>
-                                                    <td className="col-sno text-center">{index + 1}</td>
-                                                    <td className="col-bill-no">{bill.bill_number}</td>
-                                                    <td className="col-date">
-                                                        {new Date(bill.createdAt).toLocaleDateString('en-IN', {
-                                                            month: 'short',
-                                                            day: '2-digit',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </td>
-                                                    <td className="col-items" title={itemNames}>
-                                                        {itemNames}
-                                                    </td>
-                                                    <td className="col-qty text-center">{totalQty}</td>
-                                                    <td className="col-total">₹{bill.grand_total?.toLocaleString() || '0'}</td>
-                                                    <td className="col-actions text-center">
-                                                        <button
-                                                            onClick={() => handleDeleteBill(bill._id)}
-                                                            className="action-btn delete"
-                                                            title="Cancel Bill"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <div className="empty-state">
-                                    <FileText size={48} className="empty-icon mx-auto" />
-                                    <p>No bills found for the selected period</p>
-                                </div>
-                            )}
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
+                    </>)}
                 </div>
             </main>
         </div>

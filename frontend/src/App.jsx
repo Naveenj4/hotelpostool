@@ -1,31 +1,35 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import LandingPage from './pages/LandingPage';
-import RegisterRestaurant from './pages/RegisterRestaurant';
-import Login from './pages/Login';
-import ForgotPassword from './pages/ForgotPassword';
-import SelfServiceDashboard from './pages/dashboard/SelfServiceDashboard';
-import ProductMaster from './pages/dashboard/ProductMaster';
-import CategoryMaster from './pages/dashboard/CategoryMaster';
-import BrandMaster from './pages/dashboard/BrandMaster';
-import TableMaster from './pages/dashboard/TableMaster';
-import CaptainMaster from './pages/dashboard/CaptainMaster';
-import WaiterMaster from './pages/dashboard/WaiterMaster';
-import SupplierMaster from './pages/dashboard/SupplierMaster';
-import CustomerMaster from './pages/dashboard/CustomerMaster';
-import LedgerMaster from './pages/dashboard/LedgerMaster';
-import PurchaseEntry from './pages/dashboard/PurchaseEntry';
-import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement';
-import AdvancedReports from './pages/dashboard/AdvancedReports';
-import LedgerStatement from './pages/dashboard/LedgerStatement';
-import VoucherManagement from './pages/dashboard/VoucherManagement';
-import CounterMaster from './pages/dashboard/CounterMaster';
-import BillingPage from './pages/dashboard/BillingPage';
-import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage';
-import StockPage from './pages/StockPage';
-import ReportsPage from './pages/ReportsPage';
-import SettingsPage from './pages/SettingsPage';
-import AccessControlPage from './pages/AccessControlPage';
+import { Provider } from 'react-redux';
+import { store } from './redux/store';
+
+import LandingPage from './pages/LandingPage.jsx';
+import RegisterRestaurant from './pages/RegisterRestaurant.jsx';
+import Login from './pages/Login.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import SelfServiceDashboard from './pages/dashboard/SelfServiceDashboard.jsx';
+import ProductMaster from './pages/dashboard/ProductMaster.jsx';
+import CategoryMaster from './pages/dashboard/CategoryMaster.jsx';
+import BrandMaster from './pages/dashboard/BrandMaster.jsx';
+import TableMaster from './pages/dashboard/TableMaster.jsx';
+import CaptainMaster from './pages/dashboard/CaptainMaster.jsx';
+import WaiterMaster from './pages/dashboard/WaiterMaster.jsx';
+import SupplierMaster from './pages/dashboard/SupplierMaster.jsx';
+import CustomerMaster from './pages/dashboard/CustomerMaster.jsx';
+import LedgerMaster from './pages/dashboard/LedgerMaster.jsx';
+import PurchaseEntry from './pages/dashboard/PurchaseEntry.jsx';
+import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement.jsx';
+import AdvancedReports from './pages/dashboard/AdvancedReports.jsx';
+import LedgerStatement from './pages/dashboard/LedgerStatement.jsx';
+import VoucherManagement from './pages/dashboard/VoucherManagement.jsx';
+import CounterMaster from './pages/dashboard/CounterMaster.jsx';
+import BillingPage from './pages/dashboard/BillingPage.jsx';
+import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage.jsx';
+import StockPage from './pages/StockPage.jsx';
+import ReportsPage from './pages/ReportsPage.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
+import AccessControlPage from './pages/AccessControlPage.jsx';
+import GenericModulePlaceholder from './pages/dashboard/GenericModulePlaceholder.jsx';
 
 const ProtectedRoute = ({ children, adminOnly }) => {
     const { user, loading, isAdmin } = useAuth();
@@ -80,7 +84,6 @@ function AppRoutes() {
                             <Route path="home" element={
                                 <PermissionRoute pageKey="dashboard"><SelfServiceDashboard /></PermissionRoute>
                             } />
-                            {/* Rest of routes... */}
                             <Route path="products" element={
                                 <PermissionRoute pageKey="products"><ProductMaster /></PermissionRoute>
                             } />
@@ -144,6 +147,34 @@ function AppRoutes() {
                             <Route path="access-control" element={
                                 <ProtectedRoute adminOnly><AccessControlPage /></ProtectedRoute>
                             } />
+
+                            {/* Enterprise Extended Routes */}
+                            {/* Sales Summary */}
+                            <Route path="reports/sales/day" element={<GenericModulePlaceholder title="Day-wise Sales" moduleName="Sales Summary" />} />
+                            <Route path="reports/sales/month" element={<GenericModulePlaceholder title="Month-wise Sales" moduleName="Sales Summary" />} />
+                            <Route path="reports/sales/item" element={<GenericModulePlaceholder title="Item-wise Sales" moduleName="Sales Summary" />} />
+                            <Route path="reports/sales/category" element={<GenericModulePlaceholder title="Category-wise Sales" moduleName="Sales Summary" />} />
+
+                            {/* Purchase Summary */}
+                            <Route path="reports/purchase/day" element={<GenericModulePlaceholder title="Day-wise Purchase" moduleName="Purchase Summary" />} />
+                            <Route path="reports/purchase/supplier" element={<GenericModulePlaceholder title="Supplier-wise Purchase" moduleName="Purchase Summary" />} />
+
+                            {/* Outstanding */}
+                            <Route path="outstanding/customers" element={<GenericModulePlaceholder title="Customer Outstanding" moduleName="Outstanding" />} />
+                            <Route path="outstanding/suppliers" element={<GenericModulePlaceholder title="Supplier Outstanding" moduleName="Outstanding" />} />
+                            <Route path="outstanding/receivable" element={<GenericModulePlaceholder title="Accounts Receivable" moduleName="Outstanding" />} />
+                            <Route path="outstanding/payable" element={<GenericModulePlaceholder title="Accounts Payable" moduleName="Outstanding" />} />
+
+                            {/* Accounts */}
+                            <Route path="accounts/daybook" element={<GenericModulePlaceholder title="Real-time Daybook" moduleName="Accounts" />} />
+                            <Route path="accounts/cash" element={<GenericModulePlaceholder title="Cash Balance" moduleName="Accounts" />} />
+                            <Route path="accounts/bank" element={<GenericModulePlaceholder title="Bank Balance" moduleName="Accounts" />} />
+
+                            {/* Settings Extensions */}
+                            <Route path="settings/printer" element={<GenericModulePlaceholder title="Printer Settings" moduleName="Settings" />} />
+                            <Route path="settings/kitchen" element={<GenericModulePlaceholder title="Kitchen Display (KDS)" moduleName="Settings" />} />
+                            <Route path="settings/integration" element={<GenericModulePlaceholder title="Third-party Integrations" moduleName="Settings" />} />
+
                             <Route path="*" element={<Navigate to={getLandingPage()} replace />} />
                         </Routes>
                     </ProtectedRoute>
@@ -156,7 +187,7 @@ function AppRoutes() {
                     <ProtectedRoute>
                         <div className="p-10">
                             <h1 className="text-3xl font-bold mb-4">Dining Dashboard</h1>
-                            <p className="text-galaxy-secondary">Welcome to your POS system! Module implementation coming soon.</p>
+                            <p className="text-slate-600">Welcome to your POS system! Module implementation coming soon.</p>
                         </div>
                     </ProtectedRoute>
                 }
@@ -167,11 +198,13 @@ function AppRoutes() {
 
 function App() {
     return (
-        <Router>
-            <AuthProvider>
-                <AppRoutes />
-            </AuthProvider>
-        </Router>
+        <Provider store={store}>
+            <Router>
+                <AuthProvider>
+                    <AppRoutes />
+                </AuthProvider>
+            </Router>
+        </Provider>
     );
 }
 

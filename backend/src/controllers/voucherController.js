@@ -1,19 +1,25 @@
 const Voucher = require('../models/Voucher');
 const Ledger = require('../models/Ledger');
+const AccountTransaction = require('../models/AccountTransaction');
 const mongoose = require('mongoose');
 
+// @desc    Get all vouchers (excluding deleted)
 exports.getVouchers = async (req, res) => {
     try {
-        const vouchers = await Voucher.find({ company_id: req.user.restaurant_id })
+        const vouchers = await Voucher.find({
+            company_id: req.user.restaurant_id,
+            is_deleted: { $ne: true }
+        })
             .populate('debit_ledger', 'name group')
             .populate('credit_ledger', 'name group')
-            .sort({ createdAt: -1 });
+            .sort({ date: -1, createdAt: -1 });
         res.status(200).json({ success: true, count: vouchers.length, data: vouchers });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Server Error' });
     }
 };
 
+// @desc    Create a new voucher with double-entry accounting
 exports.createVoucher = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -21,7 +27,7 @@ exports.createVoucher = async (req, res) => {
         const { voucher_type, voucher_number, date, debit_ledger, credit_ledger, amount, narration, reference_id } = req.body;
         const company_id = req.user.restaurant_id;
 
-        // 1. Create the voucher record
+        // 1. Create the Voucher record
         const voucher = await Voucher.create([{
             company_id,
             voucher_type,
@@ -34,49 +40,77 @@ exports.createVoucher = async (req, res) => {
             reference_id
         }], { session });
 
-        // 2. Adjust Ledger Balances
-        // Debit the receiver (Debit side)
-        // For Debit Ledger: Opening Balance increases if it's DR type, decreases if CR type?
-        // Actually accounting logic: 
-        // Debit: Increases an Asset or Expense, Decreases a Liability or Income.
-        // Credit: Decreases an Asset or Expense, Increases a Liability or Income.
+        const voucherId = voucher[0]._id;
 
-        // This is complex for a simple POS. Let's stick to a simpler "Net Balance" approach 
-        // or just incrementing the numeric value based on its 'DR'/'CR' side.
+        // 2. Create Double Entry Account Transactions
+        // DEBIT Entry
+        await AccountTransaction.create([{
+            company_id,
+            ledger_id: debit_ledger,
+            type: 'DEBIT',
+            amount,
+            voucher_type,
+            voucher_number,
+            reference_id: voucherId,
+            narration,
+            date: date || Date.now()
+        }], { session });
 
-        // Let's use simplified logic:
-        // Debit side increases Debit Ledger numeric balance
-        // Credit side increases Credit Ledger numeric balance 
-        // (Assuming the numeric value is the 'absolute' balance and we just need to track the side)
+        // CREDIT Entry
+        await AccountTransaction.create([{
+            company_id,
+            ledger_id: credit_ledger,
+            type: 'CREDIT',
+            amount,
+            voucher_type,
+            voucher_number,
+            reference_id: voucherId,
+            narration,
+            date: date || Date.now()
+        }], { session });
 
-        // More standard: 
-        // updateLedgerBalance(ledgerId, amount, type)
-
-        await Ledger.findOneAndUpdate({ _id: debit_ledger, company_id }, { $inc: { opening_balance: amount } }, { session });
-        await Ledger.findOneAndUpdate({ _id: credit_ledger, company_id }, { $inc: { opening_balance: -amount } }, { session });
+        // 3. Update Ledger Balances (Opening balance is treated as net balance here)
+        // Note: In a full ERP, we'd have a separate field for current_balance, 
+        // but we'll use opening_balance as the real-time balance for this implementation.
+        await Ledger.findByIdAndUpdate(debit_ledger, { $inc: { opening_balance: amount } }, { session });
+        await Ledger.findByIdAndUpdate(credit_ledger, { $inc: { opening_balance: -amount } }, { session });
 
         await session.commitTransaction();
         res.status(201).json({ success: true, data: voucher[0] });
     } catch (error) {
         await session.abortTransaction();
+        console.error("Voucher Error:", error);
         res.status(500).json({ success: false, error: error.message });
     } finally {
         session.endSession();
     }
 };
 
+// @desc    Soft delete voucher and revert balances
 exports.deleteVoucher = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const voucher = await Voucher.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        const company_id = req.user.restaurant_id;
+        const voucher = await Voucher.findOne({ _id: req.params.id, company_id });
+
         if (!voucher) return res.status(404).json({ success: false, error: 'Voucher not found' });
+        if (voucher.is_deleted) return res.status(400).json({ success: false, error: 'Voucher already deleted' });
 
-        // Reverse balances
-        await Ledger.findOneAndUpdate({ _id: voucher.debit_ledger, company_id: req.user.restaurant_id }, { $inc: { opening_balance: -voucher.amount } }, { session });
-        await Ledger.findOneAndUpdate({ _id: voucher.credit_ledger, company_id: req.user.restaurant_id }, { $inc: { opening_balance: voucher.amount } }, { session });
+        // 1. Soft delete the voucher
+        voucher.is_deleted = true;
+        await voucher.save({ session });
 
-        await Voucher.findByIdAndDelete(req.params.id, { session });
+        // 2. Soft delete the associated account transactions
+        await AccountTransaction.updateMany(
+            { reference_id: voucher._id, company_id },
+            { is_deleted: true },
+            { session }
+        );
+
+        // 3. Revert Ledger Balances
+        await Ledger.findByIdAndUpdate(voucher.debit_ledger, { $inc: { opening_balance: -voucher.amount } }, { session });
+        await Ledger.findByIdAndUpdate(voucher.credit_ledger, { $inc: { opening_balance: voucher.amount } }, { session });
 
         await session.commitTransaction();
         res.status(200).json({ success: true, message: 'Voucher deleted and balances reverted' });

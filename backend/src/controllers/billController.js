@@ -207,14 +207,12 @@ exports.processPayment = async (req, res) => {
         bill.discount_amount = discount_amount !== undefined ? discount_amount : bill.discount_amount;
         bill.grand_total = finalGrandTotal;
 
-        // Determine primary payment mode for reporting purposes
         if (payment_modes.length === 1) {
             bill.payment_mode = payment_modes[0].type;
         } else {
             bill.payment_mode = 'SPLIT';
         }
 
-        // Handle cash payment details for balance calculation
         const cashPayment = payment_modes.find(pm => pm.type === 'CASH');
         if (cashPayment) {
             bill.payment_details = bill.payment_details || {};
@@ -222,7 +220,6 @@ exports.processPayment = async (req, res) => {
             bill.payment_details.change_returned = cashPayment.balance_return;
         }
 
-        // Decrement Stock Logic (Secured with company_id)
         const StockTransaction = require('../models/StockTransaction');
         for (const item of bill.items) {
             const product = await Product.findOne({ _id: item.product_id, company_id: req.user.restaurant_id });
@@ -231,22 +228,48 @@ exports.processPayment = async (req, res) => {
                 product.current_stock -= item.quantity;
                 await product.save();
 
-                // Log Stock Transaction
                 await StockTransaction.create({
-                    company_id: req.user.restaurant_id,
-                    product_id: product._id,
-                    type: 'OUT',
-                    quantity: -item.quantity,
-                    previous_stock: prev,
-                    new_stock: product.current_stock,
-                    reference_type: 'SALE',
-                    reference_id: bill._id,
-                    remark: `Sale Bill ${bill.bill_number}`
+                    company_id: req.user.restaurant_id, product_id: product._id, type: 'OUT',
+                    quantity: -item.quantity, previous_stock: prev, new_stock: product.current_stock,
+                    reference_type: 'SALE', reference_id: bill._id, remark: `Sale Bill ${bill.bill_number}`
                 });
             }
         }
 
         await bill.save();
+
+        // ACCOUNTING: Double Entry Integration
+        try {
+            const Ledger = require('../models/Ledger');
+            const AccountTransaction = require('../models/AccountTransaction');
+            const coId = req.user.restaurant_id;
+
+            const salesL = await Ledger.findOne({ company_id: coId, name: 'Sales Account' });
+            if (salesL) {
+                await AccountTransaction.create({
+                    company_id: coId, ledger_id: salesL._id, type: 'CREDIT', amount: bill.grand_total,
+                    voucher_type: 'SALES', voucher_number: bill.bill_number, reference_id: bill._id,
+                    narration: `Sale - Bill ${bill.bill_number}`, date: new Date()
+                });
+                await Ledger.findByIdAndUpdate(salesL._id, { $inc: { opening_balance: -bill.grand_total } });
+
+                for (const pm of payment_modes) {
+                    let accName = pm.type === 'CASH' ? 'Cash in Hand' : 'HDFC Bank';
+                    const payL = await Ledger.findOne({ company_id: coId, name: accName });
+                    if (payL) {
+                        await AccountTransaction.create({
+                            company_id: coId, ledger_id: payL._id, type: 'DEBIT', amount: pm.amount,
+                            voucher_type: 'SALES', voucher_number: bill.bill_number, reference_id: bill._id,
+                            narration: `Receipt - Bill ${bill.bill_number} (${pm.type})`, date: new Date()
+                        });
+                        await Ledger.findByIdAndUpdate(payL._id, { $inc: { opening_balance: pm.amount } });
+                    }
+                }
+            }
+        } catch (accErr) {
+            console.error("Accounting Integration Error:", accErr);
+        }
+
         res.status(200).json({ success: true, data: bill });
 
     } catch (error) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
-import './ProductMaster.css'; // Reusing ProductMaster styles
+import './Dashboard.css';
 import {
     PlusCircle,
     Search,
@@ -12,7 +12,9 @@ import {
     Loader2,
     Grid,
     AlertCircle,
-    Users
+    Users,
+    Activity,
+    Map
 } from 'lucide-react';
 
 const TableMaster = () => {
@@ -165,213 +167,169 @@ const TableMaster = () => {
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'AVAILABLE': return { bg: '#dcfce7', text: '#166534' };
-            case 'OCCUPIED': return { bg: '#fee2e2', text: '#991b1b' };
-            case 'RESERVED': return { bg: '#fef9c3', text: '#854d0e' };
-            case 'MAINTENANCE': return { bg: '#f1f5f9', text: '#475569' };
-            default: return { bg: '#f1f5f9', text: '#475569' };
+            case 'AVAILABLE': return { bg: '#dcfce7', text: '#166534', label: 'OPTIMAL' };
+            case 'OCCUPIED': return { bg: '#fee2e2', text: '#991b1b', label: 'ENGAGED' };
+            case 'RESERVED': return { bg: '#fef9c3', text: '#854d0e', label: 'COMMITTED' };
+            case 'MAINTENANCE': return { bg: '#f1f5f9', text: '#475569', label: 'OFFLINE' };
+            default: return { bg: '#f1f5f9', text: '#475569', label: 'UNKNOWN' };
         }
     };
 
     return (
         <div className="dashboard-layout">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
+
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
-                <div className="dashboard-content">
-                    <div className="page-header">
-                        <div className="page-title">
+
+                <div className="master-content-layout fade-in">
+                    <div className="master-header-premium">
+                        <div className="master-title-premium">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Map className="text-indigo-600" size={18} />
+                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Floor Logic Architect</span>
+                            </div>
                             <h2>Table Master</h2>
-                            <p>Setup and manage restaurant floor seating.</p>
+                            <p>Spatial configuration and seating capacity management.</p>
                         </div>
-                        <button
-                            className="btn-primary"
-                            style={{ gap: '0.5rem' }}
-                            onClick={() => { resetForm(); setShowDrawer(true); }}
-                        >
-                            <PlusCircle size={18} /> Add Table
+                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={20} /> Deploy New Table
                         </button>
                     </div>
 
-                    <div className="product-toolbar">
-                        <div className="search-wrapper">
-                            <Search className="search-icon" size={18} />
+                    <div className="toolbar-premium">
+                        <div className="search-premium">
+                            <Search size={20} />
                             <input
                                 type="text"
-                                placeholder="Search table numbers..."
-                                className="input-field pad-left"
+                                placeholder="Search spatial identifiers..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <span className="count-badge">
-                            Showing {filteredTables.length} tables
-                        </span>
+                        <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Floor Capacity</span>
+                                <span className="text-xl font-black text-slate-800">{filteredTables.reduce((acc, t) => acc + t.seating_capacity, 0)} <span className="text-xs text-slate-300">Guests</span></span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="table-grid">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
                         {loading ? (
-                            <div className="empty-state w-full"><Loader2 className="animate-spin mb-2 mx-auto" /> Loading...</div>
+                            Array(10).fill(0).map((_, i) => (
+                                <div key={i} className="h-48 bg-slate-50 animate-pulse rounded-[2rem]"></div>
+                            ))
                         ) : filteredTables.length === 0 ? (
-                            <div className="empty-state w-full">No tables configured.</div>
-                        ) : (
-                            filteredTables.map(table => (
-                                <div key={table._id} className={`table-box ${table.is_active ? '' : 'inactive-box'}`}>
-                                    <div className="table-inner">
-                                        <div className="table-id">#{table.table_number}</div>
-                                        <div className="table-seats">
-                                            <Users size={14} /> {table.seating_capacity} Seats
+                            <div className="col-span-full py-20 text-center">
+                                <Grid size={80} className="text-slate-100 mx-auto mb-6" />
+                                <p className="text-xl font-black text-slate-300 uppercase tracking-[0.2em]">Floor Void Detected</p>
+                            </div>
+                        ) : filteredTables.map(table => (
+                            <div key={table._id} className={`group relative bg-white rounded-[2.5rem] border-2 transition-all p-2 ${table.is_active ? 'border-slate-50 hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-100/50 hover:-translate-y-2' : 'border-slate-100 opacity-50 grayscale'}`}>
+                                <div className="p-6">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20 group-hover:bg-indigo-600 transition-colors">
+                                            <span className="text-xl font-black">{table.table_number.charAt(0)}</span>
                                         </div>
-                                        <div className="status-indicator" style={{
+                                        <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">Zone: Area-01</span>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase group-hover:text-indigo-600 transition-colors">{table.table_number}</h3>
+                                        <div className="flex items-center gap-2 text-slate-400 mt-1">
+                                            <Users size={14} />
+                                            <span className="text-xs font-bold uppercase tracking-widest">{table.seating_capacity} Occupancy Units</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between mt-auto">
+                                        <div className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em]" style={{
                                             backgroundColor: getStatusStyle(table.status).bg,
                                             color: getStatusStyle(table.status).text
                                         }}>
-                                            {table.status}
+                                            {getStatusStyle(table.status).label}
                                         </div>
                                     </div>
-                                    <div className="table-actions">
-                                        <button onClick={() => handleEdit(table)} className="action-circle edit"><Edit size={14} /></button>
-                                        <button onClick={() => handleToggleStatus(table)} className={`action-circle ${table.is_active ? 'delete' : 'restore'}`}>
-                                            {table.is_active ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
-                                        </button>
-                                        <button onClick={() => handleDelete(table)} className="action-circle delete"><Trash2 size={14} /></button>
-                                    </div>
                                 </div>
-                            ))
-                        )}
+                                <div className="bg-slate-50/50 rounded-[2rem] p-2 mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => handleEdit(table)} className="action-icon-btn edit flex-1 !h-12"><Edit size={18} /></button>
+                                    <button onClick={() => handleToggleStatus(table)} className="action-icon-btn flex-1 !h-12" style={{ background: '#fff', border: '1px solid #f1f5f9', color: table.is_active ? '#9a3412' : '#15803d' }}>
+                                        {table.is_active ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
+                                    </button>
+                                    <button onClick={() => handleDelete(table)} className="action-icon-btn delete flex-1 !h-12"><Trash2 size={18} /></button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* Drawer */}
                 {showDrawer && (
-                    <div className="drawer-overlay">
-                        <div className="drawer-backdrop" onClick={() => setShowDrawer(false)}></div>
-                        <div className="drawer-container">
-                            <div className="drawer-header">
-                                <h3 className="drawer-title">{isEditing ? 'Edit Table' : 'Add New Table'}</h3>
-                                <button onClick={() => setShowDrawer(false)} className="close-btn"><XCircle size={24} /></button>
+                    <>
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999]" onClick={() => setShowDrawer(false)}></div>
+                        <div className="drawer-premium">
+                            <div className="drawer-header-premium">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{isEditing ? 'Modify Spatial Unit' : 'Configure Spatial Unit'}</h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Floor Master Definition</p>
+                                </div>
+                                <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all">
+                                    <XCircle size={24} className="text-slate-300" />
+                                </button>
                             </div>
-                            <div className="drawer-body">
-                                {error && <div className="error-box"><AlertCircle size={16} /> {error}</div>}
-                                <form id="table-form" onSubmit={handleSubmit}>
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Table Number / Name *</label>
+                            <div className="drawer-body-premium">
+                                {error && (
+                                    <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-8 animate-in fade-in duration-300">
+                                        <AlertCircle size={20} /> {error}
+                                    </div>
+                                )}
+                                <form id="table-form" onSubmit={handleSubmit} className="space-y-8">
+                                    <div className="form-group-premium">
+                                        <label>Unit Identifier *</label>
                                         <input
                                             type="text"
                                             required
-                                            className="input-field"
-                                            placeholder="e.g. T-10 or Balcony-1"
+                                            className="input-premium"
+                                            placeholder="e.g. TABLE-01"
                                             value={formData.table_number}
-                                            onChange={(e) => setFormData({ ...formData, table_number: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, table_number: e.target.value.toUpperCase() })}
                                         />
                                     </div>
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Seating Capacity</label>
+                                    <div className="form-group-premium">
+                                        <label>Seating Threshold</label>
                                         <input
                                             type="number"
-                                            className="input-field"
+                                            className="input-premium"
                                             value={formData.seating_capacity}
                                             onChange={(e) => setFormData({ ...formData, seating_capacity: parseInt(e.target.value) || 0 })}
                                         />
                                     </div>
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Initial Status</label>
-                                        <select
-                                            className="input-field"
-                                            value={formData.status}
-                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        >
-                                            <option value="AVAILABLE">AVAILABLE</option>
-                                            <option value="OCCUPIED">OCCUPIED</option>
-                                            <option value="RESERVED">RESERVED</option>
-                                            <option value="MAINTENANCE">MAINTENANCE</option>
-                                        </select>
+                                    <div className="form-group-premium">
+                                        <label>Operational Status</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {['AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE'].map(st => (
+                                                <button key={st} type="button" onClick={() => setFormData({ ...formData, status: st })} className={`p-4 rounded-2xl border-2 font-black text-[10px] uppercase tracking-widest transition-all ${formData.status === st ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-400'}`}>
+                                                    {st}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </form>
                             </div>
-                            <div className="drawer-footer">
-                                <button type="submit" form="table-form" disabled={submitting} className="btn-primary w-full p-3">
-                                    {submitting ? 'Saving...' : (isEditing ? 'Update Table' : 'Save Table')}
+                            <div className="drawer-footer-premium">
+                                <button type="submit" form="table-form" disabled={submitting} className="btn-premium-primary flex-1 justify-center py-4">
+                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? 'Commit Configuration' : 'Launch Unit')}
                                 </button>
+                                <button onClick={() => setShowDrawer(false)} className="btn-premium-outline">Discard</button>
                             </div>
                         </div>
-                    </div>
+                    </>
                 )}
             </main>
-            <style jsx>{`
-                .table-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                    gap: 1.5rem;
-                    margin-top: 1rem;
-                }
-                .table-box {
-                    background: white;
-                    border-radius: 12px;
-                    border: 1px solid #e2e8f0;
-                    overflow: hidden;
-                    transition: all 0.2s;
-                }
-                .table-box:hover {
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-                    transform: translateY(-2px);
-                }
-                .table-inner {
-                    padding: 1.25rem;
-                    text-align: center;
-                }
-                .table-id {
-                    font-size: 1.25rem;
-                    font-weight: 700;
-                    color: #0f172a;
-                    margin-bottom: 0.25rem;
-                }
-                .table-seats {
-                    font-size: 0.85rem;
-                    color: #64748b;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 4px;
-                    margin-bottom: 0.75rem;
-                }
-                .status-indicator {
-                    display: inline-block;
-                    padding: 2px 8px;
-                    border-radius: 999px;
-                    font-size: 0.7rem;
-                    font-weight: 600;
-                    letter-spacing: 0.025em;
-                }
-                .table-actions {
-                    display: flex;
-                    border-top: 1px solid #f1f5f9;
-                    background: #f8fafc;
-                }
-                .action-circle {
-                    flex: 1;
-                    padding: 8px;
-                    border: none;
-                    background: none;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: background 0.2s;
-                    border-right: 1px solid #f1f5f9;
-                }
-                .action-circle:last-child { border-right: none; }
-                .action-circle.edit:hover { background: #dbeafe; color: #1e40af; }
-                .action-circle.delete:hover { background: #fee2e2; color: #b91c1c; }
-                .action-circle.restore:hover { background: #dcfce7; color: #166534; }
-                .inactive-box {
-                    opacity: 0.6;
-                    filter: grayscale(0.5);
-                }
-            `}</style>
         </div>
     );
 };

@@ -8,7 +8,7 @@
     max-width: 1400px;
     margin: 0 auto;
     overflow-y: auto;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 65px);
 }
 
 /* Header */
@@ -26,15 +26,15 @@
 }
 
 .ac-header-icon {
-    width: 52px;
-    height: 52px;
-    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
-    border-radius: 14px;
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, var(--primary, #7ea1c4), var(--primary-dk, #5788b7));
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    box-shadow: 0 4px 15px rgba(126, 161, 196, 0.35);
+    box-shadow: 0 4px 14px rgba(126, 161, 196, 0.3);
 }
 
 .ac-title {
@@ -125,9 +125,9 @@
 }
 
 .ac-tab.active {
-    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    background: var(--primary, #7ea1c4);
     color: white;
-    box-shadow: 0 3px 12px rgba(126, 161, 196, 0.35);
+    box-shadow: 0 3px 10px rgba(126, 161, 196, 0.28);
 }
 
 .ac-tab.active .ac-tab-badge {
@@ -206,14 +206,15 @@
 }
 
 .ac-btn-primary {
-    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    background: var(--dark, #0F172A);
     color: white;
-    box-shadow: 0 3px 10px rgba(126, 161, 196, 0.3);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.18);
 }
 
 .ac-btn-primary:hover {
+    background: var(--primary-dk, #5788b7);
     transform: translateY(-1px);
-    box-shadow: 0 5px 18px rgba(126, 161, 196, 0.4);
+    box-shadow: 0 5px 18px rgba(87, 136, 183, 0.3);
 }
 
 .ac-btn-primary:disabled {
@@ -303,17 +304,18 @@
 }
 
 .ac-role-card {
-    background: var(--white);
-    border: 1px solid var(--border-light);
-    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
     padding: 1.25rem;
     transition: all 0.25s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .ac-role-card:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
+    border-color: #7ea1c4;
 }
 
 .ac-role-header {
@@ -330,14 +332,14 @@
 }
 
 .ac-role-avatar {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary-50), #dbeafe);
+    background: #f0f7ff;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary-600);
+    color: #5788b7;
     flex-shrink: 0;
 }
 
@@ -416,12 +418,12 @@
 }
 
 .ac-pill {
-    padding: 0.25rem 0.75rem;
+    padding: 0.22rem 0.65rem;
     border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: linear-gradient(135deg, var(--primary-50), #e0f2fe);
-    color: var(--primary-600);
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #f0f7ff;
+    color: #5788b7;
     border: 1px solid rgba(126, 161, 196, 0.2);
 }
 
@@ -433,9 +435,9 @@
 
 /* Users Table */
 .ac-table-wrapper {
-    background: var(--white);
-    border-radius: 16px;
-    border: 1px solid var(--border-light);
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -478,16 +480,16 @@
 }
 
 .ac-user-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: var(--primary, #7ea1c4);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
 }
 
@@ -517,12 +519,13 @@
 
 .ac-role-badge {
     display: inline-block;
-    padding: 0.3rem 0.85rem;
+    padding: 0.25rem 0.75rem;
     border-radius: 20px;
-    background: linear-gradient(135deg, var(--primary-50), #e0f2fe);
-    color: var(--primary-600);
-    font-size: 0.85rem;
-    font-weight: 600;
+    background: #f0f7ff;
+    color: #5788b7;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: 1px solid rgba(126, 161, 196, 0.2);
 }
 
 .ac-status-toggle {
@@ -576,15 +579,15 @@
 }
 
 .ac-modal {
-    background: var(--white);
-    border-radius: 20px;
+    background: #ffffff;
+    border-radius: 16px;
     width: 100%;
     max-height: 90vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-    animation: acSlideIn 0.3s ease;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    animation: acSlideIn 0.25s ease;
 }
 
 .ac-role-modal {
@@ -776,7 +779,7 @@
 
 .ac-perm-page.enabled {
     border-color: rgba(126, 161, 196, 0.3);
-    background: linear-gradient(135deg, rgba(240, 247, 255, 0.5), var(--white));
+    background: #fafcff;
 }
 
 .ac-perm-page-header {
@@ -825,8 +828,8 @@
 }
 
 .ac-checkbox-wrapper input:checked+.ac-checkmark {
-    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
-    border-color: var(--primary-500);
+    background: var(--primary, #7ea1c4);
+    border-color: var(--primary, #7ea1c4);
 }
 
 .ac-checkbox-wrapper input:checked+.ac-checkmark::after {
@@ -945,8 +948,8 @@
     align-items: flex-start;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #f0f9ff, #eff6ff);
+    border-radius: 10px;
+    background: #f0f7ff;
     border: 1px solid rgba(126, 161, 196, 0.2);
     cursor: pointer;
 }

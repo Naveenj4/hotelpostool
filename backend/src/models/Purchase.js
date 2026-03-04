@@ -74,7 +74,11 @@ const purchaseSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    notes: String
+    notes: String,
+    is_deleted: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true
 });

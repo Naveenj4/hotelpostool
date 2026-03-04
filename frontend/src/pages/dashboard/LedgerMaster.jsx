@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
-import './ProductMaster.css'; // Reusing ProductMaster styles
+import './Dashboard.css';
 import {
     PlusCircle,
     Search,
@@ -14,7 +14,13 @@ import {
     AlertCircle,
     DollarSign,
     Info,
-    ChevronDown
+    ChevronDown,
+    Building2,
+    Target,
+    BarChart3,
+    ArrowUpRight,
+    ArrowDownLeft,
+    Layers
 } from 'lucide-react';
 
 const LEDGER_GROUPS = [
@@ -191,88 +197,120 @@ const LedgerMaster = () => {
     return (
         <div className="dashboard-layout">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
+
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
-                <div className="dashboard-content">
-                    <div className="page-header">
-                        <div className="page-title">
+
+                <div className="master-content-layout fade-in">
+                    <div className="master-header-premium">
+                        <div className="master-title-premium">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Book className="text-indigo-600" size={18} />
+                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Double-Entry Core</span>
+                            </div>
                             <h2>Ledger Master</h2>
-                            <p>Manage accounts, expenses, and income headings.</p>
+                            <p>Architectural accounting heads and financial classifications.</p>
                         </div>
-                        <button
-                            className="btn-primary"
-                            style={{ gap: '0.5rem' }}
-                            onClick={() => { resetForm(); setShowDrawer(true); }}
-                        >
-                            <PlusCircle size={18} /> Add Ledger
+                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={20} /> Provision New Account
                         </button>
                     </div>
 
-                    <div className="product-toolbar">
-                        <div className="search-wrapper">
-                            <Search className="search-icon" size={18} />
+                    <div className="toolbar-premium">
+                        <div className="search-premium">
+                            <Search size={20} />
                             <input
                                 type="text"
-                                placeholder="Search ledgers..."
-                                className="input-field pad-left"
+                                placeholder="Search account nomenclature..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <span className="count-badge">
-                            Showing {filteredLedgers.length} ledgers
-                        </span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 italic">
+                                Active Accounts: {filteredLedgers.length}
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="table-card">
-                        <table className="custom-table">
+                    <div className="table-container-premium">
+                        <table className="table-premium">
                             <thead>
                                 <tr>
-                                    <th>Ledger Name</th>
-                                    <th>Group</th>
-                                    <th>Opening Balance</th>
+                                    <th>Account Nomenclature</th>
+                                    <th>Strategic Classification</th>
+                                    <th>Opening Capital</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
+                                    <th style={{ textAlign: 'right' }}>Management</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="5" className="empty-state"><Loader2 className="animate-spin mb-2 mx-auto" /> Loading...</td></tr>
-                                ) : filteredLedgers.length === 0 ? (
-                                    <tr><td colSpan="5" className="empty-state">No ledgers found.</td></tr>
-                                ) : filteredLedgers.map((ledger) => (
-                                    <tr key={ledger._id}>
-                                        <td style={{ fontWeight: 600 }}>{ledger.name}</td>
-                                        <td>
-                                            <span className="group-badge">{ledger.group.replace(/_/g, ' ')}</span>
+                                    <tr>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '100px 0' }}>
+                                            <Loader2 className="animate-spin text-indigo-600 mx-auto mb-4" size={48} />
+                                            <p className="font-black text-slate-300 uppercase tracking-[0.2em] text-xs">Synchronizing Ledgers...</p>
                                         </td>
+                                    </tr>
+                                ) : filteredLedgers.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '100px 0' }}>
+                                            <Book size={64} className="text-slate-100 mx-auto mb-4" />
+                                            <p className="font-bold text-slate-400">No account heads registered.</p>
+                                        </td>
+                                    </tr>
+                                ) : filteredLedgers.map((ledger) => (
+                                    <tr key={ledger._id} className="group">
                                         <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <span style={{ fontWeight: 600 }}>₹{ledger.opening_balance}</span>
-                                                <span style={{ fontSize: '0.7rem', color: ledger.balance_type === 'DR' ? '#1e40af' : '#b91c1c' }}>
-                                                    ({ledger.balance_type})
-                                                </span>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg shadow-slate-900/10 group-hover:bg-indigo-600 transition-all">
+                                                    <Target size={20} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-lg font-black text-slate-800 uppercase tracking-tight leading-none group-hover:text-indigo-600 transition-colors">{ledger.name}</div>
+                                                    <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 italic">Financial Heading</div>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <span className={`status-badge ${ledger.is_active ? 'status-active' : 'status-disabled'}`}>
-                                                {ledger.is_active ? 'Active' : 'Disabled'}
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs font-black text-slate-600 uppercase tracking-tighter leading-none group-hover:text-indigo-600 transition-colors">
+                                                    {ledger.group.replace(/_/g, ' ')}
+                                                </span>
+                                                <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div className="w-1/2 h-full bg-indigo-500 rounded-full"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${ledger.balance_type === 'DR' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                    {ledger.balance_type === 'DR' ? <ArrowUpRight size={14} /> : <ArrowDownLeft size={14} />}
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-black text-slate-800">₹{ledger.opening_balance.toLocaleString()}</div>
+                                                    <div className={`text-[10px] font-black uppercase tracking-widest ${ledger.balance_type === 'DR' ? 'text-blue-600' : 'text-rose-600'}`}>
+                                                        {ledger.balance_type === 'DR' ? 'Debit' : 'Credit'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className={`badge-premium ${ledger.is_active ? 'active' : 'disabled'}`}>
+                                                {ledger.is_active ? 'COMPLIANT' : 'FROZEN'}
                                             </span>
                                         </td>
                                         <td>
-                                            <div className="action-btn-group">
-                                                <button onClick={() => handleEdit(ledger)} className="action-btn edit">
-                                                    <Edit size={16} />
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={() => handleEdit(ledger)} className="action-icon-btn edit"><Edit size={18} /></button>
+                                                <button onClick={() => handleToggleStatus(ledger)} className="action-icon-btn" style={{ background: ledger.is_active ? '#fff7ed' : '#f0fdf4', color: ledger.is_active ? '#9a3412' : '#15803d' }}>
+                                                    {ledger.is_active ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
                                                 </button>
-                                                <button onClick={() => handleToggleStatus(ledger)} className={`action-btn ${ledger.is_active ? 'delete' : 'restore'}`}>
-                                                    {ledger.is_active ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
-                                                </button>
-                                                <button onClick={() => handleDelete(ledger)} className="action-btn delete">
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                <button onClick={() => handleDelete(ledger)} className="action-icon-btn delete"><Trash2 size={18} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -282,79 +320,89 @@ const LedgerMaster = () => {
                     </div>
                 </div>
 
-                {/* Drawer */}
                 {showDrawer && (
-                    <div className="drawer-overlay">
-                        <div className="drawer-backdrop" onClick={() => setShowDrawer(false)}></div>
-                        <div className="drawer-container">
-                            <div className="drawer-header">
-                                <h3 className="drawer-title">
-                                    <Book size={20} style={{ display: 'inline', marginRight: '8px' }} />
-                                    {isEditing ? 'Edit Ledger' : 'Add New Ledger'}
-                                </h3>
-                                <button onClick={() => setShowDrawer(false)} className="close-btn"><XCircle size={24} /></button>
+                    <>
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999]" onClick={() => setShowDrawer(false)}></div>
+                        <div className="drawer-premium">
+                            <div className="drawer-header-premium">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{isEditing ? 'Modify Account' : 'Architect Account'}</h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Double-Entry Fiscal Registry</p>
+                                </div>
+                                <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all">
+                                    <XCircle size={24} className="text-slate-300" />
+                                </button>
                             </div>
-                            <div className="drawer-body">
-                                {error && <div className="error-box"><AlertCircle size={16} /> {error}</div>}
-                                <form id="ledger-form" onSubmit={handleSubmit}>
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Ledger Name *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            className="input-field"
-                                            placeholder="e.g. Electricity Bill or Axis Bank"
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        />
+                            <div className="drawer-body-premium">
+                                {error && (
+                                    <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-8">
+                                        <AlertCircle size={20} /> {error}
                                     </div>
-                                    <div className="form-group mb-4" style={{ position: 'relative' }}>
-                                        <label className="input-label">Ledger Group *</label>
-                                        <select
-                                            className="input-field"
-                                            value={formData.group}
-                                            onChange={(e) => setFormData({ ...formData, group: e.target.value })}
-                                        >
-                                            {LEDGER_GROUPS.map(g => (
-                                                <option key={g.value} value={g.value}>{g.label}</option>
-                                            ))}
-                                        </select>
+                                )}
+                                <form id="ledger-form" onSubmit={handleSubmit} className="space-y-8">
+                                    <div className="form-group-premium">
+                                        <label>Account Nomenclature *</label>
+                                        <div className="relative">
+                                            <Building2 size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                            <input
+                                                type="text"
+                                                required
+                                                className="input-premium !pl-12"
+                                                placeholder="e.g. AXIS BANK OPERATIONAL"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="form-group-premium">
+                                        <label>Accounting Classification Group *</label>
+                                        <div className="relative">
+                                            <Layers size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                                            <select
+                                                className="input-premium !pl-12 appearance-none cursor-pointer"
+                                                value={formData.group}
+                                                onChange={(e) => setFormData({ ...formData, group: e.target.value })}
+                                            >
+                                                {LEDGER_GROUPS.map(g => (
+                                                    <option key={g.value} value={g.value}>{g.label}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                        </div>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '1rem' }}>
-                                        <div className="form-group mb-4">
-                                            <label className="input-label">Opening Balance</label>
-                                            <div className="input-with-icon">
-                                                <DollarSign size={16} className="field-icon" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="form-group-premium">
+                                            <label>Opening Capital</label>
+                                            <div className="relative">
+                                                <DollarSign size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                                                 <input
                                                     type="number"
-                                                    className="input-field pad-left-icon"
+                                                    className="input-premium !pl-12"
                                                     value={formData.opening_balance}
                                                     onChange={(e) => setFormData({ ...formData, opening_balance: parseFloat(e.target.value) || 0 })}
                                                 />
                                             </div>
                                         </div>
-                                        <div className="form-group mb-4">
-                                            <label className="input-label">Type</label>
-                                            <select
-                                                className="input-field"
-                                                value={formData.balance_type}
-                                                onChange={(e) => setFormData({ ...formData, balance_type: e.target.value })}
-                                            >
-                                                <option value="DR">DR</option>
-                                                <option value="CR">CR</option>
-                                            </select>
+                                        <div className="form-group-premium">
+                                            <label>Logic Type</label>
+                                            <div className="flex gap-2">
+                                                {['DR', 'CR'].map(type => (
+                                                    <button key={type} type="button" onClick={() => setFormData({ ...formData, balance_type: type })} className={`flex-1 p-3 rounded-xl border-2 font-black text-xs uppercase tracking-widest transition-all ${formData.balance_type === type ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-400'}`}>
+                                                        {type === 'DR' ? 'Debit' : 'Credit'}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="form-group mb-4">
-                                        <label className="input-label">Description (Optional)</label>
-                                        <div className="input-with-icon">
-                                            <Info size={16} className="field-icon" style={{ top: '12px', transform: 'none' }} />
+                                    <div className="form-group-premium">
+                                        <label>Accounting Narrative (Optional)</label>
+                                        <div className="relative">
+                                            <Info size={20} className="absolute left-4 top-4 text-slate-300" />
                                             <textarea
-                                                className="input-field pad-left-icon"
-                                                style={{ height: '80px', paddingTop: '8px' }}
-                                                placeholder="Additional notes..."
+                                                className="input-premium !pl-12 !h-24 !pt-4"
+                                                placeholder="Additional ledger metadata..."
                                                 value={formData.description}
                                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             ></textarea>
@@ -362,35 +410,16 @@ const LedgerMaster = () => {
                                     </div>
                                 </form>
                             </div>
-                            <div className="drawer-footer">
-                                <button type="submit" form="ledger-form" disabled={submitting} className="btn-primary w-full p-3">
-                                    {submitting ? 'Saving...' : (isEditing ? 'Update Ledger' : 'Save Ledger')}
+                            <div className="drawer-footer-premium">
+                                <button type="submit" form="ledger-form" disabled={submitting} className="btn-premium-primary flex-1 justify-center py-4">
+                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? 'COMMIT LEDGER' : 'PROVISION ACCOUNT')}
                                 </button>
+                                <button onClick={() => setShowDrawer(false)} className="btn-premium-outline">ABORT</button>
                             </div>
                         </div>
-                    </div>
+                    </>
                 )}
             </main>
-            <style jsx>{`
-                .group-badge {
-                    padding: 2px 8px;
-                    background: #f1f5f9;
-                    border-radius: 4px;
-                    font-size: 0.75rem;
-                    color: #475569;
-                    font-weight: 500;
-                    text-transform: capitalize;
-                }
-                .input-with-icon { position: relative; }
-                .field-icon {
-                    position: absolute;
-                    left: 12px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    color: #94a3b8;
-                }
-                .pad-left-icon { padding-left: 38px !important; }
-            `}</style>
         </div>
     );
 };

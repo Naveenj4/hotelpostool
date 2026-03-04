@@ -40,6 +40,10 @@ const voucherSchema = new mongoose.Schema({
     },
     reference_id: {
         type: mongoose.Schema.Types.ObjectId // Can link to Purchase, Bill, etc if needed
+    },
+    is_deleted: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
