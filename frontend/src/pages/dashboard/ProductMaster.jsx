@@ -46,6 +46,7 @@ const ProductMaster = () => {
         brand: '',
         food_type: 'NONE',
         item_nature: 'GOOD',
+        product_type: 'BUY_SELL',
         purchase_price: 0,
         cost_price: 0,
         selling_price: 0,
@@ -463,6 +464,17 @@ const ProductMaster = () => {
                                                 </label>
                                             </div>
                                         </div>
+                                        <div className="form-group">
+                                            <label className="input-label">Product Type</label>
+                                            <div style={{ display: 'flex', gap: '1.5rem', paddingTop: '0.5rem' }}>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                                    <input type="radio" name="product_type" value="OWN" checked={formData.product_type === 'OWN'} onChange={handleInputChange} /> Own Product
+                                                </label>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                                    <input type="radio" name="product_type" value="BUY_SELL" checked={formData.product_type === 'BUY_SELL'} onChange={handleInputChange} /> Buy &amp; Sell
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -470,14 +482,18 @@ const ProductMaster = () => {
                                 <div className="form-section">
                                     <div className="section-title"><Tag size={18} /> Pricing & Tax</div>
                                     <div className="grid-row-4">
-                                        <div className="form-group">
-                                            <label className="input-label">Purchase Rate</label>
-                                            <input type="number" name="purchase_price" className="input-field" value={formData.purchase_price} onChange={handleInputChange} />
-                                        </div>
-                                        <div className="form-group">
-                                            <label className="input-label">Cost Rate</label>
-                                            <input type="number" name="cost_price" className="input-field" value={formData.cost_price} onChange={handleInputChange} />
-                                        </div>
+                                        {formData.product_type !== 'OWN' && (
+                                            <>
+                                                <div className="form-group">
+                                                    <label className="input-label">Purchase Rate</label>
+                                                    <input type="number" name="purchase_price" className="input-field" value={formData.purchase_price} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label className="input-label">Cost Rate</label>
+                                                    <input type="number" name="cost_price" className="input-field" value={formData.cost_price} onChange={handleInputChange} />
+                                                </div>
+                                            </>
+                                        )}
                                         <div className="form-group">
                                             <label className="input-label">Sales Rate *</label>
                                             <input type="number" name="selling_price" required className="input-field" value={formData.selling_price} onChange={handleInputChange} />
@@ -492,10 +508,12 @@ const ProductMaster = () => {
                                             <label className="input-label">GST Sales (%)</label>
                                             <input type="number" name="gst_sales" className="input-field" value={formData.gst_sales} onChange={handleInputChange} />
                                         </div>
-                                        <div className="form-group">
-                                            <label className="input-label">GST Purchase (%)</label>
-                                            <input type="number" name="gst_purchase" className="input-field" value={formData.gst_purchase} onChange={handleInputChange} />
-                                        </div>
+                                        {formData.product_type !== 'OWN' && (
+                                            <div className="form-group">
+                                                <label className="input-label">GST Purchase (%)</label>
+                                                <input type="number" name="gst_purchase" className="input-field" value={formData.gst_purchase} onChange={handleInputChange} />
+                                            </div>
+                                        )}
                                         <div className="form-group" style={{ gridColumn: 'span 2' }}>
                                             <label className="input-label">HSN Code</label>
                                             <input type="text" name="hsn_code" className="input-field" placeholder="GST HSN Code" value={formData.hsn_code} onChange={handleInputChange} />

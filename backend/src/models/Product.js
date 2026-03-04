@@ -46,6 +46,11 @@ const productSchema = new mongoose.Schema({
         enum: ['GOOD', 'SERVICE'],
         default: 'GOOD'
     },
+    product_type: {
+        type: String,
+        enum: ['OWN', 'BUY_SELL'],
+        default: 'BUY_SELL'
+    },
     purchase_price: {
         type: Number,
         default: 0

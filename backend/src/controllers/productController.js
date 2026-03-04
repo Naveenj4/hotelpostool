@@ -30,7 +30,7 @@ exports.getProducts = async (req, res) => {
 // @access  Private (Admin, Owner)
 exports.createProduct = async (req, res) => {
     try {
-        const { name, category, selling_price } = req.body;
+        const { name, category, selling_price, product_type } = req.body;
 
         if (!name || !category || selling_price === undefined) {
             return res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -73,6 +73,7 @@ exports.updateProduct = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
 
+        // Apply update data
         product = await Product.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
