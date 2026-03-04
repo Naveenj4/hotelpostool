@@ -127,12 +127,12 @@ const LedgerStatement = () => {
                             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 border-b border-slate-100">
                                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Opening Balance</p>
-                                    <h4 className="text-2xl font-black text-indigo-600">₹{statementData.opening_balance.toLocaleString()}</h4>
+                                    <h4 className="text-2xl font-black text-indigo-600">₹{(statementData.opening_balance || 0).toLocaleString()}</h4>
                                 </div>
                                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-right">
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Closing Balance</p>
-                                    <h4 className={`text-2xl font-black ${statementData.data[statementData.data.length - 1]?.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                        ₹{statementData.data[statementData.data.length - 1]?.balance.toLocaleString() || statementData.opening_balance.toLocaleString()}
+                                    <h4 className={`text-2xl font-black ${(statementData.data[statementData.data.length - 1]?.balance || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        ₹{(statementData.data[statementData.data.length - 1]?.balance ?? statementData.opening_balance ?? 0).toLocaleString()}
                                     </h4>
                                 </div>
                             </div>

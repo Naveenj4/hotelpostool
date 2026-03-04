@@ -74,11 +74,11 @@ async function seedAll() {
         // 2. Create Products
         console.log('Creating products...');
         const products = [
-            { name: "Coffee", category: "Beverages", selling_price: 50, purchase_price: 20, product_type: "TYPE_B" },
-            { name: "Tea", category: "Beverages", selling_price: 30, purchase_price: 10, product_type: "TYPE_B" },
-            { name: "Burger", category: "Starters", selling_price: 120, purchase_price: 60, product_type: "TYPE_B" },
-            { name: "Pizza", category: "Main Course", selling_price: 250, purchase_price: 120, product_type: "TYPE_B" },
-            { name: "Ice Cream", category: "Desserts", selling_price: 80, purchase_price: 40, product_type: "TYPE_B" }
+            { name: "Coffee", category: "Beverages", selling_price: 50, purchase_price: 20, product_type: "BUY_SELL" },
+            { name: "Tea", category: "Beverages", selling_price: 30, purchase_price: 10, product_type: "BUY_SELL" },
+            { name: "Burger", category: "Starters", selling_price: 120, purchase_price: 60, product_type: "BUY_SELL" },
+            { name: "Pizza", category: "Main Course", selling_price: 250, purchase_price: 120, product_type: "BUY_SELL" },
+            { name: "Ice Cream", category: "Desserts", selling_price: 80, purchase_price: 40, product_type: "BUY_SELL" }
         ];
         for (const prod of products) {
             await fetch('http://localhost:5000/api/products', {

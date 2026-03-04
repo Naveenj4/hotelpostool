@@ -98,7 +98,16 @@ const AdvancedReports = () => {
             if (data[0].success) setSupplierOutstanding(data[0].data);
             if (data[1].success) setCustomerOutstanding(data[1].data);
             if (data[2].success) setStockValuation(data[2].data);
-            if (data[3].success) setProfitLoss(data[3].data);
+            if (data[3].success) {
+                const pl = data[3].data;
+                setProfitLoss({
+                    revenue: pl.income.total,
+                    purchases: pl.direct_expenses.total,
+                    expenses: pl.indirect_expenses.total,
+                    grossProfit: pl.gross_profit,
+                    netProfit: pl.net_profit
+                });
+            }
             if (data[4].success) setSalesByBrand(data[4].data);
             if (data[5].success) setSalesByCaptain(data[5].data);
             if (data[6].success) setPurchaseSummary(data[6].data);
@@ -177,7 +186,7 @@ const AdvancedReports = () => {
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Net Profit / (Loss)</p>
-                                        <h3 className={`text-2xl font-black ${profitLoss.netProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>₹{profitLoss.netProfit.toLocaleString()}</h3>
+                                        <h3 className={`text-2xl font-black ${profitLoss.netProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>₹{(profitLoss.netProfit || 0).toLocaleString()}</h3>
                                     </div>
                                 </div>
                                 <div className="p-6 rounded-2xl border border-indigo-100 bg-indigo-50 flex items-center gap-4 transition-all hover:shadow-lg">
@@ -186,7 +195,7 @@ const AdvancedReports = () => {
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Revenue</p>
-                                        <h3 className="text-2xl font-black text-indigo-700">₹{profitLoss.revenue.toLocaleString()}</h3>
+                                        <h3 className="text-2xl font-black text-indigo-700">₹{(profitLoss.revenue || 0).toLocaleString()}</h3>
                                     </div>
                                 </div>
                                 <div className="p-6 rounded-2xl border border-amber-100 bg-amber-50 flex items-center gap-4 transition-all hover:shadow-lg">
@@ -195,7 +204,7 @@ const AdvancedReports = () => {
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Stock Valuation</p>
-                                        <h3 className="text-2xl font-black text-amber-700">₹{stockValuation.totalValue.toLocaleString()}</h3>
+                                        <h3 className="text-2xl font-black text-amber-700">₹{(stockValuation.totalValue || 0).toLocaleString()}</h3>
                                     </div>
                                 </div>
                             </div>
@@ -210,7 +219,7 @@ const AdvancedReports = () => {
                                         {supplierOutstanding.map((s, i) => (
                                             <div key={i} className="px-5 py-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
                                                 <span className="font-bold text-slate-700">{s.name}</span>
-                                                <span className="text-rose-600 font-black">₹{s.balance.toLocaleString()}</span>
+                                                <span className="text-rose-600 font-black">₹{(s.balance || 0).toLocaleString()}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -224,7 +233,7 @@ const AdvancedReports = () => {
                                         {customerOutstanding.map((c, i) => (
                                             <div key={i} className="px-5 py-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
                                                 <span className="font-bold text-slate-700">{c.name}</span>
-                                                <span className="text-emerald-600 font-black">₹{c.balance.toLocaleString()}</span>
+                                                <span className="text-emerald-600 font-black">₹{(c.balance || 0).toLocaleString()}</span>
                                             </div>
                                         ))}
                                     </div>

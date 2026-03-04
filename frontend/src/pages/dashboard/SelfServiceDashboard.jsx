@@ -9,7 +9,8 @@ import {
     AlertTriangle,
     ArrowUpRight,
     ShoppingBag,
-    PlusCircle
+    PlusCircle,
+    Wallet
 } from 'lucide-react';
 import { Skeleton, TableSkeleton } from '../../components/Skeleton';
 
@@ -172,25 +173,25 @@ const SelfServiceDashboard = () => {
                     <div className="widgets-grid">
                         <StatCard
                             label="Today's Sales"
-                            value={`₹${dashboardData?.todaySales?.toLocaleString()}`}
+                            value={`₹${(dashboardData?.todaySales || 0).toLocaleString()}`}
                             icon={<TrendingUp size={24} />}
                             color="#10b981"
                         />
                         <StatCard
                             label="Today's Purchases"
-                            value={`₹${dashboardData?.todayPurchases?.toLocaleString()}`}
+                            value={`₹${(dashboardData?.todayPurchases || 0).toLocaleString()}`}
                             icon={<ShoppingBag size={24} />}
                             color="#ef4444"
                         />
                         <StatCard
                             label="Supplier O/S"
-                            value={`₹${dashboardData?.supplierOutstanding?.toLocaleString()}`}
+                            value={`₹${(dashboardData?.supplierOutstanding || 0).toLocaleString()}`}
                             icon={<CreditCard size={24} />}
                             color="#f59e0b"
                         />
                         <StatCard
                             label="Customer O/S"
-                            value={`₹${dashboardData?.customerOutstanding?.toLocaleString()}`}
+                            value={`₹${(dashboardData?.customerOutstanding || 0).toLocaleString()}`}
                             icon={<Wallet size={24} />}
                             color="#3b82f6"
                         />
