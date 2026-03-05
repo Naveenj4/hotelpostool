@@ -433,7 +433,7 @@
 
 /* ---- Bill Sidebar (Right) ---- */
 .bill-sidebar {
-    width: 800px;
+    width: 1000px;
     background: #fff;
     border-left: 1px solid var(--border-light);
     display: flex;

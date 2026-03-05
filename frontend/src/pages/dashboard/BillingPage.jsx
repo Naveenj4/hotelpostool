@@ -37,7 +37,10 @@ import {
     Truck,
     Users2,
     Smartphone,
-    Wallet
+    Wallet,
+    MoveHorizontal,
+    ArrowLeftRight,
+    Undo2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -843,57 +846,27 @@ const BillingPage = () => {
                                     <span>TABLE</span>
                                 </button>
                                 <button className="meta-icon-btn">
-                                    <div className="icon-bg"><Users size={18} /></div>
-                                    <span>PAX</span>
-                                </button>
-                                <button className="meta-icon-btn">
-                                    <div className="icon-bg"><User size={18} /></div>
+                                    <div className="icon-bg"><UserCheck size={18} /></div>
                                     <span>CAPTAIN</span>
                                 </button>
                                 <button className="meta-icon-btn">
-                                    <div className="icon-bg"><History size={18} /></div>
-                                    <span>KOT</span>
+                                    <div className="icon-bg"><User size={18} /></div>
+                                    <span>CUSTOMER</span>
                                 </button>
                                 <button className="meta-icon-btn">
-                                    <div className="icon-bg"><RotateCcw size={18} /></div>
-                                    <span>BILL</span>
+                                    <div className="icon-bg"><MoveHorizontal size={18} /></div>
+                                    <span>ALTER</span>
+                                </button>
+                                <button className="meta-icon-btn">
+                                    <div className="icon-bg"><ArrowLeftRight size={18} /></div>
+                                    <span>TRANSFER</span>
+                                </button>
+                                <button className="meta-icon-btn">
+                                    <div className="icon-bg"><Undo2 size={18} /></div>
+                                    <span>RETURN</span>
                                 </button>
                             </div>
 
-                            {/* Order Meta */}
-                            <div className="order-meta-enhanced">
-                                {orderMode === 'DINE_IN' && (
-                                    <div className="dine-in-fields">
-                                        <div className="meta-input-field">
-                                            <label><Table size={14} /> Table</label>
-                                            <select value={selectedTableId} onChange={(e) => setSelectedTableId(e.target.value)}>
-                                                <option value="">Select Table</option>
-                                                {tables.map(t => <option key={t._id} value={t._id}>{t.table_number}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="meta-input-field">
-                                            <label><UserCheck size={14} /> Captain</label>
-                                            <select value={selectedCaptain} onChange={(e) => setSelectedCaptain(e.target.value)}>
-                                                <option value="">Select Capt</option>
-                                                {captains.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="meta-input-field">
-                                            <label><Users size={14} /> Pax</label>
-                                            <input type="number" placeholder="0" value={persons} onChange={(e) => setPersons(e.target.value)} />
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="customer-info-section">
-                                    <div className="cust-input-row">
-                                        <User size={14} className="icon" />
-                                        <input type="text" placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-                                        <Smartphone size={14} className="icon" />
-                                        <input type="text" placeholder="Phone Number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
 
                             {/* Item List */}
                             <div className="order-items-header">
