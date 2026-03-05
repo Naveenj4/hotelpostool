@@ -404,8 +404,6 @@ const BillingPage = () => {
         localStorage.setItem('pos_held_bills', JSON.stringify(newHeld));
     };
 
-    const { subTotal, grandTotal, taxAmount, discountAmount, roundOff } = billCalculations;
-
     const filteredProducts = products.filter(p => {
         const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
         const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
