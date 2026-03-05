@@ -77,7 +77,6 @@ const BillingPage = () => {
     // -- NEW POS ENHANCEMENT STATES --
     const [showTimer, setShowTimer] = useState(true);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [priceColorEnabled, setPriceColorEnabled] = useState(true);
     const [loyaltyEnabled, setLoyaltyEnabled] = useState(false);
 
     const [billSearchQuery, setBillSearchQuery] = useState("");
@@ -573,13 +572,12 @@ const BillingPage = () => {
             <div className="pos-nav">
                 <div className="nav-left">
                     <div className="pos-logo-container">
-                        <div className="pos-logo-circle">
-                            <ShoppingBag size={22} color="white" />
+                        <div className="pos-logo-circle" style={{ overflow: 'hidden', padding: 0 }}>
+                            <img src="/yugam-logo.png" alt="Yugam Software" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                     </div>
                     <div className="pos-brand-info">
-                        <h2>{restaurantName}</h2>
-                        <p>{counters.find(c => c._id === selectedCounter)?.name || 'Main Branch'} • Terminal 01</p>
+                        <h2>Yugam Software</h2>
                     </div>
                 </div>
 
@@ -634,13 +632,7 @@ const BillingPage = () => {
                                         <option value="TOP_HEADER">Top Layout</option>
                                     </select>
                                 </div>
-                                <div className="settings-option">
-                                    <span>Price Color</span>
-                                    <label className="switch">
-                                        <input type="checkbox" checked={priceColorEnabled} onChange={() => setPriceColorEnabled(!priceColorEnabled)} />
-                                        <span className="slider round"></span>
-                                    </label>
-                                </div>
+
                                 <div className="settings-option">
                                     <span>Loyalty System</span>
                                     <label className="switch">
