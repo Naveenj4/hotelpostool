@@ -22,7 +22,20 @@ import {
     Menu as MenuIcon,
     LayoutGrid,
     Columns,
-    LogOut
+    LogOut,
+    Bell,
+    Settings,
+    Pause,
+    History,
+    Timer,
+    CheckSquare,
+    Gift,
+    Truck,
+    CircleSlash,
+    Package,
+    Users2,
+    UserCheck,
+    Smartphone
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -58,6 +71,62 @@ const BillingPage = () => {
     const [discount, setDiscount] = useState(0);
     const [gstPercentage, setGstPercentage] = useState(5);
     const [promoCode, setPromoCode] = useState('');
+
+    // -- NEW POS ENHANCEMENT STATES --
+    const [showTimer, setShowTimer] = useState(true);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [priceColorEnabled, setPriceColorEnabled] = useState(true);
+    const [loyaltyEnabled, setLoyaltyEnabled] = useState(false);
+
+    const [billSearchQuery, setBillSearchQuery] = useState("");
+    const [dailySearchQuery, setDailySearchQuery] = useState("");
+
+    const [deliveryCharge, setDeliveryCharge] = useState(0);
+    const [containerCharge, setContainerCharge] = useState(0);
+    const [discountType, setDiscountType] = useState('FIXED'); // 'PERCENT' or 'FIXED'
+
+    const [isHoldPanelOpen, setIsHoldPanelOpen] = useState(false);
+    const [heldBills, setHeldBills] = useState(() => JSON.parse(localStorage.getItem('pos_held_bills') || '[]'));
+
+    const [captains, setCaptains] = useState([]);
+    const [selectedCaptain, setSelectedCaptain] = useState("");
+    const [tables, setTables] = useState([]);
+    const [selectedTableId, setSelectedTableId] = useState("");
+
+    const [customerName, setCustomerName] = useState("");
+    const [customerPhone, setCustomerPhone] = useState("");
+    const [customerAddress, setCustomerAddress] = useState("");
+
+    // -- LATEST CALCULATION HOOK --
+    const billCalculations = useMemo(() => {
+        const sub = billItems.reduce((acc, item) => acc + (item.is_complementary ? 0 : item.total_price), 0);
+        let discAmt = 0;
+        if (discountType === 'PERCENT') {
+            discAmt = sub * (parseFloat(discount) / 100);
+        } else {
+            discAmt = parseFloat(discount);
+        }
+
+        const taxable = Math.max(0, sub - discAmt);
+        const gstAmt = taxable * (parseFloat(gstPercentage) / 100);
+        const delivery = parseFloat(deliveryCharge) || 0;
+        const container = parseFloat(containerCharge) || 0;
+
+        const rawTotal = taxable + gstAmt + delivery + container;
+        const roundedTotal = Math.round(rawTotal);
+        const rOff = roundedTotal - rawTotal;
+
+        return {
+            subTotal: sub,
+            discountAmount: discAmt,
+            taxAmount: gstAmt,
+            deliveryCharge: delivery,
+            containerCharge: container,
+            roundOff: rOff,
+            grandTotal: roundedTotal
+        };
+    }, [billItems, discount, gstPercentage, discountType, deliveryCharge, containerCharge]);
+
     const [showLoyalty, setShowLoyalty] = useState(false);
     const [billingLayout, setBillingLayout] = useState(() => localStorage.getItem('cachedBillingLayout') || 'SIDEBAR');
 
@@ -118,6 +187,17 @@ const BillingPage = () => {
                     setBillingLayout(layout);
                     localStorage.setItem('cachedBillingLayout', layout);
                 }
+
+                // 5. Fetch Tables
+                const tableRes = await fetch(`${import.meta.env.VITE_API_URL}/tables`, { headers });
+                const tableData = await tableRes.json();
+                if (tableData.success) setTables(tableData.data);
+
+                // 6. Fetch Captains
+                const captainRes = await fetch(`${import.meta.env.VITE_API_URL}/captains`, { headers });
+                const captainData = await captainRes.json();
+                if (captainData.success) setCaptains(captainData.data);
+
             } catch (error) {
                 console.error("Billing init error", error);
             } finally {
@@ -255,13 +335,73 @@ const BillingPage = () => {
         }
     };
 
-    const subTotal = billItems.reduce((acc, item) => acc + item.total_price, 0);
-    const parsedDiscount = parseFloat(discount) || 0;
-    const parsedExtraCharges = parseFloat(extraCharges) || 0;
-    const parsedGst = parseFloat(gstPercentage) || 0;
-    const taxableAmount = subTotal - parsedDiscount;
-    const tax = taxableAmount * (parsedGst / 100);
-    const grandTotal = taxableAmount + tax + parsedExtraCharges;
+    const toggleComplementary = async (index) => {
+        const newItems = [...billItems];
+        newItems[index].is_complementary = !newItems[index].is_complementary;
+        setBillItems(newItems);
+        // Backend update could happen here if model supports it
+    };
+
+    const holdCurrentBill = () => {
+        if (billItems.length === 0) return alert("Nothing to hold!");
+
+        const billToHold = {
+            id: Date.now(),
+            billItems: [...billItems],
+            orderMode,
+            tableNo,
+            persons,
+            selectedTableId,
+            selectedCaptain,
+            customer: { name: customerName, phone: customerPhone, address: customerAddress },
+            billNumber,
+            timestamp: new Date().toISOString()
+        };
+
+        const newHeld = [billToHold, ...heldBills];
+        setHeldBills(newHeld);
+        localStorage.setItem('pos_held_bills', JSON.stringify(newHeld));
+
+        // Clear current
+        setBillItems([]);
+        setTableNo("");
+        setPersons("");
+        setSelectedTableId("");
+        setSelectedCaptain("");
+        setCustomerName("");
+        setCustomerPhone("");
+        setCustomerAddress("");
+        alert("Bill placed on hold.");
+    };
+
+    const restoreHeldBill = (heldId) => {
+        const target = heldBills.find(h => h.id === heldId);
+        if (!target) return;
+
+        setBillItems(target.billItems);
+        setOrderMode(target.orderMode);
+        setTableNo(target.tableNo || "");
+        setPersons(target.persons || "");
+        setSelectedTableId(target.selectedTableId || "");
+        setSelectedCaptain(target.selectedCaptain || "");
+        setCustomerName(target.customer?.name || "");
+        setCustomerPhone(target.customer?.phone || "");
+        setCustomerAddress(target.customer?.address || "");
+
+        // Remove from hold list
+        const newHeld = heldBills.filter(h => h.id !== heldId);
+        setHeldBills(newHeld);
+        localStorage.setItem('pos_held_bills', JSON.stringify(newHeld));
+        setIsHoldPanelOpen(false);
+    };
+
+    const deleteHeldBill = (heldId) => {
+        const newHeld = heldBills.filter(h => h.id !== heldId);
+        setHeldBills(newHeld);
+        localStorage.setItem('pos_held_bills', JSON.stringify(newHeld));
+    };
+
+    const { subTotal, grandTotal, taxAmount, discountAmount, roundOff } = billCalculations;
 
     const filteredProducts = products.filter(p => {
         const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
@@ -290,8 +430,11 @@ const BillingPage = () => {
                 body: JSON.stringify({
                     payment_modes: paymentModes,
                     sub_total: subTotal,
-                    tax_amount: tax,
-                    discount_amount: parsedDiscount,
+                    tax_amount: taxAmount,
+                    discount_amount: discountAmount,
+                    delivery_charge: deliveryCharge,
+                    container_charge: containerCharge,
+                    round_off: roundOff,
                     grand_total: grandTotal
                 })
             });
@@ -305,6 +448,19 @@ const BillingPage = () => {
                 setCurrentBillId(null);
                 setBillNumber('Generating...');
                 setBillItems([]);
+
+                // Reset form fields
+                setTableNo("");
+                setPersons("");
+                setSelectedTableId("");
+                setSelectedCaptain("");
+                setCustomerName("");
+                setCustomerPhone("");
+                setCustomerAddress("");
+                setDiscount(0);
+                setDeliveryCharge(0);
+                setContainerCharge(0);
+
                 createNewBill();
             }
         } catch (error) {
@@ -350,336 +506,501 @@ const BillingPage = () => {
             {/* Top Navigation Bar */}
             <div className="pos-nav">
                 <div className="nav-left">
-                    <button className="nav-icon-btn" onClick={() => navigate('/dashboard/self-service/home')}>
-                        <ArrowLeft size={24} />
-                    </button>
-                    <div className="pos-brand-compact">
+                    <div className="pos-logo-container">
+                        <div className="pos-logo-circle">
+                            <ShoppingBag size={22} color="white" />
+                        </div>
+                    </div>
+                    <div className="pos-brand-info">
                         <h2>{restaurantName}</h2>
-                        <span>POS Terminal</span>
-                    </div>
-                </div>
-
-                <div className="nav-center">
-                    <div className="pos-timer-compact">
-                        <div className="timer-v-date">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
-                        <div className="timer-v-time">{currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}</div>
-                    </div>
-
-                    <div className="mode-selector">
-                        {['DINE_IN', 'DELIVERY', 'PARCEL', 'PARTY'].map(mode => (
-                            <button
-                                key={mode}
-                                className={`mode-btn ${orderMode === mode ? 'active' : ''}`}
-                                onClick={() => setOrderMode(mode)}
-                            >
-                                {mode.replace('_', ' ')}
-                            </button>
-                        ))}
+                        <p>Main Branch • Terminal 01</p>
                     </div>
                 </div>
 
                 <div className="nav-right">
-                    <div className="pos-status-info">
-                        <div className="status-row">
-                            <span className="status-label">Bill No:</span>
-                            <span className="status-value">{billNumber}</span>
+                    {showTimer && (
+                        <div className="pos-timer-enhanced">
+                            <Timer size={16} />
+                            <span>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+                            <span className="timer-sep">|</span>
+                            <span className="timer-clock">{currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                         </div>
-                        <div className="status-row">
-                            <span className="status-label">Counter:</span>
-                            <span className="status-value">{counters.find(c => c._id === selectedCounter)?.name || '...'}</span>
+                    )}
+
+                    <div className="nav-actions-group">
+                        <button className="nav-action-btn" onClick={() => navigate('/dashboard/orders')} title="Orders">
+                            <History size={20} />
+                            <span className="btn-text">Orders</span>
+                        </button>
+
+                        <div className="hold-btn-wrapper">
+                            <button className={`nav-action-btn ${heldBills.length > 0 ? 'has-items' : ''}`} onClick={() => setIsHoldPanelOpen(!isHoldPanelOpen)} title="Hold List">
+                                <Pause size={20} />
+                                <span className="btn-text">Hold</span>
+                                {heldBills.length > 0 && <span className="hold-badge">{heldBills.length}</span>}
+                            </button>
+
+                            {isHoldPanelOpen && (
+                                <div className="hold-dropdown-panel">
+                                    <div className="hold-panel-header">
+                                        <h4>Held Bills</h4>
+                                        <button onClick={() => setIsHoldPanelOpen(false)}><CircleSlash size={14} /></button>
+                                    </div>
+                                    <div className="hold-list">
+                                        {heldBills.length === 0 ? <p className="empty-msg">No held bills</p> : heldBills.map(hb => (
+                                            <div key={hb.id} className="hold-item">
+                                                <div className="hold-info">
+                                                    <span className="hold-id">#{hb.id.toString().slice(-4)}</span>
+                                                    <span className="hold-time">{new Date(hb.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    <span className="hold-mode">{hb.orderMode}</span>
+                                                </div>
+                                                <div className="hold-actions">
+                                                    <button className="restore-btn" onClick={() => restoreHeldBill(hb.id)}>Restore</button>
+                                                    <button className="delete-btn" onClick={() => deleteHeldBill(hb.id)}><Trash2 size={12} /></button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <button className="nav-action-btn" title="Notifications">
+                            <Bell size={20} />
+                            <span className="btn-text">Alerts</span>
+                            <span className="alert-dot"></span>
+                        </button>
+
+                        <div className="settings-btn-wrapper">
+                            <button className="nav-action-btn" onClick={() => setIsSettingsOpen(!isSettingsOpen)} title="Settings">
+                                <Settings size={20} />
+                                <span className="btn-text">Settings</span>
+                            </button>
+
+                            {isSettingsOpen && (
+                                <div className="settings-dropdown">
+                                    <div className="settings-option">
+                                        <span>Show Timer</span>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={showTimer} onChange={() => setShowTimer(!showTimer)} />
+                                            <span className="slider round"></span>
+                                        </label>
+                                    </div>
+                                    <div className="settings-option">
+                                        <span>Layout Mode</span>
+                                        <select value={billingLayout} onChange={(e) => {
+                                            setBillingLayout(e.target.value);
+                                            localStorage.setItem('cachedBillingLayout', e.target.value);
+                                            setShowSidebar(e.target.value === 'SIDEBAR');
+                                        }}>
+                                            <option value="SIDEBAR">Sidebar</option>
+                                            <option value="TOP_HEADER">Top Layout</option>
+                                        </select>
+                                    </div>
+                                    <div className="settings-option">
+                                        <span>Price Color</span>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={priceColorEnabled} onChange={() => setPriceColorEnabled(!priceColorEnabled)} />
+                                            <span className="slider round"></span>
+                                        </label>
+                                    </div>
+                                    <div className="settings-option">
+                                        <span>Loyalty System</span>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={loyaltyEnabled} onChange={() => setLoyaltyEnabled(!loyaltyEnabled)} />
+                                            <span className="slider round"></span>
+                                        </label>
+                                    </div>
+                                    <div className="settings-divider"></div>
+                                    <button className="set-logout-btn" onClick={logout}>
+                                        <LogOut size={16} /> Logout
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    {/* Layout Toggle Button */}
-                    <button
-                        className="layout-toggle-btn"
-                        onClick={toggleLayout}
-                        title={billingLayout === 'SIDEBAR' ? 'Switch to Top Header' : 'Switch to Sidebar'}
-                    >
-                        {billingLayout === 'SIDEBAR' ? <LayoutGrid size={18} /> : <Columns size={18} />}
-                        <span className="layout-toggle-label">
-                            {billingLayout === 'SIDEBAR' ? 'Top' : 'Side'}
-                        </span>
-                    </button>
-
-                    <button className="reset-btn" onClick={() => window.location.reload()} title="Hard Reload">
-                        <RotateCcw size={18} />
-                    </button>
-
-                    <button className="new-bill-btn" onClick={createManualNewBill} title="Generate New Bill">
-                        <Plus size={20} />
-                        <span className="btn-label">New Bill</span>
-                    </button>
-
-                    <div className="nav-divider"></div>
-
-                    <button className="logout-btn-pos" onClick={logout} title="Logout">
-                        <LogOut size={20} />
-                    </button>
                 </div>
             </div>
 
-            {/* Main POS Container */}
-            <div className={`pos-main ${showSidebar ? '' : 'full-width'}`}>
-                {/* Mobile Sidebar Overlay */}
-                {showSidebar && window.innerWidth <= 768 && (
-                    <div className="mobile-overlay" onClick={() => setShowSidebar(false)} style={{ zIndex: 1999 }}></div>
-                )}
-
-                {/* 1. Category Sidebar (Left) - Only if Layout 1 */}
-                {billingLayout === 'SIDEBAR' && (
-                    <div className={`category-sidebar ${showSidebar ? 'open' : 'closed'}`}>
-                        <div className="sidebar-header">
-                            <span>CATEGORY</span>
-                            <button onClick={() => setShowSidebar(false)} className="icon-btn-sm">
-                                <ArrowLeft size={16} />
-                            </button>
-                        </div>
-                        <div className="category-list">
-                            <button
-                                className={`category-item ${activeCategory === "ALL" ? 'active' : ''}`}
-                                onClick={() => setActiveCategory("ALL")}
-                            >
-                                All Items <ChevronDown size={14} />
-                            </button>
-                            {categories.map(cat => (
-                                <button
-                                    key={cat._id}
-                                    className={`category-item ${activeCategory === cat.name ? 'active' : ''}`}
-                                    onClick={() => setActiveCategory(cat.name)}
-                                >
-                                    {cat.name} <ChevronDown size={14} />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* 2. Product Area (Middle) */}
-                <div className="product-area">
-                    {checkoutActive ? (
-                        <PaymentFlow
-                            grandTotal={grandTotal}
-                            onPaymentSubmit={handlePaymentSubmit}
-                            onCancel={() => { setCheckoutActive(false); setCheckoutType(''); }}
-                            loading={paymentLoading}
-                            initialType={checkoutType}
+            {/* Enhanced Search & Mode Bar */}
+            <div className="pos-search-section">
+                <div className="search-group">
+                    <div className="search-input-wrapper">
+                        <Search size={18} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Product Search (Name/Code)..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                    ) : (
-                        <>
-                            <div className="search-bar">
-                                {billingLayout === 'SIDEBAR' && !showSidebar && (
-                                    <button
-                                        className="toggle-cat-btn"
-                                        onClick={() => setShowSidebar(true)}
-                                        title="Show Categories"
-                                    >
-                                        <MenuIcon size={20} />
-                                    </button>
-                                )}
-                                <Search size={20} className="text-gray-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Search by product name or code..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
+                    </div>
+                    <div className="search-input-wrapper">
+                        <History size={18} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Bill Search (#)..."
+                            value={billSearchQuery}
+                            onChange={(e) => setBillSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <div className="search-input-wrapper">
+                        <CheckSquare size={18} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Daily Bill (KOT/Order)..."
+                            value={dailySearchQuery}
+                            onChange={(e) => setDailySearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
 
-                            {/* Top Category Header - Only if Layout 2 */}
-                            {billingLayout === 'TOP_HEADER' && (
-                                <div className="top-category-header">
+                <div className="mode-selector-enhanced">
+                    {[
+                        { id: 'DINE_IN', label: 'Dine In', icon: <Users2 size={16} /> },
+                        { id: 'PARCEL', label: 'Parcel', icon: <Package size={16} /> },
+                        { id: 'DELIVERY', label: 'Delivery', icon: <Truck size={16} /> },
+                        { id: 'PARTY', label: 'Party', icon: <Gift size={16} /> }
+                    ].map(mode => (
+                        <button
+                            key={mode.id}
+                            className={`mode-pill ${orderMode === mode.id ? 'active' : ''}`}
+                            onClick={() => setOrderMode(mode.id)}
+                        >
+                            {mode.icon}
+                            <span>{mode.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+
+            {/* Main POS Container */}
+            {checkoutActive ? (
+                <div className="pos-checkout-overlay">
+                    <PaymentFlow
+                        grandTotal={grandTotal}
+                        onPaymentSubmit={handlePaymentSubmit}
+                        onCancel={() => setCheckoutActive(false)}
+                        loading={paymentLoading}
+                        initialType={checkoutType}
+                    />
+                </div>
+            ) : (
+                <div className={`pos-main ${showSidebar ? '' : 'full-width'}`}>
+                    {/* Mobile Sidebar Overlay */}
+                    {showSidebar && window.innerWidth <= 768 && (
+                        <div className="mobile-overlay" onClick={() => setShowSidebar(false)} style={{ zIndex: 1999 }}></div>
+                    )}
+
+                    {/* 1. Category Sidebar (Left) - Only if Layout 1 */}
+                    {billingLayout === 'SIDEBAR' && (
+                        <div className={`category-sidebar ${showSidebar ? 'open' : 'closed'}`}>
+                            <div className="sidebar-header">
+                                <span>CATEGORY</span>
+                                <button onClick={() => setShowSidebar(false)} className="icon-btn-sm">
+                                    <ArrowLeft size={16} />
+                                </button>
+                            </div>
+                            <div className="category-list">
+                                <button
+                                    className={`category-item ${activeCategory === "ALL" ? 'active' : ''}`}
+                                    onClick={() => setActiveCategory("ALL")}
+                                >
+                                    All Items <ChevronDown size={14} />
+                                </button>
+                                {categories.map(cat => (
                                     <button
-                                        className={`top-cat-btn ${activeCategory === "ALL" ? 'active' : ''}`}
-                                        onClick={() => setActiveCategory("ALL")}
+                                        key={cat._id}
+                                        className={`category-item ${activeCategory === cat.name ? 'active' : ''}`}
+                                        onClick={() => setActiveCategory(cat.name)}
                                     >
-                                        ALL ITEMS
+                                        {cat.name} <ChevronDown size={14} />
                                     </button>
-                                    {categories.map(cat => (
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 2. Product Area (Middle) */}
+                    <div className="product-area">
+                        {checkoutActive ? (
+                            <PaymentFlow
+                                grandTotal={grandTotal}
+                                onPaymentSubmit={handlePaymentSubmit}
+                                onCancel={() => { setCheckoutActive(false); setCheckoutType(''); }}
+                                loading={paymentLoading}
+                                initialType={checkoutType}
+                            />
+                        ) : (
+                            <>
+                                <div className="search-bar">
+                                    {billingLayout === 'SIDEBAR' && !showSidebar && (
                                         <button
-                                            key={cat._id}
-                                            className={`top-cat-btn ${activeCategory === cat.name ? 'active' : ''}`}
-                                            onClick={() => setActiveCategory(cat.name)}
+                                            className="toggle-cat-btn"
+                                            onClick={() => setShowSidebar(true)}
+                                            title="Show Categories"
                                         >
-                                            {cat.name}
+                                            <MenuIcon size={20} />
                                         </button>
+                                    )}
+                                    <Search size={20} className="text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by product name or code..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+
+                                {/* Top Category Header - Only if Layout 2 */}
+                                {billingLayout === 'TOP_HEADER' && (
+                                    <div className="top-category-header">
+                                        <button
+                                            className={`top-cat-btn ${activeCategory === "ALL" ? 'active' : ''}`}
+                                            onClick={() => setActiveCategory("ALL")}
+                                        >
+                                            ALL ITEMS
+                                        </button>
+                                        {categories.map(cat => (
+                                            <button
+                                                key={cat._id}
+                                                className={`top-cat-btn ${activeCategory === cat.name ? 'active' : ''}`}
+                                                onClick={() => setActiveCategory(cat.name)}
+                                            >
+                                                {cat.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="product-scroll-grid">
+                                    {loading ? (
+                                        <CardSkeleton count={12} />
+                                    ) : filteredProducts.length === 0 ? (
+                                        <div className="flex-center h-full text-gray-400 w-full py-20">
+                                            No products found in this category.
+                                        </div>
+                                    ) : filteredProducts.map(product => (
+                                        <div
+                                            key={product._id}
+                                            className={`pos-product-card ${priceColorEnabled ? 'price-colored' : ''}`}
+                                            onClick={() => addToBill(product)}
+                                        >
+                                            <div className="p-image-container">
+                                                {product.image ? (
+                                                    <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
+                                                ) : (
+                                                    <div className="p-img-placeholder">
+                                                        <ShoppingBag size={32} color="#cbd5e0" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="p-details">
+                                                <div className="p-name">{product.name}</div>
+                                                <div className="p-price">₹{product.selling_price}</div>
+                                            </div>
+                                        </div>
                                     ))}
+                                </div>
+
+
+                            </>
+                        )}
+                    </div>
+
+                    {/* 3. Bill Panel (Right) */}
+                    <div className="bill-sidebar">
+                        {/* Order Meta */}
+                        <div className="order-meta-enhanced">
+                            {orderMode === 'DINE_IN' && (
+                                <div className="dine-in-fields">
+                                    <div className="meta-input-field">
+                                        <label><Table size={14} /> Table</label>
+                                        <select value={selectedTableId} onChange={(e) => setSelectedTableId(e.target.value)}>
+                                            <option value="">Select Table</option>
+                                            {tables.map(t => <option key={t._id} value={t._id}>{t.table_number}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="meta-input-field">
+                                        <label><UserCheck size={14} /> Captain</label>
+                                        <select value={selectedCaptain} onChange={(e) => setSelectedCaptain(e.target.value)}>
+                                            <option value="">Select Capt</option>
+                                            {captains.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="meta-input-field">
+                                        <label><Users size={14} /> Pax</label>
+                                        <input type="number" placeholder="0" value={persons} onChange={(e) => setPersons(e.target.value)} />
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="product-scroll-grid">
-                                {loading ? (
-                                    <CardSkeleton count={12} />
-                                ) : filteredProducts.length === 0 ? (
-                                    <div className="flex-center h-full text-gray-400 w-full py-20">
-                                        No products found in this category.
+                            <div className="customer-info-section">
+                                <div className="cust-input-row">
+                                    <User size={14} className="icon" />
+                                    <input type="text" placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                    <Smartphone size={14} className="icon" />
+                                    <input type="text" placeholder="Phone Number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Item List */}
+                        <div className="order-items-header">
+                            <span className="col-name">ITEM</span>
+                            <span className="col-qty">QTY</span>
+                            <span className="col-rate">RATE</span>
+                            <span className="col-amt">AMT</span>
+                        </div>
+
+                        {/* Scrollable area: items list + bill footer together */}
+                        <div className="bill-scroll-area">
+                            <div className="order-items-list">
+                                {billItems.length === 0 ? (
+                                    <div className="empty-cart">
+                                        <ShoppingBag size={48} />
+                                        <p>Order is empty</p>
                                     </div>
-                                ) : filteredProducts.map(product => (
-                                    <div
-                                        key={product._id}
-                                        className="pos-product-card"
-                                        onClick={() => addToBill(product)}
-                                    >
-                                        <div className="p-image-container">
-                                            {product.image ? (
-                                                <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
-                                            ) : (
-                                                <div className="p-img-placeholder">
-                                                    <ShoppingBag size={32} color="#cbd5e0" />
-                                                </div>
-                                            )}
+                                ) : billItems.map((item, idx) => (
+                                    <div key={idx} className={`order-item-row ${item.is_complementary ? 'complementary' : ''}`}>
+                                        <div className="item-name-cell">
+                                            <button className="remove-btn" onClick={() => removeFromBill(idx)}><Trash2 size={14} /></button>
+                                            <div className="item-name-wrap">
+                                                <span>{item.name}</span>
+                                                <button
+                                                    className={`comp-toggle ${item.is_complementary ? 'active' : ''}`}
+                                                    onClick={() => toggleComplementary(idx)}
+                                                    title="Complementary"
+                                                >
+                                                    <Gift size={12} />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="p-details">
-                                            <div className="p-name">{product.name}</div>
-                                            <div className="p-price">₹{product.selling_price}</div>
+                                        <div className="item-qty-cell">
+                                            <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
+                                            <span>{item.quantity}</span>
+                                            <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
                                         </div>
+                                        <div className="item-rate">{item.is_complementary ? 0 : item.unit_price}</div>
+                                        <div className="item-amt">{item.is_complementary ? 0 : item.total_price}</div>
                                     </div>
                                 ))}
                             </div>
 
-
-                        </>
-                    )}
-                </div>
-
-                {/* 3. Bill Panel (Right) */}
-                <div className="bill-sidebar">
-                    {/* Order Meta */}
-                    <div className="order-meta">
-                        <div className="meta-input">
-                            <Table size={16} />
-                            <input type="text" placeholder="Table No" value={tableNo} onChange={(e) => setTableNo(e.target.value)} />
-                        </div>
-                        <div className="meta-input">
-                            <Users size={16} />
-                            <input type="text" placeholder="Persons" value={persons} onChange={(e) => setPersons(e.target.value)} />
-                        </div>
-                    </div>
-
-                    {/* Item List */}
-                    <div className="order-items-header">
-                        <span className="col-name">ITEM</span>
-                        <span className="col-qty">QTY</span>
-                        <span className="col-rate">RATE</span>
-                        <span className="col-amt">AMT</span>
-                    </div>
-
-                    {/* Scrollable area: items list + bill footer together */}
-                    <div className="bill-scroll-area">
-                        <div className="order-items-list">
-                            {billItems.length === 0 ? (
-                                <div className="empty-cart">
-                                    <ShoppingBag size={48} />
-                                    <p>Order is empty</p>
-                                </div>
-                            ) : billItems.map((item, idx) => (
-                                <div key={idx} className="order-item-row">
-                                    <div className="item-name-cell">
-                                        <button className="remove-btn" onClick={() => removeFromBill(idx)}><Trash2 size={14} /></button>
-                                        <span>{item.name}</span>
+                            {/* Bill Footer */}
+                            <div className="order-footer">
+                                <div className="summary-section">
+                                    <div className="sum-row">
+                                        <span>Subtotal ({billItems.length} items)</span>
+                                        <span className="mono">₹{subTotal.toFixed(2)}</span>
                                     </div>
-                                    <div className="item-qty-cell">
-                                        <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
-                                        <span>{item.quantity}</span>
-                                        <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
-                                    </div>
-                                    <div className="item-rate">{item.unit_price}</div>
-                                    <div className="item-amt">{item.total_price}</div>
-                                </div>
-                            ))}
-                        </div>
 
-                        {/* Bill Footer */}
-                        <div className="order-footer">
-                            <div className="summary-section">
-                                <div className="sum-row">
-                                    <span>Subtotal ({billItems.length} items)</span>
-                                    <span>₹{subTotal.toFixed(2)}</span>
-                                </div>
-
-                                {/* Expanded "More" Options */}
-                                {showMoreOptions && (
-                                    <div className="more-options-grid">
-                                        <div className="opt-field">
-                                            <label>GST %</label>
-                                            <input type="number" value={gstPercentage} onChange={(e) => setGstPercentage(e.target.value)} />
+                                    {/* Detailed Summary Sections */}
+                                    <div className="summary-details-grid">
+                                        <div className="sum-detail-row">
+                                            <label>Discount</label>
+                                            <div className="input-with-toggle">
+                                                <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+                                                <button onClick={() => setDiscountType(discountType === 'PERCENT' ? 'FIXED' : 'PERCENT')}>
+                                                    {discountType === 'PERCENT' ? '%' : '₹'}
+                                                </button>
+                                            </div>
+                                            <span className="calc-val">- ₹{billCalculations.discountAmount.toFixed(2)}</span>
                                         </div>
-                                        <div className="opt-field">
-                                            <label>Disc (₹)</label>
-                                            <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
-                                        </div>
-                                        <div className="opt-field">
-                                            <label>Addl Chg</label>
-                                            <input type="number" value={extraCharges} onChange={(e) => setExtraCharges(e.target.value)} />
-                                        </div>
-                                    </div>
-                                )}
 
-                                <div className="sum-row">
-                                    <span>Tax ({parsedGst}%)</span>
-                                    <span>₹{tax.toFixed(2)}</span>
+                                        {(orderMode === 'DELIVERY' || showMoreOptions) && (
+                                            <div className="sum-detail-row">
+                                                <label>Deliv. Chg</label>
+                                                <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} />
+                                                <span className="calc-val">+ ₹{billCalculations.deliveryCharge.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
+                                        {(orderMode === 'PARCEL' || showMoreOptions) && (
+                                            <div className="sum-detail-row">
+                                                <label>Pack. Chg</label>
+                                                <input type="number" value={containerCharge} onChange={(e) => setContainerCharge(e.target.value)} />
+                                                <span className="calc-val">+ ₹{billCalculations.containerCharge.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="sum-detail-row">
+                                            <label>Tax ({gstPercentage}%)</label>
+                                            <div className="empty-input"></div>
+                                            <span className="calc-val">+ ₹{taxAmount.toFixed(2)}</span>
+                                        </div>
+
+                                        {roundOff !== 0 && (
+                                            <div className="sum-detail-row">
+                                                <label>Round Off</label>
+                                                <div className="empty-input"></div>
+                                                <span className="calc-val">{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {loyaltyEnabled && (
+                                        <div className="loyalty-promo-compact">
+                                            <div className="loyalty-input">
+                                                <Gift size={14} />
+                                                <input type="text" placeholder="Loyalty / Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
+                                                <button>Apply</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="sum-total-enhanced">
+                                        <div className="total-label">
+                                            <span className="main-total">TOTAL PAYABLE</span>
+                                            <span className="items-count">{billItems.length} Items</span>
+                                        </div>
+                                        <span className="total-value">₹{grandTotal.toFixed(2)}</span>
+                                    </div>
                                 </div>
 
-                                {/* Loyalty Section — below Tax */}
-                                {showLoyalty && (
-                                    <div className="loyalty-promo-row">
-                                        <input
-                                            type="text"
-                                            placeholder="Enter promo/loyalty code"
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value)}
-                                        />
-                                        <button className="apply-btn">Apply</button>
-                                    </div>
-                                )}
-
-                                <div className="sum-total">
-                                    <span>Total Payable</span>
-                                    <span>₹{grandTotal.toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            {/* Top Control Buttons */}
-                            <div className="panel-controls">
-                                <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
-                                    Loyalty
-                                </button>
-                                <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
-                                    More
-                                </button>
-                                {!stepProceeded && (
-                                    <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
-                                        Check Out (Next)
+                                {/* Top Control Buttons */}
+                                <div className="panel-controls">
+                                    <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
+                                        Loyalty
                                     </button>
-                                )}
-                            </div>
-
-                            {/* Fast Payment - Show only after Check Out/Proceed */}
-                            {stepProceeded && (
-                                <div className="fast-payment fade-in">
-                                    <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
-                                    <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
-                                    <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
+                                    <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
+                                        More
+                                    </button>
+                                    {!stepProceeded && (
+                                        <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
+                                            Check Out (Next)
+                                        </button>
+                                    )}
                                 </div>
-                            )}
 
-                            <div className="footer-actions">
-                                <button className="save-btn" onClick={handlePayment} disabled={billItems.length === 0}>
-                                    <Save size={18} /> SAVE
-                                </button>
-                                <button className="print-btn" onClick={handlePayment} disabled={billItems.length === 0}>
-                                    <Printer size={18} /> SAVE & PRINT
-                                </button>
+                                {/* Fast Payment - Show only after Check Out/Proceed */}
                                 {stepProceeded && (
-                                    <button className="back-btn" onClick={() => setStepProceeded(false)}>
-                                        Back
-                                    </button>
+                                    <div className="fast-payment fade-in">
+                                        <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
+                                        <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
+                                        <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
+                                    </div>
                                 )}
+
+                                <div className="footer-actions-grid">
+                                    <button className="action-btn hold-bill" onClick={holdCurrentBill}>
+                                        <Pause size={18} /> HOLD
+                                    </button>
+                                    <button className="action-btn kot-print" onClick={() => handlePayment('KOT')}>
+                                        <Printer size={18} /> KOT PRINT
+                                    </button>
+                                    <button className="action-btn save-bill" onClick={() => handlePayment('SAVE')}>
+                                        <Save size={18} /> SAVE
+                                    </button>
+                                    <button className="action-btn print-bill" onClick={() => handlePayment('PRINT')}>
+                                        <Printer size={18} /> SAVE & PRINT
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Modals */}
             {showBillPreview && (

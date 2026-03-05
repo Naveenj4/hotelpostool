@@ -151,12 +151,42 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                                             <span>Subtotal</span>
                                             <span className="bpm-mono">₹{billData?.sub_total?.toFixed(2)}</span>
                                         </div>
+
+                                        {billData?.discount_amount > 0 && (
+                                            <div className="bpm-total-row">
+                                                <span>Discount (-)</span>
+                                                <span className="bpm-mono">₹{billData?.discount_amount?.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
+                                        {billData?.delivery_charge > 0 && (
+                                            <div className="bpm-total-row">
+                                                <span>Delivery Chg (+)</span>
+                                                <span className="bpm-mono">₹{billData?.delivery_charge?.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
+                                        {billData?.container_charge > 0 && (
+                                            <div className="bpm-total-row">
+                                                <span>Package Chg (+)</span>
+                                                <span className="bpm-mono">₹{billData?.container_charge?.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
                                         {billData?.tax_amount > 0 && (
                                             <div className="bpm-total-row">
-                                                <span>Tax</span>
+                                                <span>Tax (+)</span>
                                                 <span className="bpm-mono">₹{billData?.tax_amount?.toFixed(2)}</span>
                                             </div>
                                         )}
+
+                                        {billData?.round_off !== 0 && (
+                                            <div className="bpm-total-row">
+                                                <span>Round Off</span>
+                                                <span className="bpm-mono">{billData?.round_off > 0 ? '+' : ''}₹{billData?.round_off?.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
                                         <div className="bpm-grand-total-row">
                                             <span>GRAND TOTAL</span>
                                             <span className="bpm-mono">₹{billData?.grand_total?.toFixed(2)}</span>
