@@ -428,7 +428,7 @@
 
 /* ---- Bill Sidebar (Right) ---- */
 .bill-sidebar {
-    width: 480px;
+    width: 580px;
     background: #fff;
     border-left: 1px solid var(--border-light);
     display: flex;
