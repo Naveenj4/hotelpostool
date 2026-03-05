@@ -809,7 +809,7 @@ const BillingPage = () => {
                                         ) : filteredProducts.map(product => (
                                             <div
                                                 key={product._id}
-                                                className={`pos-product-card ${priceColorEnabled ? 'price-colored' : ''}`}
+                                                className="pos-product-card"
                                                 onClick={() => addToBill(product)}
                                             >
                                                 <div className="p-image-container">
