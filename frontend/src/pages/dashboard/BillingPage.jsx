@@ -571,11 +571,6 @@ const BillingPage = () => {
             {/* Top Navigation Bar */}
             <div className="pos-nav">
                 <div className="nav-left">
-                    <div className="pos-logo-container">
-                        <div className="pos-logo-circle" style={{ overflow: 'hidden', padding: 0 }}>
-                            <img src="/yugam-logo.png" alt="Yugam Software" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                    </div>
                     <div className="pos-brand-info">
                         <h2>Yugam Software</h2>
                     </div>
