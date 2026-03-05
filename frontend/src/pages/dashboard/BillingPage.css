@@ -364,6 +364,8 @@
     transition: all 0.2s;
     display: flex;
     flex-direction: column;
+    height: 140px;
+    /* Match skeleton height */
 }
 
 .pos-product-card:hover {
@@ -373,7 +375,8 @@
 }
 
 .p-image-container {
-    height: 90px;
+    height: 80px;
+    /* Reduced from 90px */
     background: #F8FAFC;
     display: flex;
     align-items: center;
@@ -405,7 +408,8 @@
     background: #f1f5f9;
     /* Gray box at bottom */
     border-top: 1px solid #e2e8f0;
-    min-height: 52px;
+    height: 60px;
+    /* Fixed height to fill remaining space (140 - 80) */
 }
 
 .p-name {
