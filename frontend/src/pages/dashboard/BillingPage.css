@@ -9,7 +9,7 @@
     /* Orange accent */
     --bg-main: #f8fafc;
     --sidebar-bg: #FFFFFF;
-    --nav-bg: #1e293b;
+    --nav-bg: #0F172A;
     --text-main: #1e293b;
     --text-muted: #64748b;
     --border-light: #e2e8f0;
@@ -30,7 +30,7 @@
 /* ---- POS Header (Nav) ---- */
 .pos-nav {
     height: 60px;
-    background: #1e293b;
+    background: #0F172A;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -265,7 +265,7 @@
 
 .sidebar-header {
     padding: 1.25rem 1rem;
-    font-size: 0.75rem;
+    font-size: 1rem;
     font-weight: 900;
     color: var(--text-muted);
     letter-spacing: 0.05em;
@@ -287,8 +287,8 @@
     border: none;
     background: transparent;
     text-align: left;
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 800;
     color: var(--text-main);
     border-radius: 10px;
     margin-bottom: 0.25rem;
