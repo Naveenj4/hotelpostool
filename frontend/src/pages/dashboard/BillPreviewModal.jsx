@@ -119,6 +119,31 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                                     </div>
                                     <div className="bpm-divider-dashed" />
 
+                                    {/* Customer Info */}
+                                    {(billData?.customer_name || billData?.customer_phone) && (
+                                        <div className="bpm-meta bpm-customer-details">
+                                            {billData?.customer_name && (
+                                                <div className="bpm-meta-row">
+                                                    <span className="bpm-meta-label">Customer:</span>
+                                                    <span className="bpm-meta-val">{billData.customer_name}</span>
+                                                </div>
+                                            )}
+                                            {billData?.customer_phone && (
+                                                <div className="bpm-meta-row">
+                                                    <span className="bpm-meta-label">Phone:</span>
+                                                    <span className="bpm-meta-val">{billData.customer_phone}</span>
+                                                </div>
+                                            )}
+                                            {billData?.customer_address && (
+                                                <div className="bpm-meta-row">
+                                                    <span className="bpm-meta-label">Address:</span>
+                                                    <span className="bpm-meta-val">{billData.customer_address}</span>
+                                                </div>
+                                            )}
+                                            <div className="bpm-divider-dashed" />
+                                        </div>
+                                    )}
+
                                     {/* Items */}
                                     <table className="bpm-items-table">
                                         <thead>

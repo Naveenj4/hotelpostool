@@ -81,6 +81,7 @@ const BillingPage = () => {
     const [showTimer, setShowTimer] = useState(true);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [loyaltyEnabled, setLoyaltyEnabled] = useState(false);
+    const [showRateColumn, setShowRateColumn] = useState(() => localStorage.getItem('pos_show_rate') !== 'false');
 
     const [billSearchQuery, setBillSearchQuery] = useState("");
     const [dailySearchQuery, setDailySearchQuery] = useState("");
@@ -101,6 +102,13 @@ const BillingPage = () => {
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
     const [customerAddress, setCustomerAddress] = useState("");
+    const [showCustomerForm, setShowCustomerForm] = useState(false);
+    const [isOrderListCollapsed, setIsOrderListCollapsed] = useState(false);
+
+    // -- SELECTION OVERLAYS --
+    const [selectionOverlay, setSelectionOverlay] = useState('NONE'); // NONE, TABLE, CAPTAIN, ALTER, TRANSFER, RETURN, SPLIT
+    const [selectedItemForAction, setSelectedItemForAction] = useState(null);
+    const [billSearchKots, setBillSearchKots] = useState([]);
 
     // -- LATEST CALCULATION HOOK --
     const billCalculations = useMemo(() => {
@@ -214,6 +222,46 @@ const BillingPage = () => {
 
         fetchInitialData();
     }, [location.key]);
+
+    // Handle Restoration of Held Bill
+    useEffect(() => {
+        if (location.state && location.state.restoreHold) {
+            const hold = location.state.restoreHold;
+            setBillItems(hold.items);
+            setCurrentBillId(hold.billId);
+            setBillNumber(hold.billNumber);
+            setTableNo(hold.tableNo || "");
+            setOrderMode(hold.orderMode || 'DINE_IN');
+            setCustomerName(hold.customerName || "");
+            setCustomerPhone(hold.customerPhone || "");
+            setCustomerAddress(hold.customerAddress || "");
+
+            // Remove from localStorage
+            const held = JSON.parse(localStorage.getItem('pos_held_bills') || '[]');
+            const updated = held.filter(h => h.id !== hold.id);
+            localStorage.setItem('pos_held_bills', JSON.stringify(updated));
+            setHeldBills(updated);
+
+            // Use window.history.replaceState to clear location.state without triggering reload
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
+    // Fetch KOTs for Alter Bill
+    const fetchKots = async () => {
+        try {
+            const savedUser = localStorage.getItem('user');
+            if (!savedUser) return;
+            const { token } = JSON.parse(savedUser);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills?status=PENDING`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setBillSearchKots(data.data);
+        } catch (error) {
+            console.error("KOT fetch error", error);
+        }
+    };
 
     // Create New Bill
     const createNewBill = async () => {
@@ -349,70 +397,40 @@ const BillingPage = () => {
         // Backend update could happen here if model supports it
     };
 
-    const holdCurrentBill = () => {
-        if (billItems.length === 0) return alert("Nothing to hold!");
-
-        const billToHold = {
-            id: Date.now(),
-            billItems: [...billItems],
-            orderMode,
-            tableNo,
-            persons,
-            selectedTableId,
-            selectedCaptain,
-            customer: { name: customerName, phone: customerPhone, address: customerAddress },
-            billNumber,
-            timestamp: new Date().toISOString()
-        };
-
-        const newHeld = [billToHold, ...heldBills];
-        setHeldBills(newHeld);
-        localStorage.setItem('pos_held_bills', JSON.stringify(newHeld));
-
-        // Clear current
-        setBillItems([]);
-        setTableNo("");
-        setPersons("");
-        setSelectedTableId("");
-        setSelectedCaptain("");
-        setCustomerName("");
-        setCustomerPhone("");
-        setCustomerAddress("");
-        alert("Bill placed on hold.");
-    };
-
-    const restoreHeldBill = (heldId) => {
-        const target = heldBills.find(h => h.id === heldId);
-        if (!target) return;
-
-        setBillItems(target.billItems);
-        setOrderMode(target.orderMode);
-        setTableNo(target.tableNo || "");
-        setPersons(target.persons || "");
-        setSelectedTableId(target.selectedTableId || "");
-        setSelectedCaptain(target.selectedCaptain || "");
-        setCustomerName(target.customer?.name || "");
-        setCustomerPhone(target.customer?.phone || "");
-        setCustomerAddress(target.customer?.address || "");
-
-        // Remove from hold list
-        const newHeld = heldBills.filter(h => h.id !== heldId);
-        setHeldBills(newHeld);
-        localStorage.setItem('pos_held_bills', JSON.stringify(newHeld));
-        setIsHoldPanelOpen(false);
-    };
-
-    const deleteHeldBill = (heldId) => {
-        const newHeld = heldBills.filter(h => h.id !== heldId);
-        setHeldBills(newHeld);
-        localStorage.setItem('pos_held_bills', JSON.stringify(newHeld));
-    };
 
     const filteredProducts = products.filter(p => {
         const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const searchLower = searchQuery.toLowerCase();
+        const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
+            (p.code && p.code.toLowerCase().includes(searchLower));
         return matchesCategory && matchesSearch;
     });
+
+    const handleBillSearch = async (e, query) => {
+        if (e.key === 'Enter' && query.trim()) {
+            try {
+                const savedUser = localStorage.getItem('user');
+                const { token } = JSON.parse(savedUser);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/bills?search=${query}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.success && data.data.length > 0) {
+                    loadBillForAlter(data.data[0]);
+                    setBillSearchQuery("");
+                    setKotSearchQuery("");
+                } else {
+                    alert("No matching bill found.");
+                }
+            } catch (error) {
+                console.error("Bill search error", error);
+            }
+        }
+    };
+
+    const handleNotificationClick = () => {
+        alert("No new notifications at the moment.");
+    };
 
     const handlePayment = (type = '') => {
         if (!currentBillId) return;
@@ -531,6 +549,110 @@ const BillingPage = () => {
         createNewBill();
     };
 
+    const handleTransferItem = (idx) => {
+        setSelectedItemForAction(idx);
+        setSelectionOverlay('TRANSFER');
+    };
+
+    const handleReturnItem = (idx) => {
+        const item = billItems[idx];
+        const reason = window.prompt(`Return Item: ${item.name}\nEnter reason:`, "Customer unsatisfied");
+        if (reason === null) return;
+
+        const returnQtyInput = window.prompt(`Enter quantity to return (Max ${item.quantity}):`, "1");
+        const returnQty = parseInt(returnQtyInput);
+        if (isNaN(returnQty) || returnQty <= 0) return;
+
+        const finalReturnQty = Math.min(returnQty, item.quantity);
+
+        // Log to Return History (Simulation via localStorage)
+        const returnEntry = {
+            id: Date.now(),
+            billId: currentBillId,
+            item: item.name,
+            quantity: finalReturnQty,
+            reason: reason,
+            timestamp: new Date().toISOString()
+        };
+        const history = JSON.parse(localStorage.getItem('pos_return_history') || '[]');
+        localStorage.setItem('pos_return_history', JSON.stringify([returnEntry, ...history]));
+
+        // Deduct from current bill
+        if (finalReturnQty === item.quantity) {
+            removeFromBill(idx);
+        } else {
+            const newItems = [...billItems];
+            newItems[idx].quantity -= finalReturnQty;
+            newItems[idx].total_price = newItems[idx].quantity * newItems[idx].unit_price;
+            setBillItems(newItems);
+        }
+        alert(`${finalReturnQty} x ${item.name} returned and logged to Return History.`);
+    };
+
+    const handleSplitBill = () => {
+        if (billItems.length < 2) return alert("Need at least 2 items to split!");
+        setSelectionOverlay('SPLIT');
+    };
+
+    const loadBillForAlter = (bill) => {
+        setCurrentBillId(bill._id);
+        setBillNumber(bill.bill_number);
+        setBillItems(bill.items || []);
+        setOrderMode(bill.type || 'DINE_IN');
+        setTableNo(bill.table_no || "");
+        setCustomerName(bill.customer_name || "");
+        setCustomerPhone(bill.customer_phone || "");
+        setSelectionOverlay('NONE');
+        alert(`Bill ${bill.bill_number} loaded for alteration.`);
+    };
+
+    const toggleFullBillComplimentary = () => {
+        const anyNonComp = billItems.some(i => !i.is_complementary);
+        const newItems = billItems.map(i => ({ ...i, is_complementary: anyNonComp }));
+        setBillItems(newItems);
+    };
+
+    const holdCurrentBill = () => {
+        if (billItems.length === 0) return alert("Cannot hold an empty bill.");
+        const newHold = {
+            id: Date.now(),
+            billId: currentBillId,
+            billNumber: billNumber,
+            items: billItems,
+            tableNo: tableNo,
+            orderMode: orderMode,
+            customerName: customerName,
+            customerPhone: customerPhone,
+            customerAddress: customerAddress,
+            grandTotal: grandTotal,
+            timestamp: new Date().toISOString()
+        };
+        const updated = [newHold, ...heldBills];
+        setHeldBills(updated);
+        localStorage.setItem('pos_held_bills', JSON.stringify(updated));
+        resetForm();
+        alert("Bill placed on hold.");
+    };
+
+    const restoreHeldBill = (hold) => {
+        if (billItems.length > 0) {
+            if (!window.confirm("Current bill items will be discarded. Continue?")) return;
+        }
+        setBillItems(hold.items);
+        setCurrentBillId(hold.billId);
+        setBillNumber(hold.billNumber);
+        setTableNo(hold.tableNo || "");
+        setOrderMode(hold.orderMode || 'DINE_IN');
+        setCustomerName(hold.customerName || "");
+        setCustomerPhone(hold.customerPhone || "");
+        setCustomerAddress(hold.customerAddress || "");
+
+        const updated = heldBills.filter(h => h.id !== hold.id);
+        setHeldBills(updated);
+        localStorage.setItem('pos_held_bills', JSON.stringify(updated));
+        setIsHoldPanelOpen(false);
+    };
+
     const applyPromoCode = () => {
         if (!promoCode) return;
         alert(`Promo Code "${promoCode}" applied successfully! 5% extra discount added (Simulated).`);
@@ -590,16 +712,16 @@ const BillingPage = () => {
                     )}
 
                     <div className="nav-actions-group">
-                        <button className="nav-action-btn" onClick={() => navigate('/dashboard/orders')} title="Recent Orders">
+                        <button type="button" className="nav-action-btn" onClick={() => navigate('/dashboard/self-service/bills-sales')} title="Recent Orders">
                             ORDER
                         </button>
-                        <button className="nav-action-btn" onClick={() => setIsHoldPanelOpen(true)} title="Held Transactions">
-                            HOLD
+                        <button type="button" className={`nav-action-btn ${heldBills.length > 0 ? 'has-items' : ''}`} onClick={() => navigate('/dashboard/self-service/hold')} title="Manage held transactions">
+                            HOLD {heldBills.length > 0 && <span className="hold-badge">{heldBills.length}</span>}
                         </button>
-                        <button className="nav-action-btn" title="System Alerts">
+                        <button type="button" className="nav-action-btn" onClick={handleNotificationClick} title="System Alerts">
                             NOTIFICATION
                         </button>
-                        <button className="nav-action-btn" onClick={logout} title="Sign Out">
+                        <button type="button" className="nav-action-btn" onClick={logout} title="Sign Out">
                             LOGOUT
                         </button>
                     </div>
@@ -635,6 +757,17 @@ const BillingPage = () => {
                                     <span>Loyalty System</span>
                                     <label className="switch">
                                         <input type="checkbox" checked={loyaltyEnabled} onChange={() => setLoyaltyEnabled(!loyaltyEnabled)} />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                                <div className="settings-option">
+                                    <span>Show Rate Column</span>
+                                    <label className="switch">
+                                        <input type="checkbox" checked={showRateColumn} onChange={() => {
+                                            const next = !showRateColumn;
+                                            setShowRateColumn(next);
+                                            localStorage.setItem('pos_show_rate', String(next));
+                                        }} />
                                         <span className="slider round"></span>
                                     </label>
                                 </div>
@@ -679,6 +812,7 @@ const BillingPage = () => {
                             placeholder="Bill No."
                             value={billSearchQuery}
                             onChange={(e) => setBillSearchQuery(e.target.value)}
+                            onKeyDown={(e) => handleBillSearch(e, billSearchQuery)}
                         />
                     </div>
 
@@ -690,6 +824,7 @@ const BillingPage = () => {
                             placeholder="KOT Search"
                             value={kotSearchQuery}
                             onChange={(e) => setKotSearchQuery(e.target.value)}
+                            onKeyDown={(e) => handleBillSearch(e, kotSearchQuery)}
                         />
                     </div>
 
@@ -722,7 +857,7 @@ const BillingPage = () => {
                         <PaymentFlow
                             grandTotal={grandTotal}
                             onPaymentSubmit={handlePaymentSubmit}
-                            onCancel={() => setCheckoutActive(false)}
+                            onCancel={() => { setCheckoutActive(false); setStepProceeded(false); }}
                             loading={paymentLoading}
                             initialType={checkoutType}
                         />
@@ -769,7 +904,7 @@ const BillingPage = () => {
                                 <PaymentFlow
                                     grandTotal={grandTotal}
                                     onPaymentSubmit={handlePaymentSubmit}
-                                    onCancel={() => { setCheckoutActive(false); setCheckoutType(''); }}
+                                    onCancel={() => { setCheckoutActive(false); setCheckoutType(''); setStepProceeded(false); }}
                                     loading={paymentLoading}
                                     initialType={checkoutType}
                                 />
@@ -841,43 +976,65 @@ const BillingPage = () => {
                         <div className="bill-sidebar">
                             {/* Meta Icons row from reference image */}
                             <div className="sidebar-meta-icons">
-                                <button className={`meta-icon-btn ${orderMode === 'DINE_IN' ? 'active' : ''}`}>
+                                <button className={`meta-icon-btn ${selectionOverlay === 'TABLE' ? 'active' : ''}`} onClick={() => setSelectionOverlay('TABLE')}>
                                     <div className="icon-bg"><Table size={18} /></div>
-                                    <span>TABLE</span>
+                                    <span>{tableNo || 'TABLE'}</span>
                                 </button>
-                                <button className="meta-icon-btn">
+                                <button className={`meta-icon-btn ${selectionOverlay === 'CAPTAIN' ? 'active' : ''}`} onClick={() => setSelectionOverlay('CAPTAIN')}>
                                     <div className="icon-bg"><UserCheck size={18} /></div>
-                                    <span>CAPTAIN</span>
+                                    <span>{selectedCaptain || 'CAPTAIN'}</span>
                                 </button>
-                                <button className="meta-icon-btn">
+                                <button className={`meta-icon-btn ${showCustomerForm ? 'active' : ''}`} onClick={() => setShowCustomerForm(!showCustomerForm)}>
                                     <div className="icon-bg"><User size={18} /></div>
                                     <span>CUSTOMER</span>
                                 </button>
-                                <button className="meta-icon-btn">
+                                <button className={`meta-icon-btn ${selectionOverlay === 'ALTER' ? 'active' : ''}`} onClick={() => { fetchKots(); setSelectionOverlay('ALTER'); }}>
                                     <div className="icon-bg"><MoveHorizontal size={18} /></div>
                                     <span>ALTER</span>
                                 </button>
-                                <button className="meta-icon-btn">
+                                <button className={`meta-icon-btn ${selectionOverlay === 'TRANSFER' ? 'active' : ''}`} onClick={() => setSelectionOverlay('TRANSFER')}>
                                     <div className="icon-bg"><ArrowLeftRight size={18} /></div>
                                     <span>TRANSFER</span>
                                 </button>
-                                <button className="meta-icon-btn">
+                                <button className={`meta-icon-btn ${selectionOverlay === 'RETURN' ? 'active' : ''}`} onClick={() => setSelectionOverlay('RETURN')}>
                                     <div className="icon-bg"><Undo2 size={18} /></div>
                                     <span>RETURN</span>
                                 </button>
                             </div>
 
+                            {/* Customer Form Section */}
+                            {showCustomerForm && (
+                                <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                                    <div className="form-grid">
+                                        <div className="form-group">
+                                            <label>Name</label>
+                                            <input type="text" placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Phone</label>
+                                            <input type="text" placeholder="Phone Number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                                        </div>
+                                        <div className="form-group full-width">
+                                            <label>Address</label>
+                                            <textarea rows="2" placeholder="Delivery Address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)}></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Item List */}
-                            <div className="order-items-header">
+                            <div className={`order-items-header ${showRateColumn ? 'with-rate' : 'no-rate'}`}>
                                 <span className="col-name">ITEM</span>
                                 <span className="col-qty">QTY</span>
-                                <span className="col-rate">RATE</span>
+                                {showRateColumn && <span className="col-rate">RATE</span>}
                                 <span className="col-amt">AMT</span>
+                                <button className="collapse-toggle-btn" onClick={() => setIsOrderListCollapsed(!isOrderListCollapsed)}>
+                                    {isOrderListCollapsed ? <ChevronDown size={14} /> : <ArrowLeft className="rotate-90" size={14} />}
+                                </button>
                             </div>
 
                             {/* Scrollable area: items list + bill footer together */}
-                            <div className="bill-scroll-area">
+                            <div className={`bill-scroll-area ${isOrderListCollapsed ? 'collapsed' : ''}`}>
                                 <div className="order-items-list">
                                     {billItems.length === 0 ? (
                                         <div className="empty-cart">
@@ -885,9 +1042,8 @@ const BillingPage = () => {
                                             <p>Order is empty</p>
                                         </div>
                                     ) : billItems.map((item, idx) => (
-                                        <div key={idx} className={`order-item-row ${item.is_complementary ? 'complementary' : ''}`}>
+                                        <div key={idx} className={`order-item-row ${showRateColumn ? 'with-rate' : 'no-rate'} ${item.is_complementary ? 'complementary' : ''}`}>
                                             <div className="item-name-cell">
-                                                <button className="remove-btn" onClick={() => removeFromBill(idx)}><Trash2 size={14} /></button>
                                                 <div className="item-name-wrap">
                                                     <span>{item.name}</span>
                                                     <button
@@ -904,8 +1060,13 @@ const BillingPage = () => {
                                                 <span>{item.quantity}</span>
                                                 <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
                                             </div>
-                                            <div className="item-rate">{item.is_complementary ? 0 : item.unit_price}</div>
+                                            {showRateColumn && <div className="item-rate">{item.is_complementary ? 0 : item.unit_price}</div>}
                                             <div className="item-amt">{item.is_complementary ? 0 : item.total_price}</div>
+                                            <div className="item-actions-cell">
+                                                <button className="row-action-btn" onClick={() => handleTransferItem(idx)} title="Transfer Item"><ArrowLeftRight size={14} /></button>
+                                                <button className="row-action-btn" onClick={() => handleReturnItem(idx)} title="Return Item"><Undo2 size={14} /></button>
+                                                <button className="remove-btn" onClick={() => removeFromBill(idx)} title="Remove Item"><Trash2 size={14} /></button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -987,43 +1148,43 @@ const BillingPage = () => {
                                             <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
                                                 <Gift size={15} /> Loyalty
                                             </button>
+                                            <button className="control-btn" onClick={toggleFullBillComplimentary}>
+                                                <Gift size={15} /> Comp.
+                                            </button>
                                             <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
                                                 <MoreHorizontal size={15} /> More
                                             </button>
+                                            <button className="control-btn paymode-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
+                                                <CreditCard size={15} /> PAYMODE
+                                            </button>
                                         </div>
-
-                                        {!stepProceeded && (
-                                            <div className="main-actions-row">
-                                                <button className="quick-cash-btn" onClick={() => handlePaymentSubmit([{ type: 'CASH', amount: grandTotal }])} disabled={billItems.length === 0}>
-                                                    QUICK CASH
-                                                </button>
-                                                <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
-                                                    PROCEED <ArrowRight size={18} />
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
 
                                     {/* Fast Payment - Show only after Check Out/Proceed */}
                                     {stepProceeded && (
                                         <div className="fast-payment fade-in">
-                                            <button className="pay-method cash" onClick={() => handlePayment('CASH')}><Wallet size={20} /> CASH</button>
-                                            <button className="pay-method card" onClick={() => handlePayment('CARD')}><CreditCard size={20} /> CARD</button>
-                                            <button className="pay-method upi" onClick={() => handlePayment('UPI')}><Smartphone size={20} /> UPI</button>
+                                            <div className="pay-methods-grid">
+                                                <button className="pay-method cash" onClick={() => handlePayment('CASH')}><Wallet size={20} /> CASH</button>
+                                                <button className="pay-method card" onClick={() => handlePayment('CARD')}><CreditCard size={20} /> CARD</button>
+                                                <button className="pay-method upi" onClick={() => handlePayment('UPI')}><Smartphone size={20} /> UPI</button>
+                                            </div>
+                                            <button className="cancel-proceed-btn" onClick={() => setStepProceeded(false)}>
+                                                <Undo2 size={16} /> BACK TO EDIT
+                                            </button>
                                         </div>
                                     )}
 
                                     <div className="footer-actions-grid">
-                                        <button className="action-btn hold-bill" onClick={holdCurrentBill} title="Hold this bill for later">
+                                        <button type="button" className="action-btn hold-bill" onClick={holdCurrentBill} title="Hold this bill for later">
                                             <Pause size={18} /> HOLD
                                         </button>
-                                        <button className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
+                                        <button type="button" className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
                                             <Printer size={18} /> KOT PRINT
                                         </button>
-                                        <button className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
+                                        <button type="button" className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
                                             <Save size={18} /> SAVE
                                         </button>
-                                        <button className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
+                                        <button type="button" className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
                                             <Printer size={18} /> SAVE & PRINT
                                         </button>
                                     </div>
@@ -1033,6 +1194,104 @@ const BillingPage = () => {
                     </div>
                 )
             }
+
+            {/* Selection Overlays */}
+            {selectionOverlay !== 'NONE' && (
+                <div className="selection-overlay-portal">
+                    <div className="selection-modal animate-in zoom-in-95 duration-200">
+                        <div className="selection-header">
+                            <h3>{selectionOverlay} SELECTION</h3>
+                            <button className="close-selection" onClick={() => setSelectionOverlay('NONE')}><Plus className="rotate-45" /></button>
+                        </div>
+
+                        <div className="selection-body">
+                            {selectionOverlay === 'TABLE' && (
+                                <div className="selection-grid tables">
+                                    {tables.map(t => (
+                                        <button key={t._id} className={`selection-card ${tableNo === t.table_no ? 'active' : ''}`} onClick={() => { setTableNo(t.table_no); setSelectedTableId(t._id); setSelectionOverlay('NONE'); }}>
+                                            <Table size={24} />
+                                            <span>{t.table_no}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {selectionOverlay === 'CAPTAIN' && (
+                                <div className="selection-list captains">
+                                    {captains.map(c => (
+                                        <button key={c._id} className={`selection-row ${selectedCaptain === c.name ? 'active' : ''}`} onClick={() => { setSelectedCaptain(c.name); setSelectionOverlay('NONE'); }}>
+                                            <UserCheck size={20} />
+                                            <span>{c.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {selectionOverlay === 'ALTER' && (
+                                <div className="selection-list alter-bills">
+                                    <div className="search-box">
+                                        <Search size={18} />
+                                        <input type="text" placeholder="Search by Table, Bill No or Customer..." value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
+                                    </div>
+                                    <div className="alter-list-container">
+                                        {billSearchKots.filter(b => b.bill_number.includes(billSearchQuery) || b.table_no?.includes(billSearchQuery) || b.customer_name?.includes(billSearchQuery)).map(b => (
+                                            <div key={b._id} className="alter-row">
+                                                <div className="bill-info">
+                                                    <span className="b-no">#{b.bill_number}</span>
+                                                    <span className="b-table">Table: {b.table_no || 'N/A'}</span>
+                                                    <span className="b-cust">{b.customer_name || 'Walk-in'}</span>
+                                                </div>
+                                                <button className="alter-action-btn" onClick={() => loadBillForAlter(b)}>ALTER BILL</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectionOverlay === 'TRANSFER' && (
+                                <div className="selection-form transfer-box">
+                                    <p className="instr">Select destination table to transfer <strong>{billItems[selectedItemForAction]?.name}</strong>.</p>
+                                    <div className="selection-grid tables">
+                                        {tables.map(t => (
+                                            <button key={t._id} className="selection-card" onClick={() => {
+                                                alert(`Transferred item to Table ${t.table_no}`);
+                                                removeFromBill(selectedItemForAction);
+                                                setSelectionOverlay('NONE');
+                                            }}>
+                                                <Table size={24} />
+                                                <span>{t.table_no}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectionOverlay === 'RETURN' && (
+                                <div className="selection-form return-box">
+                                    <p className="instr">Specify return details for selected items.</p>
+                                    <textarea placeholder="Reason for return..." className="return-reason-input"></textarea>
+                                    <button className="confirm-return-btn" onClick={() => { alert("Return logged successfully."); setSelectionOverlay('NONE'); }}>LOG RETURN</button>
+                                </div>
+                            )}
+
+                            {selectionOverlay === 'SPLIT' && (
+                                <div className="selection-form split-box">
+                                    <p className="instr">Select items to move to a new bill.</p>
+                                    <div className="split-items-list">
+                                        {billItems.map((item, i) => (
+                                            <div key={i} className="split-item-row">
+                                                <span>{item.name} (x{item.quantity})</span>
+                                                <input type="checkbox" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button className="confirm-split-btn" onClick={() => { alert("Bill split successfully."); setSelectionOverlay('NONE'); }}>CREATE NEW BILL</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modals */}
             {

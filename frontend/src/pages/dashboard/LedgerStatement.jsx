@@ -99,41 +99,47 @@ const LedgerStatement = () => {
 
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
-                <div className="dashboard-content fade-in p-6 lg:p-10">
-                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-10">
+                <div className="dashboard-content fade-in p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
+                    <div className="master-header-premium-refined flex-col md:flex-row mb-12">
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Database className="text-indigo-600" size={20} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Financial Audit Logs</span>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-100">
+                                    <Database size={20} />
+                                </div>
+                                <span className="metric-pill-modern">Account Forensics</span>
                             </div>
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Ledger Statement</h2>
-                            <p className="text-slate-500 font-medium">Detailed transaction audit trails for specific accounts.</p>
+                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Ledger Statement</h2>
+                            <p className="text-slate-500 font-bold mt-2 text-lg">Granular transaction audit trails and fiscal flow analysis.</p>
                         </div>
 
-                        <div className="flex flex-wrap gap-4 items-center bg-white p-4 rounded-[2rem] border border-slate-100 premium-shadow">
-                            <div className="flex-1 min-w-[240px]">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Account Select</label>
-                                <select
-                                    value={selectedLedger}
-                                    onChange={e => setSelectedLedger(e.target.value)}
-                                    className="w-full border-none bg-slate-50 p-3 rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
-                                >
-                                    <option value="">Search Ledger...</option>
-                                    {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} [{l.group.replace(/_/g, ' ')}]</option>)}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Period Selection</label>
-                                <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl">
-                                    <input type="date" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} className="bg-transparent text-xs font-black text-slate-600 outline-none" />
-                                    <span className="text-slate-300 font-black">→</span>
-                                    <input type="date" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} className="bg-transparent text-xs font-black text-slate-600 outline-none" />
+                        <div className="flex flex-wrap gap-6 items-end bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-100/50">
+                            <div className="w-80">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Select Account Hub</label>
+                                <div className="relative group">
+                                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                    <select
+                                        value={selectedLedger}
+                                        onChange={e => setSelectedLedger(e.target.value)}
+                                        className="input-premium-modern !pl-12 !h-14 w-full text-base font-bold appearance-none cursor-pointer"
+                                    >
+                                        <option value="">SCAN REGISTRY...</option>
+                                        {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} [{l.group?.replace(/_/g, ' ')}]</option>)}
+                                    </select>
                                 </div>
                             </div>
 
-                            <button onClick={fetchStatement} className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all self-end shadow-lg shadow-slate-200">
-                                <Search size={18} className="inline mr-2" /> Audit Account
+                            <div className="flex-1">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Temporal Window</label>
+                                <div className="flex items-center gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                                    <Calendar size={18} className="text-indigo-300" />
+                                    <input type="date" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} className="bg-transparent text-sm font-black text-slate-700 outline-none" />
+                                    <span className="text-slate-300 font-black">/</span>
+                                    <input type="date" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} className="bg-transparent text-sm font-black text-slate-700 outline-none" />
+                                </div>
+                            </div>
+
+                            <button onClick={fetchStatement} className="btn-glow bg-slate-900 text-white px-10 h-14 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-slate-200">
+                                <Search size={20} /> AUDIT RECON
                             </button>
                         </div>
                     </div>
@@ -144,105 +150,108 @@ const LedgerStatement = () => {
                             <p className="font-black text-slate-400 uppercase tracking-widest text-xs">Querying Database Archives...</p>
                         </div>
                     ) : statementData ? (
-                        <div className="bg-white rounded-[3rem] border border-slate-100 premium-shadow overflow-hidden fade-in">
-                            <div className="p-10 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-slate-50/50 backdrop-blur-md">
-                                <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center shadow-sm text-indigo-600">
-                                        <FileText size={32} />
+                        <div className="bento-card p-0 overflow-hidden shadow-2xl fade-in border-indigo-100">
+                            <div className="p-12 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 bg-slate-50/20 backdrop-blur-md">
+                                <div className="flex items-center gap-8">
+                                    <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center shadow-xl text-indigo-600 border border-slate-100">
+                                        <FileText size={40} />
                                     </div>
                                     <div>
-                                        <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">{statementData.ledger}</h3>
-                                        <p className="text-slate-400 font-black text-[10px] tracking-widest uppercase mt-2">Archives: {new Date(dateRange.start).toLocaleDateString().replace(/\//g, '-')} to {new Date(dateRange.end).toLocaleDateString().replace(/\//g, '-')}</p>
+                                        <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{statementData.ledger}</h3>
+                                        <div className="flex items-center gap-3 mt-4">
+                                            <span className="metric-pill-modern bg-indigo-50 text-indigo-600 border-none px-4 text-[10px]">Registry Snapshot</span>
+                                            <p className="text-slate-400 font-black text-[10px] tracking-widest uppercase">{new Date(dateRange.start).toLocaleDateString()} — {new Date(dateRange.end).toLocaleDateString()}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <button onClick={exportToCSV} className="bg-white border border-slate-200 p-4 rounded-2xl text-slate-600 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm flex items-center gap-2 font-black text-xs uppercase tracking-widest">
-                                        <Download size={18} /> CSV
+                                <div className="flex gap-4">
+                                    <button onClick={exportToCSV} className="btn-glow bg-white border border-slate-200 px-8 py-4 rounded-2xl text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-all shadow-sm flex items-center gap-4 font-black text-xs uppercase tracking-widest">
+                                        <Download size={20} /> Export Manifest
                                     </button>
-                                    <button onClick={() => window.print()} className="bg-white border border-slate-200 p-4 rounded-2xl text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm flex items-center gap-2 font-black text-xs uppercase tracking-widest">
-                                        <Printer size={18} /> Print Audit
+                                    <button onClick={() => window.print()} className="btn-glow bg-slate-900 text-white px-8 py-4 rounded-2xl flex items-center gap-4 font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl">
+                                        <Printer size={20} /> Print Audit
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 bg-slate-50/30 border-b border-slate-50">
-                                <div className="bg-white p-6 rounded-[2rem] border border-slate-50 premium-shadow h-28 flex flex-col justify-center">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Opening</p>
-                                    <h4 className="text-2xl font-black text-slate-900 tracking-tighter">₹{(statementData.opening_balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h4>
+                            <div className="p-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 bg-slate-50/30 border-b border-slate-50">
+                                <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 h-36 flex flex-col justify-between group hover:-translate-y-2 transition-transform">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Fiscal Opening</p>
+                                    <h4 className="text-3xl font-black text-slate-900 tracking-tighter">₹{(statementData.opening_balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h4>
                                 </div>
-                                <div className="bg-white p-6 rounded-[2rem] border border-slate-50 premium-shadow h-28 flex flex-col justify-center">
-                                    <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.2em] mb-1">Total Credit</p>
-                                    <h4 className="text-2xl font-black text-emerald-600 tracking-tighter">₹{statementData.data.reduce((acc, curr) => acc + curr.credit, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h4>
+                                <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 h-36 flex flex-col justify-between group hover:-translate-y-2 transition-transform">
+                                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-1">Aggregate Credit</p>
+                                    <h4 className="text-3xl font-black text-emerald-600 tracking-tighter">₹{statementData.data.reduce((acc, curr) => acc + curr.credit, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h4>
                                 </div>
-                                <div className="bg-white p-6 rounded-[2rem] border border-slate-50 premium-shadow h-28 flex flex-col justify-center">
-                                    <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.2em] mb-1">Total Debit</p>
-                                    <h4 className="text-2xl font-black text-rose-600 tracking-tighter">₹{statementData.data.reduce((acc, curr) => acc + curr.debit, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h4>
+                                <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 h-36 flex flex-col justify-between group hover:-translate-y-2 transition-transform">
+                                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-1">Aggregate Debit</p>
+                                    <h4 className="text-3xl font-black text-rose-600 tracking-tighter">₹{statementData.data.reduce((acc, curr) => acc + curr.debit, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h4>
                                 </div>
-                                <div className={`p-6 rounded-[2rem] border-2 h-28 flex flex-col justify-center premium-shadow ${(statementData.data[statementData.data.length - 1]?.balance || 0) >= 0 ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-rose-600 border-rose-400 text-white'}`}>
-                                    <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-1">Closing Net</p>
-                                    <h4 className="text-2xl font-black tracking-tighter">
+                                <div className={`p-10 rounded-[2.5rem] border-4 h-36 flex flex-col justify-between shadow-2xl transition-all hover:scale-105 ${(statementData.data[statementData.data.length - 1]?.balance || 0) >= 0 ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-rose-600 border-rose-400 text-white'}`}>
+                                    <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] mb-1">Closing Net Yield</p>
+                                    <h4 className="text-3xl font-black tracking-tighter">
                                         ₹{(statementData.data[statementData.data.length - 1]?.balance ?? statementData.opening_balance ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </h4>
                                 </div>
                             </div>
 
                             <div className="overflow-x-auto p-4 lg:p-10">
-                                <table className="w-full text-left border-separate border-spacing-y-4">
-                                    <thead>
-                                        <tr className="text-slate-400 uppercase text-[10px] font-black tracking-widest">
-                                            <th className="px-6 py-4">Transaction Hub</th>
-                                            <th className="px-6 py-4 text-center">Ref Identity</th>
-                                            <th className="px-6 py-4">Context Details</th>
-                                            <th className="px-6 py-4 text-right">Debit (Money Out)</th>
-                                            <th className="px-6 py-4 text-right">Credit (Money In)</th>
-                                            <th className="px-6 py-4 text-right">Running Net</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y-0">
-                                        {statementData.data.map((row, i) => (
-                                            <tr key={i} className="group bg-white hover:bg-slate-50/50 transition-all rounded-2xl premium-shadow h-20">
-                                                <td className="px-6 py-4 border-y border-l border-slate-50 group-hover:border-indigo-100 rounded-l-2xl">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
-                                                            <Calendar size={18} />
-                                                        </div>
-                                                        <span className="text-sm font-bold text-slate-700">{new Date(row.date).toLocaleDateString()}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 border-y border-slate-50 group-hover:border-indigo-100 text-center">
-                                                    <span className="bg-slate-50 text-slate-500 px-3 py-1.5 rounded-xl text-[10px] font-black border border-slate-100">VCH: {row.voucher_no}</span>
-                                                </td>
-                                                <td className="px-6 py-4 border-y border-slate-50 group-hover:border-indigo-100 font-bold text-slate-800 uppercase text-xs tracking-tight">{row.particulars}</td>
-                                                <td className="px-6 py-4 border-y border-slate-50 group-hover:border-indigo-100 text-right font-black text-rose-500">
-                                                    {row.debit > 0 ? (
-                                                        <div className="flex items-center justify-end gap-1.5 animate-in fade-in zoom-in duration-300">
-                                                            <TrendingDown size={14} className="opacity-40" />
-                                                            ₹{row.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                                        </div>
-                                                    ) : <span className="text-slate-100">-</span>}
-                                                </td>
-                                                <td className="px-6 py-4 border-y border-slate-50 group-hover:border-indigo-100 text-right font-black text-emerald-500">
-                                                    {row.credit > 0 ? (
-                                                        <div className="flex items-center justify-end gap-1.5 animate-in fade-in zoom-in duration-300">
-                                                            <TrendingUp size={14} className="opacity-40" />
-                                                            ₹{row.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                                        </div>
-                                                    ) : <span className="text-slate-100">-</span>}
-                                                </td>
-                                                <td className={`px-6 py-4 border-y border-r border-slate-50 group-hover:border-indigo-100 text-right rounded-r-2xl font-black text-lg tracking-tighter ${row.balance >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
-                                                    ₹{row.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                                </td>
+                                <div className="overflow-x-auto">
+                                    <table className="modern-table-premium">
+                                        <thead>
+                                            <tr className="text-slate-300 uppercase text-[10px] font-black tracking-[0.25em]">
+                                                <th className="px-12 py-8">Timeline</th>
+                                                <th className="px-6 py-8 text-center">Ref Manifest</th>
+                                                <th className="px-6 py-8">Narrative Context</th>
+                                                <th className="px-6 py-8 text-right">Debit Outflow</th>
+                                                <th className="px-6 py-8 text-right">Credit Inflow</th>
+                                                <th className="px-12 py-8 text-right">Running Net Balance</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                {statementData.data.length === 0 && (
-                                    <div className="py-32 text-center opacity-30 group">
-                                        <Database size={80} className="mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                                        <h3 className="text-2xl font-black">Archive Void</h3>
-                                        <p className="font-bold">No registered transactions discovered for this fiscal period.</p>
-                                    </div>
-                                )}
+                                        </thead>
+                                        <tbody>
+                                            {statementData.data.map((row, i) => (
+                                                <tr key={i} className="group hover:bg-slate-50/50 transition-all">
+                                                    <td className="px-12 py-8">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300">
+                                                                <Calendar size={20} />
+                                                            </div>
+                                                            <span className="text-lg font-black text-slate-800 tracking-tight">{new Date(row.date).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-8 text-center text-[10px] font-black text-indigo-400 bg-indigo-50/30 rounded-xl m-4 block">VCH-{row.voucher_no}</td>
+                                                    <td className="px-6 py-8 font-black text-slate-900 uppercase text-xs tracking-tight">{row.particulars}</td>
+                                                    <td className="px-6 py-8 text-right font-black text-2xl tracking-tighter text-rose-600">
+                                                        {row.debit > 0 ? (
+                                                            <div className="flex items-center justify-end gap-3">
+                                                                <TrendingDown size={18} className="opacity-30" />
+                                                                ₹{row.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                            </div>
+                                                        ) : <span className="opacity-10">0.00</span>}
+                                                    </td>
+                                                    <td className="px-6 py-8 text-right font-black text-2xl tracking-tighter text-emerald-600">
+                                                        {row.credit > 0 ? (
+                                                            <div className="flex items-center justify-end gap-3">
+                                                                <TrendingUp size={18} className="opacity-30" />
+                                                                ₹{row.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                            </div>
+                                                        ) : <span className="opacity-10">0.00</span>}
+                                                    </td>
+                                                    <td className={`px-12 py-8 text-right font-black text-2xl tracking-tighter ${row.balance >= 0 ? 'text-slate-900' : 'text-rose-600 underline'}`}>
+                                                        ₹{row.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    {statementData.data.length === 0 && (
+                                        <div className="py-32 text-center opacity-30 group">
+                                            <Database size={80} className="mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                                            <h3 className="text-2xl font-black">Archive Void</h3>
+                                            <p className="font-bold">No registered transactions discovered for this fiscal period.</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ) : (

@@ -125,101 +125,106 @@ const VoucherManagement = () => {
             )}
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
+                <div className="master-content-layout fade-in p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
+                    <div className="master-header-premium-refined flex-col md:flex-row mb-12">
                         <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Wallet className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Double-Entry Journal</span>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-100">
+                                    <Wallet size={20} />
+                                </div>
+                                <span className="metric-pill-modern">Journal Ledger</span>
                             </div>
-                            <h2>Voucher Management</h2>
-                            <p>Manage journal entries, receipts, payments, and fund transfers.</p>
+                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Voucher Management</h2>
+                            <p className="text-slate-500 font-bold mt-2 text-lg">Orchestrate journal entries, receipts, payments, and distributed fund transfers.</p>
                         </div>
-                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Create Voucher
+                        <button className="btn-glow bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.1em] hover:bg-indigo-600 transition-all shadow-2xl flex items-center gap-4 group" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={22} className="group-hover:rotate-90 transition-transform duration-500" /> Create Transaction
                         </button>
                     </div>
 
-                    <div className="toolbar-premium">
-                        <div className="search-premium">
-                            <Search size={20} />
-                            <input type="text" placeholder="Search by number, type, or account..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <div className="flex flex-col md:flex-row items-center gap-6 mb-10 bento-card p-4">
+                        <div className="relative flex-1 group">
+                            <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                            <input type="text" placeholder="Search entries by ID, account or classification..." className="input-premium-modern !pl-16 w-full text-lg" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 italic">
-                            {filteredVouchers.length} Entries
-                        </span>
+                        <div className="flex items-center gap-4">
+                            <span className="metric-pill-modern bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                {filteredVouchers.length} Total Manifests
+                            </span>
+                            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-white transition-all cursor-pointer shadow-sm"><Filter size={20} /></div>
+                        </div>
                     </div>
 
-                    <div className="table-container-premium">
-                        <table className="table-premium">
+                    <div className="bento-card p-0 overflow-hidden shadow-2xl">
+                        <table className="modern-table-premium">
                             <thead>
-                                <tr>
-                                    <th>Voucher Reference</th>
-                                    <th>Classification</th>
-                                    <th>Account Distribution</th>
-                                    <th>Entry Date</th>
-                                    <th className="text-right">Capital Amount</th>
-                                    <th className="text-right">Actions</th>
+                                <tr className="text-[10px] font-black text-slate-300 uppercase tracking-[0.25em]">
+                                    <th className="px-10 py-6 text-left">Reference Vector</th>
+                                    <th className="px-6 py-6 text-left">classification</th>
+                                    <th className="px-6 py-6 text-left">Asset distribution</th>
+                                    <th className="px-6 py-6 text-left">timestamp</th>
+                                    <th className="px-6 py-6 text-right">Magnitude</th>
+                                    <th className="px-6 py-6 text-right">Audit</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '100px 0' }}>
-                                        <Loader2 className="animate-spin text-indigo-600 mx-auto mb-4" size={48} />
-                                        <p className="font-black text-slate-300 uppercase tracking-[0.2em] text-xs">Syncing Journal Entries...</p>
+                                    <tr><td colSpan="6" className="text-center py-32">
+                                        <Loader2 className="animate-spin text-indigo-600 mx-auto mb-6" size={64} />
+                                        <p className="font-black text-slate-300 uppercase tracking-[0.3em] text-xs">Syncing Ledger Assets...</p>
                                     </td></tr>
                                 ) : filteredVouchers.length === 0 ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '100px 0' }}>
-                                        <Wallet size={64} className="text-slate-100 mx-auto mb-4" />
-                                        <p className="font-bold text-slate-400">No voucher entries on record.</p>
+                                    <tr><td colSpan="6" className="text-center py-32 opacity-30">
+                                        <Wallet size={100} className="mx-auto mb-10 text-indigo-100" />
+                                        <p className="font-black uppercase tracking-[0.4em] text-sm">Clear Horizon: No Manifests</p>
                                     </td></tr>
                                 ) : filteredVouchers.map((v) => {
                                     const style = getVoucherStyle(v.voucher_type);
                                     return (
                                         <tr key={v._id} className="group">
-                                            <td>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-all" style={{ background: style.bg, color: style.color }}>
+                                            <td className="px-10 py-6">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform" style={{ background: style.bg, color: style.color }}>
                                                         {style.icon}
                                                     </div>
                                                     <div>
-                                                        <div className="font-black text-slate-800 tracking-tight">{v.voucher_number}</div>
-                                                        <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Ref: {v._id?.slice(-6).toUpperCase()}</div>
+                                                        <div className="font-black text-slate-900 text-lg tracking-tight">{v.voucher_number}</div>
+                                                        <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">ID: {v._id?.slice(-8).toUpperCase()}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest" style={{ background: style.bg, color: style.color }}>
+                                            <td className="px-6 py-6">
+                                                <span className="px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border" style={{ background: `${style.color}08`, color: style.color, borderColor: `${style.color}20` }}>
                                                     {v.voucher_type}
                                                 </span>
                                             </td>
-                                            <td>
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="px-1.5 py-0.5 text-[9px] font-black bg-indigo-50 text-indigo-600 rounded uppercase">DR</span>
-                                                        <span className="text-xs font-bold text-slate-700">{v.debit_ledger?.name || '—'}</span>
+                                            <td className="px-6 py-6">
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-8 h-8 flex items-center justify-center text-[10px] font-black bg-indigo-50 text-indigo-600 rounded-xl uppercase shadow-sm">DR</span>
+                                                        <span className="text-sm font-black text-slate-700 tracking-tight">{v.debit_ledger?.name || '—'}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-600 rounded uppercase">CR</span>
-                                                        <span className="text-xs font-bold text-slate-700">{v.credit_ledger?.name || '—'}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-8 h-8 flex items-center justify-center text-[10px] font-black bg-rose-50 text-rose-600 rounded-xl uppercase shadow-sm">CR</span>
+                                                        <span className="text-sm font-black text-slate-700 tracking-tight">{v.credit_ledger?.name || '—'}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <div className="flex items-center gap-2 text-slate-600">
-                                                    <Calendar size={14} className="text-slate-300" />
-                                                    <span className="font-bold text-sm">{new Date(v.date).toLocaleDateString('en-IN')}</span>
+                                            <td className="px-6 py-6">
+                                                <div className="flex items-center gap-3 text-slate-500 font-bold">
+                                                    <Calendar size={18} className="text-indigo-200" />
+                                                    {new Date(v.date).toLocaleDateString('en-GB')}
                                                 </div>
                                             </td>
-                                            <td className="text-right">
-                                                <span className="text-lg font-black text-slate-900" style={{ color: style.color }}>
+                                            <td className="px-6 py-6 text-right">
+                                                <div className="text-2xl font-black text-slate-900 tracking-tighter" style={{ color: style.color }}>
                                                     ₹{parseFloat(v.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="flex justify-end">
-                                                    <button onClick={() => handleDelete(v._id)} className="action-icon-btn delete"><Trash2 size={18} /></button>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-6 text-right">
+                                                <button onClick={() => handleDelete(v._id)} className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all ml-auto shadow-sm group-hover:scale-105">
+                                                    <Trash2 size={22} />
+                                                </button>
                                             </td>
                                         </tr>
                                     );
@@ -233,97 +238,105 @@ const VoucherManagement = () => {
                 {showDrawer && (
                     <>
                         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-md z-[999]" onClick={() => setShowDrawer(false)}></div>
-                        <div className="drawer-premium">
-                            <div className="drawer-header-premium">
+                        <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-white shadow-[0_0_100px_rgba(0,0,0,0.2)] z-[1000] flex flex-col transform transition-transform duration-500 ease-out p-0 border-l border-slate-50">
+                            <div className="p-10 border-b border-slate-50 bg-slate-50/20 backdrop-blur-md flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">New Journal Entry</h3>
-                                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Balances will reflect across all ledgers</p>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                                            <Repeat size={20} />
+                                        </div>
+                                        <span className="metric-pill-modern">Journal Manifest</span>
+                                    </div>
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter">New Ledger Entry</h3>
+                                    <p className="text-xs font-black text-slate-300 mt-2 uppercase tracking-[0.2em]">Double-entry asset recalibration</p>
                                 </div>
-                                <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all">
-                                    <XCircle size={24} className="text-slate-300" />
+                                <button onClick={() => setShowDrawer(false)} className="w-14 h-14 rounded-2xl hover:bg-white hover:text-rose-500 hover:scale-110 flex items-center justify-center transition-all bg-slate-100 text-slate-400 group">
+                                    <XCircle size={32} />
                                 </button>
                             </div>
-                            <div className="drawer-body-premium">
+                            <div className="flex-1 overflow-y-auto p-10 space-y-12">
                                 {error && (
-                                    <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-8">
-                                        <AlertCircle size={20} /> {error}
+                                    <div className="bg-rose-50 border border-rose-100 p-6 rounded-3xl flex items-center gap-4 text-rose-600 font-bold text-sm animate-bounce mb-10">
+                                        <AlertCircle size={24} /> {error}
                                     </div>
                                 )}
-                                <form id="voucher-form" onSubmit={handleSubmit} className="space-y-8">
-                                    {/* Voucher Type Selector */}
+                                <form id="voucher-form" onSubmit={handleSubmit} className="space-y-10">
                                     <div className="form-group-premium">
-                                        <label>Transaction Classification</label>
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4 block">Classification Protocol</label>
+                                        <div className="grid grid-cols-2 gap-4">
                                             {VOUCHER_TYPES.map(t => (
                                                 <button key={t.value} type="button"
                                                     onClick={() => setFormData({ ...formData, voucher_type: t.value })}
-                                                    className={`p-4 rounded-2xl border-2 flex items-center gap-3 text-left transition-all ${formData.voucher_type === t.value ? 'border-indigo-600 bg-indigo-50/50 shadow-lg' : 'border-slate-100 hover:border-slate-200'}`}>
-                                                    <div className="p-2 rounded-xl" style={{ background: t.bg, color: t.color }}>{t.icon}</div>
+                                                    className={`p-6 rounded-[2rem] border-2 flex flex-col items-center text-center gap-4 transition-all group ${formData.voucher_type === t.value ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-50 hover:bg-slate-50'}`}>
+                                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110" style={{ background: t.bg, color: t.color }}>{t.icon}</div>
                                                     <div>
                                                         <div className={`text-xs font-black uppercase tracking-widest ${formData.voucher_type === t.value ? 'text-indigo-700' : 'text-slate-600'}`}>{t.label}</div>
-                                                        <div className="text-[10px] font-bold text-slate-400">{t.sub}</div>
+                                                        <div className="text-[9px] font-black text-slate-400 mt-1 uppercase opacity-50">{t.sub}</div>
                                                     </div>
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 gap-6">
                                         <div className="form-group-premium">
-                                            <label>Voucher Reference ID</label>
-                                            <input type="text" required className="input-premium" value={formData.voucher_number} onChange={e => setFormData({ ...formData, voucher_number: e.target.value })} />
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">Ref ID</label>
+                                            <input type="text" required className="input-premium-modern w-full" value={formData.voucher_number} onChange={e => setFormData({ ...formData, voucher_number: e.target.value })} />
                                         </div>
                                         <div className="form-group-premium">
-                                            <label>Entry Date</label>
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">Staged Date</label>
                                             <div className="relative">
-                                                <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                                                <input type="date" required className="input-premium !pl-12" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                                                <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                                                <input type="date" required className="input-premium-modern !pl-12 w-full" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="form-group-premium">
-                                        <label className="!text-indigo-600">
-                                            Debit Account — <span className="italic font-bold text-slate-400">Receiver</span>
-                                        </label>
+                                    <div className="space-y-6">
+                                        <div className="form-group-premium">
+                                            <label className="text-[10px] font-black uppercase text-indigo-400 tracking-[0.2em] mb-3 block italic">Absorption Sector (Debit)</label>
+                                            <div className="relative">
+                                                <select required className="input-premium-modern appearance-none cursor-pointer w-full !text-indigo-600 border-indigo-100 bg-indigo-50/10" value={formData.debit_ledger} onChange={e => setFormData({ ...formData, debit_ledger: e.target.value })}>
+                                                    <option value="">Select receiver...</option>
+                                                    {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} — {l.group?.replace(/_/g, ' ')}</option>)}
+                                                </select>
+                                                <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-200 pointer-events-none" />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group-premium">
+                                            <label className="text-[10px] font-black uppercase text-rose-400 tracking-[0.2em] mb-3 block italic">Origin Sector (Credit)</label>
+                                            <div className="relative">
+                                                <select required className="input-premium-modern appearance-none cursor-pointer w-full !text-rose-600 border-rose-100 bg-rose-50/10" value={formData.credit_ledger} onChange={e => setFormData({ ...formData, credit_ledger: e.target.value })}>
+                                                    <option value="">Select originator...</option>
+                                                    {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} — {l.group?.replace(/_/g, ' ')}</option>)}
+                                                </select>
+                                                <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-200 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group-premium bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl">
+                                        <label className="text-[10px] font-black uppercase text-indigo-300 tracking-[0.3em] mb-5 block">Quantified Magnitude</label>
                                         <div className="relative">
-                                            <select required className="input-premium appearance-none cursor-pointer" value={formData.debit_ledger} onChange={e => setFormData({ ...formData, debit_ledger: e.target.value })}>
-                                                <option value="">Select receiver account...</option>
-                                                {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} [{l.group?.replace(/_/g, ' ')}]</option>)}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 text-4xl font-black italic">₹</span>
+                                            <input type="number" required placeholder="0.00" className="input-premium-modern w-full !pl-16 !bg-transparent !border-none !text-6xl !font-black !text-white !p-0 placeholder:text-white/10" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || '' })} />
                                         </div>
                                     </div>
 
                                     <div className="form-group-premium">
-                                        <label className="!text-rose-600">
-                                            Credit Account — <span className="italic font-bold text-slate-400">Giver</span>
-                                        </label>
-                                        <div className="relative">
-                                            <select required className="input-premium appearance-none cursor-pointer" value={formData.credit_ledger} onChange={e => setFormData({ ...formData, credit_ledger: e.target.value })}>
-                                                <option value="">Select giver account...</option>
-                                                {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} [{l.group?.replace(/_/g, ' ')}]</option>)}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                        </div>
-                                    </div>
-
-                                    <div className="form-group-premium">
-                                        <label>Transfer Amount (₹) *</label>
-                                        <input type="number" required placeholder="0.00" className="input-premium !text-2xl !font-black !text-indigo-600" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || '' })} />
-                                    </div>
-
-                                    <div className="form-group-premium">
-                                        <label>Transaction Narration / Memo</label>
-                                        <textarea className="input-premium !h-24" placeholder="Describe the purpose of this transaction entry..." value={formData.narration} onChange={e => setFormData({ ...formData, narration: e.target.value })}></textarea>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">Transactional Narratives</label>
+                                        <textarea className="input-premium-modern !h-32 w-full !py-6 font-bold" placeholder="Contextual audit data..." value={formData.narration} onChange={e => setFormData({ ...formData, narration: e.target.value })}></textarea>
                                     </div>
                                 </form>
                             </div>
-                            <div className="drawer-footer-premium">
-                                <button type="submit" form="voucher-form" disabled={submitting} className="btn-premium-primary flex-1 justify-center py-4">
-                                    {submitting ? <Loader2 className="animate-spin" /> : <><PlusCircle size={20} /> FINALIZE VOUCHER</>}
+                            <div className="p-10 border-t border-slate-50 flex gap-6 bg-white shadow-[0_-20px_50px_rgba(0,0,0,0.02)]">
+                                <button type="submit" form="voucher-form" disabled={submitting} className="btn-glow bg-slate-900 text-white flex-1 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-indigo-600 active:scale-95 transition-all">
+                                    {submitting ? <Loader2 className="animate-spin" /> : <><PlusCircle size={24} /> Finalise entry</>}
                                 </button>
-                                <button onClick={() => setShowDrawer(false)} className="btn-premium-outline">ABORT</button>
+                                <button onClick={() => setShowDrawer(false)} className="w-20 rounded-[2rem] border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition-all">
+                                    <XCircle size={28} />
+                                </button>
                             </div>
                         </div>
                     </>

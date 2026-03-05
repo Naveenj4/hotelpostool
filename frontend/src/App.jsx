@@ -24,6 +24,7 @@ import LedgerStatement from './pages/dashboard/LedgerStatement.jsx';
 import VoucherManagement from './pages/dashboard/VoucherManagement.jsx';
 import CounterMaster from './pages/dashboard/CounterMaster.jsx';
 import BillingPage from './pages/dashboard/BillingPage.jsx';
+import HoldBillsPage from './pages/dashboard/HoldBillsPage.jsx';
 import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage.jsx';
 import StockPage from './pages/StockPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
@@ -131,6 +132,9 @@ function AppRoutes() {
                             } />
                             <Route path="billing" element={
                                 <PermissionRoute pageKey="billing"><BillingPage /></PermissionRoute>
+                            } />
+                            <Route path="hold" element={
+                                <PermissionRoute pageKey="billing"><HoldBillsPage /></PermissionRoute>
                             } />
                             <Route path="bills-sales" element={
                                 <PermissionRoute pageKey="bills_sales"><BillsAndSalesPage /></PermissionRoute>

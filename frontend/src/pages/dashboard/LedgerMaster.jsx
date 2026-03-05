@@ -205,112 +205,106 @@ const LedgerMaster = () => {
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
 
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
+                <div className="master-content-layout fade-in p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
+                    <div className="master-header-premium-refined flex-col md:flex-row mb-12">
                         <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Book className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Double-Entry Core</span>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="p-2 bg-slate-900 rounded-xl text-white shadow-lg shadow-slate-100">
+                                    <Book size={20} />
+                                </div>
+                                <span className="metric-pill-modern">Accounting Infrastructure</span>
                             </div>
-                            <h2>Ledger Master</h2>
-                            <p>Architectural accounting heads and financial classifications.</p>
+                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Ledger Master</h2>
+                            <p className="text-slate-500 font-bold mt-2 text-lg">Architectural accounting heads and strategic financial classifications.</p>
                         </div>
-                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Provision New Account
+                        <button className="btn-glow bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.1em] hover:bg-indigo-600 transition-all shadow-2xl flex items-center gap-4 group" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={22} className="group-hover:rotate-90 transition-transform duration-500" /> Provision Account
                         </button>
                     </div>
 
-                    <div className="toolbar-premium">
-                        <div className="search-premium">
-                            <Search size={20} />
-                            <input
-                                type="text"
-                                placeholder="Search account nomenclature..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                    <div className="flex flex-col md:flex-row items-center gap-6 mb-10 bento-card p-4">
+                        <div className="relative flex-1 group">
+                            <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                            <input type="text" placeholder="Search account nomenclature or classification..." className="input-premium-modern !pl-16 w-full text-lg" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 italic">
-                                Active Accounts: {filteredLedgers.length}
+                            <span className="metric-pill-modern bg-indigo-50 text-indigo-600 border border-indigo-100 px-6 py-3">
+                                {filteredLedgers.length} Active Vectors
                             </span>
                         </div>
                     </div>
 
-                    <div className="table-container-premium">
-                        <table className="table-premium">
+                    <div className="bento-card p-0 overflow-hidden shadow-2xl">
+                        <table className="modern-table-premium">
                             <thead>
-                                <tr>
-                                    <th>Account Nomenclature</th>
-                                    <th>Strategic Classification</th>
-                                    <th>Opening Capital</th>
-                                    <th>Status</th>
-                                    <th style={{ textAlign: 'right' }}>Management</th>
+                                <tr className="text-[10px] font-black text-slate-300 uppercase tracking-[0.25em]">
+                                    <th className="px-10 py-6 text-left">Account Metadata</th>
+                                    <th className="px-6 py-6 text-left">Strategic grouping</th>
+                                    <th className="px-6 py-6 text-left">Fiscal Origin</th>
+                                    <th className="px-6 py-6 text-left">Integrity</th>
+                                    <th className="px-10 py-6 text-right">Audit</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr>
-                                        <td colSpan="5" style={{ textAlign: 'center', padding: '100px 0' }}>
-                                            <Loader2 className="animate-spin text-indigo-600 mx-auto mb-4" size={48} />
-                                            <p className="font-black text-slate-300 uppercase tracking-[0.2em] text-xs">Synchronizing Ledgers...</p>
-                                        </td>
-                                    </tr>
+                                    <tr><td colSpan="5" className="text-center py-32">
+                                        <Loader2 className="animate-spin text-indigo-600 mx-auto mb-6" size={64} />
+                                        <p className="font-black text-slate-300 uppercase tracking-[0.3em] text-xs">Syncing Ledger Infrastructure...</p>
+                                    </td></tr>
                                 ) : filteredLedgers.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" style={{ textAlign: 'center', padding: '100px 0' }}>
-                                            <Book size={64} className="text-slate-100 mx-auto mb-4" />
-                                            <p className="font-bold text-slate-400">No account heads registered.</p>
-                                        </td>
-                                    </tr>
+                                    <tr><td colSpan="5" className="text-center py-32 opacity-30">
+                                        <Book size={100} className="mx-auto mb-10 text-indigo-100" />
+                                        <p className="font-black uppercase tracking-[0.4em] text-sm">Registry Clear: No Nodes Found</p>
+                                    </td></tr>
                                 ) : filteredLedgers.map((ledger) => (
                                     <tr key={ledger._id} className="group">
-                                        <td>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg shadow-slate-900/10 group-hover:bg-indigo-600 transition-all">
-                                                    <Target size={20} />
+                                        <td className="px-10 py-8">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110 group-hover:bg-indigo-600">
+                                                    <Target size={24} />
                                                 </div>
                                                 <div>
-                                                    <div className="text-lg font-black text-slate-800 uppercase tracking-tight leading-none group-hover:text-indigo-600 transition-colors">{ledger.name}</div>
-                                                    <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 italic">Financial Heading</div>
+                                                    <div className="text-xl font-black text-slate-900 tracking-tight leading-none mb-2">{ledger.name}</div>
+                                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded w-fit">Ref: {ledger._id?.slice(-6).toUpperCase()}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-xs font-black text-slate-600 uppercase tracking-tighter leading-none group-hover:text-indigo-600 transition-colors">
+                                        <td className="px-6 py-8">
+                                            <div className="space-y-2">
+                                                <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-50/50 text-indigo-600 border border-indigo-100">
                                                     {ledger.group.replace(/_/g, ' ')}
                                                 </span>
-                                                <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div className="w-1/2 h-full bg-indigo-500 rounded-full"></div>
-                                                </div>
                                             </div>
                                         </td>
-                                        <td>
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${ledger.balance_type === 'DR' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>
-                                                    {ledger.balance_type === 'DR' ? <ArrowUpRight size={14} /> : <ArrowDownLeft size={14} />}
+                                        <td className="px-6 py-8">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${ledger.balance_type === 'DR' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                    {ledger.balance_type === 'DR' ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-black text-slate-800">₹{ledger.opening_balance.toLocaleString()}</div>
-                                                    <div className={`text-[10px] font-black uppercase tracking-widest ${ledger.balance_type === 'DR' ? 'text-blue-600' : 'text-rose-600'}`}>
-                                                        {ledger.balance_type === 'DR' ? 'Debit' : 'Credit'}
+                                                    <div className="text-xl font-black text-slate-900 tracking-tighter">₹{ledger.opening_balance.toLocaleString()}</div>
+                                                    <div className={`text-[9px] font-black uppercase tracking-[0.2em] mt-0.5 ${ledger.balance_type === 'DR' ? 'text-indigo-400' : 'text-rose-400'}`}>
+                                                        {ledger.balance_type === 'DR' ? 'DEBIT ORIGIN' : 'CREDIT ORIGIN'}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
-                                            <span className={`badge-premium ${ledger.is_active ? 'active' : 'disabled'}`}>
-                                                {ledger.is_active ? 'COMPLIANT' : 'FROZEN'}
+                                        <td className="px-6 py-8">
+                                            <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-colors ${ledger.is_active ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                                {ledger.is_active ? 'Active' : 'Frozen'}
                                             </span>
                                         </td>
-                                        <td>
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => handleEdit(ledger)} className="action-icon-btn edit"><Edit size={18} /></button>
-                                                <button onClick={() => handleToggleStatus(ledger)} className="action-icon-btn" style={{ background: ledger.is_active ? '#fff7ed' : '#f0fdf4', color: ledger.is_active ? '#9a3412' : '#15803d' }}>
-                                                    {ledger.is_active ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
+                                        <td className="px-10 py-8 text-right">
+                                            <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleEdit(ledger)} className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-all shadow-sm">
+                                                    <Edit size={20} />
                                                 </button>
-                                                <button onClick={() => handleDelete(ledger)} className="action-icon-btn delete"><Trash2 size={18} /></button>
+                                                <button onClick={() => handleToggleStatus(ledger)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${ledger.is_active ? 'bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'}`}>
+                                                    {ledger.is_active ? <XCircle size={20} /> : <CheckCircle2 size={20} />}
+                                                </button>
+                                                <button onClick={() => handleDelete(ledger)} className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all shadow-sm">
+                                                    <Trash2 size={20} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -322,44 +316,51 @@ const LedgerMaster = () => {
 
                 {showDrawer && (
                     <>
-                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999]" onClick={() => setShowDrawer(false)}></div>
-                        <div className="drawer-premium">
-                            <div className="drawer-header-premium">
+                        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-md z-[999]" onClick={() => setShowDrawer(false)}></div>
+                        <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-white shadow-[0_0_100px_rgba(0,0,0,0.2)] z-[1000] flex flex-col transform transition-transform duration-500 ease-out p-0 border-l border-slate-50">
+                            <div className="p-10 border-b border-slate-50 bg-slate-50/20 backdrop-blur-md flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{isEditing ? 'Modify Account' : 'Architect Account'}</h3>
-                                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Double-Entry Fiscal Registry</p>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-slate-100">
+                                            <Target size={20} />
+                                        </div>
+                                        <span className="metric-pill-modern">{isEditing ? 'RECALIBRATION' : 'PROVISIONING'}</span>
+                                    </div>
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{isEditing ? 'Modify Account' : 'Architect Account'}</h3>
+                                    <p className="text-[10px] font-black text-slate-300 mt-2 uppercase tracking-[0.2em]">Double-entry asset orchestration</p>
                                 </div>
-                                <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all">
-                                    <XCircle size={24} className="text-slate-300" />
+                                <button onClick={() => setShowDrawer(false)} className="w-14 h-14 rounded-2xl hover:bg-white hover:text-rose-500 hover:scale-110 flex items-center justify-center transition-all bg-slate-100 text-slate-400 group">
+                                    <XCircle size={32} />
                                 </button>
                             </div>
-                            <div className="drawer-body-premium">
+                            <div className="flex-1 overflow-y-auto p-10 space-y-10">
                                 {error && (
-                                    <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-8">
-                                        <AlertCircle size={20} /> {error}
+                                    <div className="bg-rose-50 border border-rose-100 p-6 rounded-3xl flex items-center gap-4 text-rose-600 font-bold text-sm animate-bounce mb-10">
+                                        <AlertCircle size={24} /> {error}
                                     </div>
                                 )}
-                                <form id="ledger-form" onSubmit={handleSubmit} className="space-y-8">
+                                <form id="ledger-form" onSubmit={handleSubmit} className="space-y-10">
                                     <div className="form-group-premium">
-                                        <label>Account Nomenclature *</label>
-                                        <div className="relative">
-                                            <Building2 size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4 block">Account Nomenclature</label>
+                                        <div className="relative group">
+                                            <Building2 size={24} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
                                             <input
                                                 type="text"
                                                 required
-                                                className="input-premium !pl-12"
-                                                placeholder="e.g. AXIS BANK OPERATIONAL"
+                                                className="input-premium-modern !pl-16 w-full text-xl font-black uppercase"
+                                                placeholder="ENTER ACCOUNT NAME..."
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                                             />
                                         </div>
                                     </div>
+
                                     <div className="form-group-premium">
-                                        <label>Accounting Classification Group *</label>
-                                        <div className="relative">
-                                            <Layers size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4 block">Strategic classification</label>
+                                        <div className="relative group">
+                                            <Layers size={24} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors pointer-events-none" />
                                             <select
-                                                className="input-premium !pl-12 appearance-none cursor-pointer"
+                                                className="input-premium-modern !pl-16 w-full appearance-none cursor-pointer text-lg font-bold"
                                                 value={formData.group}
                                                 onChange={(e) => setFormData({ ...formData, group: e.target.value })}
                                             >
@@ -367,28 +368,30 @@ const LedgerMaster = () => {
                                                     <option key={g.value} value={g.value}>{g.label}</option>
                                                 ))}
                                             </select>
-                                            <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                            <ChevronDown size={24} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 gap-8 bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100">
                                         <div className="form-group-premium">
-                                            <label>Opening Capital</label>
-                                            <div className="relative">
-                                                <DollarSign size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block text-center">Opening Capital</label>
+                                            <div className="relative group">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
                                                 <input
                                                     type="number"
-                                                    className="input-premium !pl-12"
+                                                    className="input-premium-modern !pl-10 w-full text-center text-2xl font-black bg-white"
                                                     value={formData.opening_balance}
                                                     onChange={(e) => setFormData({ ...formData, opening_balance: parseFloat(e.target.value) || 0 })}
                                                 />
                                             </div>
                                         </div>
                                         <div className="form-group-premium">
-                                            <label>Logic Type</label>
-                                            <div className="flex gap-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block text-center">Logic mode</label>
+                                            <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200">
                                                 {['DR', 'CR'].map(type => (
-                                                    <button key={type} type="button" onClick={() => setFormData({ ...formData, balance_type: type })} className={`flex-1 p-3 rounded-xl border-2 font-black text-xs uppercase tracking-widest transition-all ${formData.balance_type === type ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-100 text-slate-400'}`}>
+                                                    <button key={type} type="button"
+                                                        onClick={() => setFormData({ ...formData, balance_type: type })}
+                                                        className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${formData.balance_type === type ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
                                                         {type === 'DR' ? 'Debit' : 'Credit'}
                                                     </button>
                                                 ))}
@@ -397,12 +400,12 @@ const LedgerMaster = () => {
                                     </div>
 
                                     <div className="form-group-premium">
-                                        <label>Accounting Narrative (Optional)</label>
-                                        <div className="relative">
-                                            <Info size={20} className="absolute left-4 top-4 text-slate-300" />
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4 block">Accounting Narratives</label>
+                                        <div className="relative group">
+                                            <Info size={24} className="absolute left-6 top-6 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
                                             <textarea
-                                                className="input-premium !pl-12 !h-24 !pt-4"
-                                                placeholder="Additional ledger metadata..."
+                                                className="input-premium-modern !pl-16 w-full !h-32 !pt-6 text-lg font-bold"
+                                                placeholder="CONTEXTUAL METADATA..."
                                                 value={formData.description}
                                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             ></textarea>
@@ -410,11 +413,13 @@ const LedgerMaster = () => {
                                     </div>
                                 </form>
                             </div>
-                            <div className="drawer-footer-premium">
-                                <button type="submit" form="ledger-form" disabled={submitting} className="btn-premium-primary flex-1 justify-center py-4">
-                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? 'COMMIT LEDGER' : 'PROVISION ACCOUNT')}
+                            <div className="p-10 border-t border-slate-50 flex gap-6 bg-white shadow-[0_-20px_50px_rgba(0,0,0,0.02)]">
+                                <button type="submit" form="ledger-form" disabled={submitting} className="btn-glow bg-slate-900 text-white flex-1 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-indigo-600 active:scale-95 transition-all">
+                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? <><Edit size={24} /> COMMIT CHANGES</> : <><CheckCircle2 size={24} /> PROVISION ACCOUNT</>)}
                                 </button>
-                                <button onClick={() => setShowDrawer(false)} className="btn-premium-outline">ABORT</button>
+                                <button onClick={() => setShowDrawer(false)} className="w-20 rounded-[2rem] border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition-all">
+                                    <XCircle size={28} />
+                                </button>
                             </div>
                         </div>
                     </>

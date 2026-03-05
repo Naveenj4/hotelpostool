@@ -9,8 +9,9 @@
     display: flex;
     height: 100vh;
     width: 100vw;
-    background-color: #F1F5F9;
+    background-color: #F8FAFC;
     overflow: hidden;
+    font-family: 'Outfit', sans-serif;
 }
 
 /* ============================================================
@@ -468,19 +469,37 @@
 
 .stat-card {
     background: #ffffff;
-    padding: 1.25rem;
-    border-radius: 8px;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s ease;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    position: relative;
+    overflow: hidden;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    border-color: #7ea1c4;
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: var(--primary, #7ea1c4);
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--primary, #7ea1c4);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::after {
+    opacity: 1;
 }
 
 .stat-header {
@@ -602,9 +621,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #E2E8F0;
+    margin-bottom: 2rem;
+    padding: 1.5rem 2rem;
+    background: white;
+    border-radius: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #E2E8F0;
 }
 
 .page-title h2 {
@@ -1029,4 +1051,150 @@
     .dashboard-sidebar.collapsed .sub-menu {
         display: none;
     }
+}
+
+/* ============================================================
+   MODERN & PROFESSIONAL OVERHAUL UTILITIES
+   ============================================================ */
+
+.premium-gradient-bg {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.bento-card {
+    background: white;
+    border-radius: 2rem;
+    padding: 2rem;
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bento-card:hover {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+    transform: scale(1.01);
+}
+
+.metric-pill-modern {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background: var(--primary-lt, #f0f7ff);
+    color: var(--primary-dk, #5788b7);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgba(126, 161, 196, 0.1);
+}
+
+.btn-glow {
+    position: relative;
+    z-index: 1;
+}
+
+.btn-glow::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(45deg, var(--primary), #a855f7, var(--primary));
+    background-size: 400%;
+    z-index: -1;
+    filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: inherit;
+    animation: glow-animation 20s linear infinite;
+}
+
+.btn-glow:hover::before {
+    opacity: 0.4;
+}
+
+@keyframes glow-animation {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.modern-table-premium {
+    width: 100%;
+    border-spacing: 0 0.75rem;
+    border-collapse: separate;
+}
+
+.modern-table-premium tr {
+    transition: all 0.2s ease;
+}
+
+.modern-table-premium tbody tr {
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.modern-table-premium tbody tr:hover {
+    transform: translateX(4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    background: #fdfdfd;
+}
+
+.modern-table-premium td {
+    padding: 1.25rem 1.5rem;
+    border: none;
+}
+
+.modern-table-premium td:first-child {
+    border-top-left-radius: 1rem;
+    border-bottom-left-radius: 1rem;
+}
+
+.modern-table-premium td:last-child {
+    border-top-right-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+}
+
+.master-header-premium-refined {
+    background: linear-gradient(to bottom, #ffffff, #f8fafc);
+    border: 1px solid #e2e8f0;
+    border-radius: 2rem;
+    padding: 2.5rem 3rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.input-premium-modern {
+    background: #f8fafc !important;
+    border: 2px solid transparent !important;
+    border-radius: 1rem !important;
+    padding: 1rem 1.25rem !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.input-premium-modern:focus {
+    background: white !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 4px rgba(126, 161, 196, 0.1) !important;
+    outline: none !important;
 }
