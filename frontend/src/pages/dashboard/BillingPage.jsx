@@ -82,6 +82,7 @@ const BillingPage = () => {
 
     const [billSearchQuery, setBillSearchQuery] = useState("");
     const [dailySearchQuery, setDailySearchQuery] = useState("");
+    const [kotSearchQuery, setKotSearchQuery] = useState("");
 
     const [deliveryCharge, setDeliveryCharge] = useState(0);
     const [containerCharge, setContainerCharge] = useState(0);
