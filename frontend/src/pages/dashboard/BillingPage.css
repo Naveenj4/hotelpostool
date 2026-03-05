@@ -349,16 +349,16 @@
 .product-scroll-grid {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    padding: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
     overflow-y: auto;
 }
 
 .pos-product-card {
     background: #fff;
     border: 1px solid var(--border-light);
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.2s;
@@ -367,13 +367,13 @@
 }
 
 .pos-product-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
     border-color: var(--primary);
 }
 
 .p-image-container {
-    height: 120px;
+    height: 90px;
     background: #F8FAFC;
     display: flex;
     align-items: center;
@@ -396,20 +396,23 @@
 }
 
 .p-details {
-    padding: 0.875rem;
+    padding: 0.65rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.2rem;
 }
 
 .p-name {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .p-price {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 800;
     color: var(--text-muted);
 }
@@ -420,33 +423,33 @@
 
 /* ---- Bill Sidebar (Right) ---- */
 .bill-sidebar {
-    width: 400px;
+    width: 480px;
     background: #fff;
     border-left: 1px solid var(--border-light);
     display: flex;
     flex-direction: column;
-    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.02);
+    box-shadow: -10px 0 20px rgba(0, 0, 0, 0.03);
 }
 
 .order-meta-enhanced {
-    padding: 1rem;
+    padding: 1.25rem;
     background: #F8FAFC;
     border-bottom: 1px solid var(--border-light);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .dine-in-fields {
     display: grid;
-    grid-template-columns: 1fr 1fr 0.6fr;
-    gap: 0.5rem;
+    grid-template-columns: 1fr 1fr 0.8fr;
+    gap: 0.75rem;
 }
 
 .meta-input-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .meta-input-field label {
@@ -497,12 +500,13 @@
 /* Item List */
 .order-items-header {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 0.8fr 0.8fr;
-    padding: 0.75rem 1rem;
-    background: #fff;
-    border-bottom: 2px solid #F1F5F9;
-    font-size: 0.7rem;
-    font-weight: 900;
+    grid-template-columns: 2fr 1fr 0.8fr 0.8fr;
+    padding: 1rem 1.25rem;
+    background: #F8FAFC;
+    border-bottom: 2px solid #E2E8F0;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    font-weight: 800;
     color: var(--text-muted);
 }
 
@@ -523,16 +527,27 @@
 
 .order-items-list {
     flex: 1;
-    padding: 0.5rem;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .order-item-row {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 0.8fr 0.8fr;
+    grid-template-columns: 2fr 1fr 0.8fr 0.8fr;
     align-items: center;
-    padding: 0.75rem 0.5rem;
-    border-bottom: 1px solid #F8FAFC;
+    padding: 1rem;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #F1F5F9;
     font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.order-item-row:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    border-color: #E2E8F0;
 }
 
 .order-item-row.complementary {
@@ -597,10 +612,21 @@
 
 .remove-btn {
     color: #EF4444;
-    border: none;
-    background: transparent;
+    border: 1px solid #FEE2E2;
+    background: #FFF;
+    border-radius: 6px;
     cursor: pointer;
-    padding: 4px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.remove-btn:hover {
+    background: #EF4444;
+    color: white;
+    border-color: #EF4444;
 }
 
 /* Billing Table / Summary */
@@ -633,18 +659,18 @@
 .summary-details-grid {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    margin: 0.75rem 0;
-    padding: 0.75rem 0;
+    gap: 0.6rem;
+    margin: 1rem 0;
+    padding: 1rem 0;
     border-top: 1px dashed var(--border-light);
     border-bottom: 1px dashed var(--border-light);
 }
 
 .sum-detail-row {
     display: grid;
-    grid-template-columns: 1fr 110px 90px;
+    grid-template-columns: 1fr 130px 100px;
     align-items: center;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 700;
 }
 
@@ -1511,4 +1537,69 @@ input:checked+.slider:before {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    flex: 1.5;
+    padding: 0.85rem;
+    font-size: 0.9rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.proceed-btn:hover {
+    background: #5d8ab5;
+}
+
+.proceed-btn:disabled {
+    background: #CBD5E1;
+    cursor: not-allowed;
+}
+
+/* Fast Payment Methods Style */
+.fast-payment {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #F8FAFC;
+    border-top: 1px dashed var(--border-light);
+    border-radius: 0 0 16px 16px;
+    margin-top: 0.5rem;
+}
+
+.pay-method {
+    padding: 1rem 0.5rem;
+    border: none;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.pay-method.cash {
+    background: #10B981;
+}
+
+.pay-method.card {
+    background: #3B82F6;
+}
+
+.pay-method.upi {
+    background: #8B5CF6;
+}
+
+.pay-method:hover {
+    filter: brightness(1.1);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.12);
 }

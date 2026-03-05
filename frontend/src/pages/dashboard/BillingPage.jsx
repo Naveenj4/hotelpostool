@@ -36,7 +36,8 @@ import {
     Package,
     Truck,
     Users2,
-    Smartphone
+    Smartphone,
+    Wallet
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -1026,9 +1027,9 @@ const BillingPage = () => {
                                 {/* Fast Payment - Show only after Check Out/Proceed */}
                                 {stepProceeded && (
                                     <div className="fast-payment fade-in">
-                                        <button className="pay-method cash" onClick={() => handlePayment('CASH')}>CASH</button>
-                                        <button className="pay-method card" onClick={() => handlePayment('CARD')}>CARD</button>
-                                        <button className="pay-method upi" onClick={() => handlePayment('UPI')}>UPI</button>
+                                        <button className="pay-method cash" onClick={() => handlePayment('CASH')}><Wallet size={20} /> CASH</button>
+                                        <button className="pay-method card" onClick={() => handlePayment('CARD')}><CreditCard size={20} /> CARD</button>
+                                        <button className="pay-method upi" onClick={() => handlePayment('UPI')}><Smartphone size={20} /> UPI</button>
                                     </div>
                                 )}
 
