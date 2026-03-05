@@ -180,6 +180,13 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                                             </div>
                                         )}
 
+                                        {billData?.tip_amount > 0 && (
+                                            <div className="bpm-total-row">
+                                                <span>Tip / Gratuity (+)</span>
+                                                <span className="bpm-mono">₹{billData?.tip_amount?.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
                                         {billData?.round_off !== 0 && (
                                             <div className="bpm-total-row">
                                                 <span>Round Off</span>

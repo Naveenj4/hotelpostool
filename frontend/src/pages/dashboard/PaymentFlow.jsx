@@ -16,7 +16,8 @@ const PaymentFlow = ({
         cashAmount: '',
         cashReceived: '',
         upiAmount: '',
-        cardAmount: ''
+        cardAmount: '',
+        tipAmount: ''
     });
 
     useEffect(() => {
@@ -28,8 +29,11 @@ const PaymentFlow = ({
     const cashAmount = parseFloat(paymentData.cashAmount) || 0;
     const upiAmount = parseFloat(paymentData.upiAmount) || 0;
     const cardAmount = parseFloat(paymentData.cardAmount) || 0;
+    const tipAmount = parseFloat(paymentData.tipAmount) || 0;
+
     const totalPaid = cashAmount + upiAmount + cardAmount;
-    const remaining = Math.max(0, grandTotal - totalPaid);
+    const totalDueWithTip = grandTotal + tipAmount;
+    const remaining = Math.max(0, totalDueWithTip - totalPaid);
     const balanceToReturn = Math.max(0, (parseFloat(paymentData.cashReceived) || 0) - cashAmount);
 
     const resetAllPayments = () => {
@@ -59,7 +63,7 @@ const PaymentFlow = ({
         if (cashAmount > 0) paymentModes.push({ type: 'CASH', amount: cashAmount, cash_received: parseFloat(paymentData.cashReceived) || 0, balance_return: balanceToReturn });
         if (upiAmount > 0) paymentModes.push({ type: 'UPI', amount: upiAmount });
         if (cardAmount > 0) paymentModes.push({ type: 'CARD', amount: cardAmount });
-        onPaymentSubmit(paymentModes);
+        onPaymentSubmit(paymentModes, tipAmount);
     };
 
     const isPayDisabled = totalPaid < (grandTotal - 0.01);
@@ -145,13 +149,29 @@ const PaymentFlow = ({
                     <div className="step-view">
                         <div className="checkout-summary-bar">
                             <div className="summary-item">
-                                <span className="label">Amount Due</span>
+                                <span className="label">Bill Amount</span>
                                 <span className="value">₹{grandTotal.toFixed(2)}</span>
+                            </div>
+                            <div className="summary-item">
+                                <span className="label">Add Tip</span>
+                                <input
+                                    type="number"
+                                    className="tip-input-summary"
+                                    placeholder="0"
+                                    value={paymentData.tipAmount}
+                                    onChange={(e) => handleInputChange('tipAmount', e.target.value)}
+                                />
                             </div>
                             <div className="summary-item">
                                 <span className="label">Total Paid</span>
                                 <span className="value success">₹{totalPaid.toFixed(2)}</span>
                             </div>
+                            {remaining > 0 && (
+                                <div className="summary-item">
+                                    <span className="label">Due</span>
+                                    <span className="value warning">₹{remaining.toFixed(2)}</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="payment-entry-section">

@@ -28,13 +28,14 @@ import {
     Pause,
     History,
     Timer,
-    CheckSquare,
     Gift,
-    Truck,
-    CircleSlash,
-    Package,
-    Users2,
+    MoreHorizontal,
+    ArrowRight,
+    CheckSquare,
     UserCheck,
+    Package,
+    Truck,
+    Users2,
     Smartphone
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -126,6 +127,8 @@ const BillingPage = () => {
             grandTotal: roundedTotal
         };
     }, [billItems, discount, gstPercentage, discountType, deliveryCharge, containerCharge]);
+
+    const { subTotal, taxAmount, discountAmount, roundOff, grandTotal } = billCalculations;
 
     const [showLoyalty, setShowLoyalty] = useState(false);
     const [billingLayout, setBillingLayout] = useState(() => localStorage.getItem('cachedBillingLayout') || 'SIDEBAR');
@@ -416,7 +419,7 @@ const BillingPage = () => {
         setCheckoutActive(true);
     };
 
-    const handlePaymentSubmit = async (paymentModes) => {
+    const handlePaymentSubmit = async (paymentModes, tipAmount = 0) => {
         setPaymentLoading(true);
         try {
             const savedUser = localStorage.getItem('user');
@@ -435,39 +438,102 @@ const BillingPage = () => {
                     delivery_charge: deliveryCharge,
                     container_charge: containerCharge,
                     round_off: roundOff,
-                    grand_total: grandTotal
+                    tip_amount: tipAmount,
+                    grand_total: grandTotal + tipAmount,
+                    customer_name: customerName,
+                    customer_phone: customerPhone,
+                    table_no: tableNo,
+                    persons: persons,
+                    waiter_name: selectedCaptain
                 })
             });
             const data = await res.json();
             if (data.success) {
-                setLastPaymentModes(paymentModes);
                 setLastBillId(currentBillId);
-                setShowBillPreview(true);
+                setLastPaymentModes(paymentModes);
                 setCheckoutActive(false);
-                setCheckoutType('');
-                setCurrentBillId(null);
-                setBillNumber('Generating...');
+                setShowBillPreview(true);
                 setBillItems([]);
-
-                // Reset form fields
-                setTableNo("");
-                setPersons("");
-                setSelectedTableId("");
-                setSelectedCaptain("");
-                setCustomerName("");
-                setCustomerPhone("");
-                setCustomerAddress("");
-                setDiscount(0);
-                setDeliveryCharge(0);
-                setContainerCharge(0);
-
-                createNewBill();
+                createNewBill(); // Start fresh
+            } else {
+                alert(data.message || "Payment failed");
             }
         } catch (error) {
-            alert("Payment failed.");
+            console.error("Payment submission error", error);
+            alert("Could not process payment. Check your connection.");
         } finally {
             setPaymentLoading(false);
         }
+    };
+
+    const handleOrderAction = async (type) => {
+        if (!currentBillId) return;
+        if (billItems.length === 0) return alert("Add items first!");
+
+        setPaymentLoading(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    items: billItems,
+                    sub_total: subTotal,
+                    tax_amount: taxAmount,
+                    discount_amount: discountAmount,
+                    delivery_charge: deliveryCharge,
+                    container_charge: containerCharge,
+                    round_off: roundOff,
+                    grand_total: grandTotal,
+                    table_no: tableNo,
+                    persons: persons,
+                    order_mode: orderMode,
+                    customer_name: customerName,
+                    customer_phone: customerPhone
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (type === 'KOT') alert("KOT (Kitchen Order Ticket) Printed Successfully!");
+                else if (type === 'SAVE' || type === 'PRINT') {
+                    setLastBillId(currentBillId);
+                    setLastPaymentModes([]);
+                    setShowBillPreview(true);
+                }
+            }
+        } catch (error) {
+            console.error("Order action error", error);
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
+
+    const resetForm = () => {
+        setTableNo("");
+        setPersons("");
+        setSelectedTableId("");
+        setSelectedCaptain("");
+        setCustomerName("");
+        setCustomerPhone("");
+        setCustomerAddress("");
+        setDiscount(0);
+        setDeliveryCharge(0);
+        setContainerCharge(0);
+        setBillItems([]);
+        setStepProceeded(false);
+        setPromoCode('');
+        createNewBill();
+    };
+
+    const applyPromoCode = () => {
+        if (!promoCode) return;
+        alert(`Promo Code "${promoCode}" applied successfully! 5% extra discount added (Simulated).`);
+        setDiscount(prev => parseFloat(prev) + 5);
+        setPromoCode('');
     };
 
     // Toggle billing layout instantly from the header
@@ -513,7 +579,7 @@ const BillingPage = () => {
                     </div>
                     <div className="pos-brand-info">
                         <h2>{restaurantName}</h2>
-                        <p>Main Branch • Terminal 01</p>
+                        <p>{counters.find(c => c._id === selectedCounter)?.name || 'Main Branch'} • Terminal 01</p>
                     </div>
                 </div>
 
@@ -612,6 +678,15 @@ const BillingPage = () => {
                                         </label>
                                     </div>
                                     <div className="settings-divider"></div>
+                                    <div className="settings-option">
+                                        <span>Swiggy Sync</span>
+                                        <span className="badge-beta">PRO</span>
+                                    </div>
+                                    <div className="settings-option">
+                                        <span>Zomato Sync</span>
+                                        <span className="badge-beta">PRO</span>
+                                    </div>
+                                    <div className="settings-divider"></div>
                                     <button className="set-logout-btn" onClick={logout}>
                                         <LogOut size={16} /> Logout
                                     </button>
@@ -629,27 +704,9 @@ const BillingPage = () => {
                         <Search size={18} className="search-icon" />
                         <input
                             type="text"
-                            placeholder="Product Search (Name/Code)..."
+                            placeholder="Search by product name or code..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    <div className="search-input-wrapper">
-                        <History size={18} className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Bill Search (#)..."
-                            value={billSearchQuery}
-                            onChange={(e) => setBillSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    <div className="search-input-wrapper">
-                        <CheckSquare size={18} className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Daily Bill (KOT/Order)..."
-                            value={dailySearchQuery}
-                            onChange={(e) => setDailySearchQuery(e.target.value)}
                         />
                     </div>
                 </div>
@@ -733,25 +790,6 @@ const BillingPage = () => {
                             />
                         ) : (
                             <>
-                                <div className="search-bar">
-                                    {billingLayout === 'SIDEBAR' && !showSidebar && (
-                                        <button
-                                            className="toggle-cat-btn"
-                                            onClick={() => setShowSidebar(true)}
-                                            title="Show Categories"
-                                        >
-                                            <MenuIcon size={20} />
-                                        </button>
-                                    )}
-                                    <Search size={20} className="text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search by product name or code..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-
                                 {/* Top Category Header - Only if Layout 2 */}
                                 {billingLayout === 'TOP_HEADER' && (
                                     <div className="top-category-header">
@@ -771,6 +809,12 @@ const BillingPage = () => {
                                             </button>
                                         ))}
                                     </div>
+                                )}
+
+                                {billingLayout === 'SIDEBAR' && !showSidebar && (
+                                    <button className="toggle-sidebar-btn" onClick={() => setShowSidebar(true)}>
+                                        <MenuIcon size={18} /> <span>Show Categories</span>
+                                    </button>
                                 )}
 
                                 <div className="product-scroll-grid">
@@ -939,12 +983,12 @@ const BillingPage = () => {
                                         )}
                                     </div>
 
-                                    {loyaltyEnabled && (
-                                        <div className="loyalty-promo-compact">
+                                    {showLoyalty && (
+                                        <div className="loyalty-promo-compact fade-in">
                                             <div className="loyalty-input">
                                                 <Gift size={14} />
                                                 <input type="text" placeholder="Loyalty / Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
-                                                <button>Apply</button>
+                                                <button onClick={applyPromoCode}>Apply</button>
                                             </div>
                                         </div>
                                     )}
@@ -959,17 +1003,25 @@ const BillingPage = () => {
                                 </div>
 
                                 {/* Top Control Buttons */}
-                                <div className="panel-controls">
-                                    <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
-                                        Loyalty
-                                    </button>
-                                    <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
-                                        More
-                                    </button>
-                                    {!stepProceeded && (
-                                        <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
-                                            Check Out (Next)
+                                <div className="billing-actions-panel">
+                                    <div className="panel-controls">
+                                        <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
+                                            <Gift size={15} /> Loyalty
                                         </button>
+                                        <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
+                                            <MoreHorizontal size={15} /> More
+                                        </button>
+                                    </div>
+
+                                    {!stepProceeded && (
+                                        <div className="main-actions-row">
+                                            <button className="quick-cash-btn" onClick={() => handlePaymentSubmit([{ type: 'CASH', amount: grandTotal }])} disabled={billItems.length === 0}>
+                                                QUICK CASH
+                                            </button>
+                                            <button className="proceed-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
+                                                PROCEED <ArrowRight size={18} />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
 
@@ -983,16 +1035,16 @@ const BillingPage = () => {
                                 )}
 
                                 <div className="footer-actions-grid">
-                                    <button className="action-btn hold-bill" onClick={holdCurrentBill}>
+                                    <button className="action-btn hold-bill" onClick={holdCurrentBill} title="Hold this bill for later">
                                         <Pause size={18} /> HOLD
                                     </button>
-                                    <button className="action-btn kot-print" onClick={() => handlePayment('KOT')}>
+                                    <button className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
                                         <Printer size={18} /> KOT PRINT
                                     </button>
-                                    <button className="action-btn save-bill" onClick={() => handlePayment('SAVE')}>
+                                    <button className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
                                         <Save size={18} /> SAVE
                                     </button>
-                                    <button className="action-btn print-bill" onClick={() => handlePayment('PRINT')}>
+                                    <button className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
                                         <Printer size={18} /> SAVE & PRINT
                                     </button>
                                 </div>

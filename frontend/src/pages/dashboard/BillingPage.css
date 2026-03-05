@@ -1353,4 +1353,121 @@ input:checked+.slider:before {
     .payment-flow-container {
         padding: 1rem;
     }
+}.summary-item .value.warning { color: var(--warning); }
+
+.tip-input-summary {
+    width: 60px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #fff;
+    padding: 2px 4px;
+    font-weight: 900;
+    text-align: center;
+    font-size: 1rem;
+    outline: none;
 }
+
+.tip-input-summary:focus {
+    border-color: var(--primary);
+}
+
+.main-actions-row {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.quick-cash-btn {
+    flex: 1;
+    background: #DCFCE7;
+    color: #16A34A;
+    border: none;
+    border-radius: 10px;
+    font-weight: 900;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quick-cash-btn:hover {
+    background: #BBF7D0;
+    transform: translateY(-2px);
+}
+
+.proceed-btn {
+    flex: 2;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.875rem;
+    border-radius: 10px;
+    font-weight: 900;
+    cursor: pointer;
+}
+.badge-beta { background: #FEF3C7; color: #D97706; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 900; }
+
+/* Sidebar and Toggle Controls */
+.icon-btn-sm {
+    background: #F8FAFC;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.icon-btn-sm:hover {
+    background: #F1F5F9;
+    color: var(--primary);
+}
+
+.toggle-cat-btn {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--primary);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+/* Panel Controls for Loyalty/More */
+.panel-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.control-btn {
+    flex: 1;
+    padding: 0.65rem;
+    border: 1px solid var(--border-light);
+    background: #fff;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+.toggle-sidebar-btn { background: #fff; border: 1px solid var(--border-light); padding: 0.65rem 1rem; border-radius: 10px; display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary); cursor: pointer; margin: 1rem 1.5rem 0.5rem; transition: all 0.2s; font-size: 0.82rem; }
+.toggle-sidebar-btn:hover { background: #F1F5F9; }
+.billing-actions-panel { display: flex; flex-direction: column; gap: 0.5rem; }
+.proceed-btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
