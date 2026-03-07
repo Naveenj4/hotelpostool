@@ -179,8 +179,8 @@ exports.processPayment = async (req, res) => {
         // Calculate total paid from all payment modes
         let totalPaid = 0;
         for (const payment of payment_modes) {
-            if (!payment.type || !['CASH', 'UPI', 'CARD'].includes(payment.type)) {
-                return res.status(400).json({ success: false, error: 'Invalid payment type. Must be CASH, UPI, or CARD' });
+            if (!payment.type || !['CASH', 'UPI', 'CARD', 'ONLINE', 'SPLIT'].includes(payment.type)) {
+                return res.status(400).json({ success: false, error: 'Invalid payment type. Must be CASH, UPI, CARD, ONLINE, or SPLIT' });
             }
 
             if (typeof payment.amount !== 'number' || payment.amount <= 0) {
@@ -283,7 +283,7 @@ exports.processPayment = async (req, res) => {
 // @access  Admin/Owner
 exports.getAllBills = async (req, res) => {
     try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, status, search } = req.query;
 
         let start, end;
 
@@ -292,19 +292,32 @@ exports.getAllBills = async (req, res) => {
             start.setHours(0, 0, 0, 0);
             end = new Date(endDate);
             end.setHours(23, 59, 59, 999);
-        } else {
-            // Default to today
-            start = new Date();
-            start.setHours(0, 0, 0, 0);
-            end = new Date();
-            end.setHours(23, 59, 59, 999);
         }
 
-        const bills = await Bill.find({
-            company_id: req.user.restaurant_id,
-            status: 'PAID',
-            createdAt: { $gte: start, $lte: end }
-        }).sort({ createdAt: -1 });
+        const query = {
+            company_id: req.user.restaurant_id
+        };
+
+        if (start && end) {
+            query.createdAt = { $gte: start, $lte: end };
+        }
+
+        if (status) {
+            query.status = status;
+        } else if (!search) {
+            // Default to PAID if no status or search specified
+            query.status = 'PAID';
+        }
+
+        if (search) {
+            query.$or = [
+                { bill_number: { $regex: search, $options: 'i' } },
+                { table_no: { $regex: search, $options: 'i' } },
+                { customer_name: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const bills = await Bill.find(query).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,

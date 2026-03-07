@@ -14,6 +14,10 @@ const billSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Counter'
     },
+    order_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Order'
+    },
     customer_name: {
         type: String,
         trim: true
@@ -88,7 +92,7 @@ const billSchema = new mongoose.Schema({
     payment_modes: [{
         type: {
             type: String,
-            enum: ['CASH', 'UPI', 'CARD'],
+            enum: ['CASH', 'UPI', 'CARD', 'ONLINE', 'SPLIT'],
             required: true
         },
         amount: {

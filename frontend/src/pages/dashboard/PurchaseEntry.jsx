@@ -251,52 +251,52 @@ const PurchaseEntry = () => {
                         </div>
 
                         {/* Footer Summary */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                            <div className="bento-card p-10 bg-slate-900 text-white border-none shadow-2xl">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
+                            <div className="bento-card p-10 bg-slate-900 text-white border-none shadow-2xl rounded-[1.5rem]">
                                 <h4 className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-10">Fiscal Consolidation</h4>
                                 <div className="space-y-6">
-                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl hover:bg-white/10 transition-colors">
-                                        <span className="text-sm font-bold text-slate-400">Net Manifest Core</span>
-                                        <span className="font-black text-xl tracking-tight">₹{purchaseDetails.sub_total.toLocaleString()}</span>
+                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl hover:bg-white/10 transition-all hover:border-indigo-400/30 border border-white/5">
+                                        <span className="text-sm font-bold text-slate-300">Net Manifest Core</span>
+                                        <span className="font-black text-xl tracking-tight text-white">₹{purchaseDetails.sub_total.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl hover:bg-white/10 transition-colors">
-                                        <span className="text-sm font-bold text-slate-400">GST Load Vector</span>
+                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl hover:bg-white/10 transition-all hover:border-indigo-400/30 border border-white/5">
+                                        <span className="text-sm font-bold text-slate-300">GST Load Vector</span>
                                         <span className="font-black text-xl tracking-tight text-amber-400">₹{purchaseDetails.tax_amount.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl hover:bg-white/10 transition-colors">
-                                        <span className="text-sm font-bold text-slate-400">Service Auxiliaries</span>
-                                        <input type="number" className="w-32 bg-slate-800 border-none rounded-xl font-black text-white text-right px-4 py-2 focus:ring-2 focus:ring-indigo-500" value={purchaseDetails.other_charges} onChange={(e) => { const v = parseFloat(e.target.value) || 0; setPurchaseDetails(p => ({ ...p, other_charges: v })); calculateTotals(purchaseDetails.items, v); }} />
+                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl hover:bg-white/10 transition-all hover:border-indigo-400/30 border border-white/5">
+                                        <span className="text-sm font-bold text-slate-300">Service Auxiliaries</span>
+                                        <input type="number" className="w-32 bg-slate-800 border border-slate-700 rounded-lg font-black text-white text-right px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" value={purchaseDetails.other_charges} onChange={(e) => { const v = parseFloat(e.target.value) || 0; setPurchaseDetails(p => ({ ...p, other_charges: v })); calculateTotals(purchaseDetails.items, v); }} />
                                     </div>
                                     <div className="pt-8 border-t border-white/10 flex justify-between items-end">
                                         <div>
-                                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Total Fiscal Outflow</span>
-                                            <div className="text-5xl font-black tracking-tighter mt-2">₹{purchaseDetails.grand_total.toLocaleString()}</div>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">Total Fiscal Outflow</span>
+                                            <div className="text-5xl font-black tracking-tighter mt-3 text-white">₹{purchaseDetails.grand_total.toLocaleString()}</div>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 mt-10">
                                         <div className="space-y-2">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Settled</span>
-                                            <input type="number" className="w-full bg-emerald-500/10 border border-emerald-500/20 rounded-xl font-black text-emerald-400 text-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none" value={purchaseDetails.paid_amount} onChange={(e) => setPurchaseDetails(p => ({ ...p, paid_amount: parseFloat(e.target.value) || 0 }))} />
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Settled Amount</span>
+                                            <input type="number" className="w-full bg-emerald-500/15 border border-emerald-500/40 rounded-xl font-black text-emerald-300 text-base px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none" value={purchaseDetails.paid_amount} onChange={(e) => setPurchaseDetails(p => ({ ...p, paid_amount: parseFloat(e.target.value) || 0 }))} />
                                         </div>
                                         <div className="space-y-2">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Liability</span>
-                                            <div className="w-full bg-rose-500/10 border border-rose-500/20 rounded-xl font-black text-rose-400 text-xl px-4 py-3 flex items-center">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Outstanding</span>
+                                            <div className="w-full bg-rose-500/15 border border-rose-500/40 rounded-xl font-black text-rose-300 text-base px-4 py-3 flex items-center">
                                                 ₹{(purchaseDetails.grand_total - purchaseDetails.paid_amount).toLocaleString()}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex flex-col justify-center items-center text-center p-10 bg-indigo-600/5 rounded-[3rem] border-2 border-dashed border-indigo-100 gap-8">
-                                <div className="p-8 bg-white rounded-full shadow-xl shadow-indigo-100/50">
+                            <div className="flex flex-col justify-center items-center text-center p-12 bg-indigo-600/5 rounded-[2.5rem] border-2 border-dashed border-indigo-100 gap-8 bento-card">
+                                <div className="p-8 bg-gradient-to-br from-indigo-50 to-white rounded-full shadow-xl shadow-indigo-200">
                                     <ShoppingCart size={80} className="text-indigo-600" />
                                 </div>
                                 <div>
-                                    <h4 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Finalise Procurement</h4>
-                                    <p className="text-slate-500 font-bold mt-2">Clicking commit will broadcast these entries to the distributed ledger and update stock levels in real-time.</p>
+                                    <h4 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-3">Finalise Procurement</h4>
+                                    <p className="text-slate-600 font-bold text-sm leading-relaxed max-w-xs mx-auto">Clicking commit will broadcast these entries to the distributed ledger and update stock levels in real-time.</p>
                                 </div>
-                                <button type="submit" disabled={submitting} className="btn-glow bg-indigo-600 text-white w-full py-6 rounded-[2rem] font-black text-lg uppercase tracking-widest flex items-center justify-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-indigo-200">
-                                    {submitting ? <><Loader2 className="animate-spin" /> COMMIT IN PROGRESS...</> : <><Save size={24} /> COMMIT TO LEDGER</>}
+                                <button type="submit" disabled={submitting} className="btn-glow w-full py-4 rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg duration-300" style={{background: submitting ? '#94a3b8' : 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)', color: 'white', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1}}>
+                                    {submitting ? <><Loader2 className="animate-spin" size={20} /> COMMIT IN PROGRESS...</> : <><Save size={20} /> COMMIT TO LEDGER</>}
                                 </button>
                             </div>
                         </div>

@@ -274,6 +274,34 @@ textarea.input-field {
     }
 }
 
+@media (max-width: 1024px) {
+    .settings-layout {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .settings-sidebar {
+        position: static;
+        order: 2;
+    }
+
+    .settings-main {
+        order: 1;
+    }
+
+    .settings-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .settings-nav .nav-item {
+        flex: 1;
+        min-width: 160px;
+        justify-content: center;
+    }
+}
+
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;
@@ -297,6 +325,18 @@ textarea.input-field {
 
     .form-actions .btn-outline {
         margin-left: 0 !important;
+    }
+
+    .settings-card {
+        padding: 1.25rem;
+    }
+
+    .card-title {
+        font-size: 0.95rem;
+    }
+
+    .input-field {
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 }
 

@@ -235,6 +235,11 @@ exports.getSalesByCategory = async (req, res) => {
             start.setHours(0, 0, 0, 0);
         }
 
+        const Category = require('../models/Category');
+        const categories = await Category.find({ company_id: req.user.restaurant_id });
+        const categoryMap = {};
+        categories.forEach(c => categoryMap[c._id.toString()] = c.name);
+
         const bills = await Bill.find({
             company_id: req.user.restaurant_id,
             status: 'PAID',
@@ -245,17 +250,18 @@ exports.getSalesByCategory = async (req, res) => {
         const categorySales = {};
         bills.forEach(bill => {
             bill.items.forEach(item => {
-                if (item.category) {
-                    if (!categorySales[item.category]) {
-                        categorySales[item.category] = {
-                            category: item.category,
-                            totalSales: 0,
-                            itemCount: 0
-                        };
-                    }
-                    categorySales[item.category].totalSales += item.total_price;
-                    categorySales[item.category].itemCount += item.quantity;
+                const catStr = item.category ? item.category.toString() : '';
+                const catName = categoryMap[catStr] || catStr || 'Uncategorized';
+
+                if (!categorySales[catName]) {
+                    categorySales[catName] = {
+                        category: catName,
+                        totalSales: 0,
+                        itemCount: 0
+                    };
                 }
+                categorySales[catName].totalSales += item.total_price;
+                categorySales[catName].itemCount += item.quantity;
             });
         });
 
@@ -381,41 +387,6 @@ exports.getStockValuation = async (req, res) => {
         const totalValue = valuation.reduce((sum, item) => sum + item.value, 0);
 
         res.status(200).json({ success: true, data: { items: valuation, totalValue } });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-// @desc    Get basic Profit & Loss report
-// @route   GET /api/reports/profit-loss
-exports.getProfitLoss = async (req, res) => {
-    try {
-        const { startDate, endDate } = req.query;
-        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
-        let end = new Date(endDate || new Date());
-
-        // 1. Total Sales (Revenue)
-        const bills = await Bill.find({ company_id: req.user.restaurant_id, status: 'PAID', createdAt: { $gte: start, $lte: end } });
-        const totalRevenue = bills.reduce((sum, b) => sum + b.grand_total, 0);
-
-        // 2. Total Purchases (Cost of Goods Sold - Approx)
-        const purchases = await Purchase.find({ company_id: req.user.restaurant_id, purchase_date: { $gte: start, $lte: end } });
-        const totalPurchases = purchases.reduce((sum, p) => sum + p.grand_total, 0);
-
-        // 3. Operating Expenses (From Vouchers)
-        const Voucher = require('../models/Voucher');
-        const vouchers = await Voucher.find({ company_id: req.user.restaurant_id, voucher_type: 'PAYMENT', date: { $gte: start, $lte: end } });
-        const totalExpenses = vouchers.reduce((sum, v) => sum + v.amount, 0);
-
-        res.status(200).json({
-            success: true,
-            data: {
-                revenue: totalRevenue,
-                purchases: totalPurchases,
-                expenses: totalExpenses,
-                netProfit: totalRevenue - (totalPurchases + totalExpenses)
-            }
-        });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -587,27 +558,83 @@ exports.getAgingReport = async (req, res) => {
             '60+': 0
         };
 
+        const detailedList = [];
+
         if (type === 'SUPPLIER') {
-            const purchases = await Purchase.find({ company_id: req.user.restaurant_id, due_amount: { $gt: 0 } });
+            const purchases = await Purchase.find({ company_id: req.user.restaurant_id, due_amount: { $gt: 0 } }).populate('supplier_id', 'name contact_person');
             purchases.forEach(p => {
                 const diffDays = Math.ceil((now - new Date(p.purchase_date)) / (1000 * 60 * 60 * 24));
-                if (diffDays <= 30) ranges['0-30'] += p.due_amount;
-                else if (diffDays <= 60) ranges['30-60'] += p.due_amount;
-                else ranges['60+'] += p.due_amount;
+                let agingCategory = '';
+
+                if (diffDays <= 30) { ranges['0-30'] += p.due_amount; agingCategory = '0-30'; }
+                else if (diffDays <= 60) { ranges['30-60'] += p.due_amount; agingCategory = '30-60'; }
+                else { ranges['60+'] += p.due_amount; agingCategory = '60+'; }
+
+                detailedList.push({
+                    type: 'PURCHASE',
+                    reference: p.invoice_number || `PUR-${p._id.toString().slice(-6)}`,
+                    entity: p.supplier_id?.name || 'Unknown Supplier',
+                    date: p.purchase_date,
+                    amount: p.due_amount,
+                    age: diffDays,
+                    category: agingCategory
+                });
             });
         } else {
-            // Customers - Assuming we track customer due in Bills (need to check Bill model for due amount)
-            const bills = await Bill.find({ company_id: req.user.restaurant_id, status: 'DUE' });
+            // Customers
+            const bills = await Bill.find({ company_id: req.user.restaurant_id, status: 'DUE' }).populate('customer_id', 'name phone');
             bills.forEach(b => {
                 const diffDays = Math.ceil((now - new Date(b.createdAt)) / (1000 * 60 * 60 * 24));
-                if (diffDays <= 30) ranges['0-30'] += b.grand_total;
-                else if (diffDays <= 60) ranges['30-60'] += b.grand_total;
-                else ranges['60+'] += b.grand_total;
+                let agingCategory = '';
+
+                if (diffDays <= 30) { ranges['0-30'] += b.grand_total; agingCategory = '0-30'; }
+                else if (diffDays <= 60) { ranges['30-60'] += b.grand_total; agingCategory = '30-60'; }
+                else { ranges['60+'] += b.grand_total; agingCategory = '60+'; }
+
+                detailedList.push({
+                    type: 'SALE',
+                    reference: b.bill_number,
+                    entity: b.customer_id?.name || b.customer_name || 'Walk-in / Unknown',
+                    date: b.createdAt,
+                    amount: b.grand_total,
+                    age: diffDays,
+                    category: agingCategory
+                });
             });
         }
 
-        res.status(200).json({ success: true, data: ranges });
+        res.status(200).json({ success: true, data: ranges, details: detailedList.sort((a, b) => b.age - a.age) });
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get Account Balances (Cash/Bank)
+// @route   GET /api/reports/account-balances
+// @access  Private (Admin, Owner)
+exports.getAccountBalances = async (req, res) => {
+    try {
+        const { type } = req.query; // 'CASH' or 'BANK'
+
+        const filter = { company_id: req.user.restaurant_id };
+        if (type === 'CASH') filter.group = 'CASH_IN_HAND';
+        else if (type === 'BANK') filter.group = 'BANK_ACCOUNTS';
+        else return res.status(400).json({ success: false, error: 'Valid type (CASH or BANK) required' });
+
+        const ledgers = await Ledger.find(filter);
+
+        const balances = ledgers.map(l => ({
+            id: l._id,
+            name: l.name,
+            opening_balance: l.opening_balance || 0,
+            current_balance: l.opening_balance // Future enhancement: compute real-time balance from vouchers
+        })).sort((a, b) => b.current_balance - a.current_balance);
+
+        const totalBalance = balances.reduce((sum, b) => sum + b.current_balance, 0);
+
+        res.status(200).json({ success: true, data: balances, totalBalance });
+    } catch (error) {
+        console.error('Account Balances Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 // @desc    Get Profit & Loss Report
@@ -646,4 +673,156 @@ exports.getProfitLoss = async (req, res) => {
             }
         });
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
+// @desc    Get month-wise sales report
+// @route   GET /api/reports/month-wise?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+// @access  Private (Admin, Owner)
+exports.getMonthWiseReport = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let start, end;
+
+        if (startDate && endDate) {
+            start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+        } else {
+            // Default to current year
+            const today = new Date();
+            start = new Date(today.getFullYear(), 0, 1);
+            end = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
+        }
+
+        const bills = await Bill.find({
+            company_id: req.user.restaurant_id,
+            status: 'PAID',
+            createdAt: { $gte: start, $lte: end }
+        }).sort({ createdAt: 1 });
+
+        // Group by Month
+        const months = {};
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        let currentDate = new Date(start);
+        currentDate.setDate(1);
+
+        while (currentDate <= end) {
+            const year = currentDate.getFullYear();
+            const monthIdx = currentDate.getMonth();
+            const monthKey = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
+            const monthLabel = `${monthNames[monthIdx]} ${year}`;
+
+            if (!months[monthKey]) {
+                months[monthKey] = {
+                    month: monthLabel,
+                    monthKey: monthKey,
+                    totalSales: 0,
+                    billCount: 0
+                };
+            }
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+
+        bills.forEach(bill => {
+            const d = new Date(bill.createdAt);
+            const year = d.getFullYear();
+            const monthIdx = d.getMonth();
+            const monthKey = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
+
+            if (months[monthKey]) {
+                months[monthKey].totalSales += bill.grand_total;
+                months[monthKey].billCount += 1;
+            }
+        });
+
+        const sortedMonths = Object.values(months).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                period: { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] },
+                totalSales: bills.reduce((sum, bill) => sum + bill.grand_total, 0),
+                totalBills: bills.length,
+                monthlyBreakdown: sortedMonths
+            }
+        });
+    } catch (error) {
+        console.error('Month-wise report error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get day-wise purchase report
+// @route   GET /api/reports/purchase/day-wise?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+// @access  Private (Admin, Owner)
+exports.getDayWisePurchaseReport = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+
+        let start = new Date();
+        start.setDate(start.getDate() - 30);
+        let end = new Date();
+
+        if (startDate) {
+            start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+        } else {
+            start.setHours(0, 0, 0, 0);
+        }
+
+        if (endDate) {
+            end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+        } else {
+            end.setHours(23, 59, 59, 999);
+        }
+
+        const purchases = await Purchase.find({
+            company_id: req.user.restaurant_id,
+            purchase_date: { $gte: start, $lte: end }
+        }).sort({ purchase_date: 1 });
+
+        // Group by day
+        const dailyPurchases = {};
+        const currentDate = new Date(start);
+
+        // Initialize all dates in range
+        while (currentDate <= end) {
+            const dateKey = currentDate.toISOString().split('T')[0];
+            dailyPurchases[dateKey] = {
+                date: dateKey,
+                totalPurchases: 0,
+                billCount: 0
+            };
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // Populate with actual data
+        purchases.forEach(p => {
+            const dateKey = p.purchase_date.toISOString().split('T')[0];
+            if (dailyPurchases[dateKey]) {
+                dailyPurchases[dateKey].totalPurchases += p.grand_total;
+                dailyPurchases[dateKey].billCount += 1;
+            }
+        });
+
+        const purchaseData = Object.values(dailyPurchases);
+        const totalAmount = purchaseData.reduce((sum, day) => sum + day.totalPurchases, 0);
+        const totalDocs = purchaseData.reduce((sum, day) => sum + day.billCount, 0);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                period: { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] },
+                totalAmount,
+                totalDocs,
+                dailyBreakdown: purchaseData
+            }
+        });
+    } catch (error) {
+        console.error('Day-wise purchase report error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 };

@@ -40,6 +40,11 @@ exports.getUserSettings = async (req, res) => {
                     bill_printer_ip: restaurant.bill_printer_ip || '',
                     kitchen_mapping: restaurant.kitchen_mapping || []
                 },
+                orderIntegration: {
+                    zomato_api_key: restaurant.zomato_api_key || '',
+                    swiggy_api_key: restaurant.swiggy_api_key || '',
+                    enabled: restaurant.order_integration_enabled || false
+                },
                 billFormat: {
                     header: restaurant.bill_header || '',
                     footer: restaurant.bill_footer || '',
@@ -57,10 +62,19 @@ exports.getUserSettings = async (req, res) => {
 // @desc    Update Advanced Settings (Printers, etc)
 exports.updateAdvancedSettings = async (req, res) => {
     try {
-        const { kot_printer_ip, bill_printer_ip, kitchen_mapping } = req.body;
+        const { kot_printer_ip, bill_printer_ip, kitchen_mapping, zomato_api_key, swiggy_api_key, order_integration_enabled } = req.body;
+
+        const updatePayload = {};
+        if (kot_printer_ip !== undefined) updatePayload.kot_printer_ip = kot_printer_ip;
+        if (bill_printer_ip !== undefined) updatePayload.bill_printer_ip = bill_printer_ip;
+        if (kitchen_mapping !== undefined) updatePayload.kitchen_mapping = kitchen_mapping;
+        if (zomato_api_key !== undefined) updatePayload.zomato_api_key = zomato_api_key;
+        if (swiggy_api_key !== undefined) updatePayload.swiggy_api_key = swiggy_api_key;
+        if (order_integration_enabled !== undefined) updatePayload.order_integration_enabled = order_integration_enabled;
+
         const restaurant = await Restaurant.findByIdAndUpdate(
             req.user.restaurant_id,
-            { kot_printer_ip, bill_printer_ip, kitchen_mapping },
+            updatePayload,
             { new: true }
         );
         res.status(200).json({ success: true, data: restaurant });

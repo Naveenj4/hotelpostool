@@ -1019,6 +1019,45 @@
 @media (max-width: 768px) {
     .ac-container {
         padding: 1rem;
+        height: auto;
+        min-height: calc(100vh - 65px);
+    }
+
+    .ac-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .ac-tabs {
+        flex-direction: column;
+        padding: 0.5rem;
+    }
+
+    .ac-tab {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .ac-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .ac-search-wrapper {
+        width: 100%;
+    }
+
+    .ac-table-container {
+        overflow-x: auto;
+    }
+
+    .ac-table {
+        min-width: 800px;
+    }
+    .ac-container {
+        padding: 1rem;
     }
 
     .ac-header-icon {

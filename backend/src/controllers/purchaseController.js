@@ -5,9 +5,18 @@ const mongoose = require('mongoose');
 
 exports.getPurchases = async (req, res) => {
     try {
-        const purchases = await Purchase.find({ company_id: req.user.restaurant_id })
+        const { startDate, endDate, supplier } = req.query;
+        const query = { company_id: req.user.restaurant_id, is_deleted: { $ne: true } };
+
+        if (startDate || endDate) {
+            query.purchase_date = {};
+            if (startDate) query.purchase_date.$gte = new Date(startDate + 'T00:00:00.000Z');
+            if (endDate) query.purchase_date.$lte = new Date(endDate + 'T23:59:59.999Z');
+        }
+
+        const purchases = await Purchase.find(query)
             .populate('supplier_id', 'name contact_person')
-            .sort({ createdAt: -1 });
+            .sort({ purchase_date: -1 });
         res.status(200).json({ success: true, count: purchases.length, data: purchases });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Server Error' });

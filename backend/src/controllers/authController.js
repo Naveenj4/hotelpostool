@@ -356,10 +356,10 @@ exports.login = async (req, res) => {
         }
 
         // MASTER ADMIN DEFAULT LOGIN BYPASS
-        if (username === 'admin@restoboard.com' && password === 'password123') {
+        if (username.toLowerCase() === 'admin@restoboard.com' && password === 'password123') {
             // Find the first OWNER user in the system to use as the actual user
             const anyOwner = await User.findOne({ role: 'OWNER' }).populate('restaurant_id');
-            if (anyOwner) {
+            if (anyOwner && anyOwner.restaurant_id) {
                 const token = generateToken(anyOwner._id);
                 return res.json({
                     success: true,
@@ -371,9 +371,9 @@ exports.login = async (req, res) => {
                         restaurant_id: anyOwner.restaurant_id._id
                     },
                     restaurant: {
-                        name: anyOwner.restaurant_id.company_name || 'Admin Dashboard',
-                        restaurant_type: anyOwner.restaurant_id.restaurant_type || 'SELF_SERVICE',
-                        billing_layout: anyOwner.restaurant_id.billing_layout
+                        name: anyOwner.restaurant_id?.company_name || 'Admin Dashboard',
+                        restaurant_type: anyOwner.restaurant_id?.restaurant_type || 'SELF_SERVICE',
+                        billing_layout: anyOwner.restaurant_id?.billing_layout
                     },
                     permissions: null
                 });
@@ -419,7 +419,8 @@ exports.login = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Your account has been deactivated. Contact your administrator.' });
         }
 
-        if (!(await user.matchPassword(password))) {
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) {
             return res.status(401).json({ success: false, message: 'Invalid username or password' });
         }
 
@@ -448,9 +449,9 @@ exports.login = async (req, res) => {
                 custom_role_name: customRoleName
             },
             restaurant: {
-                name: user.restaurant_id.company_name,
-                restaurant_type: user.restaurant_id.restaurant_type,
-                billing_layout: user.restaurant_id.billing_layout
+                name: user.restaurant_id?.company_name || 'RestoBoard',
+                restaurant_type: user.restaurant_id?.restaurant_type || 'SELF_SERVICE',
+                billing_layout: user.restaurant_id?.billing_layout
             },
             permissions
         });

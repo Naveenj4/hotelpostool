@@ -80,7 +80,10 @@ const restaurantSchema = new mongoose.Schema({
     kitchen_mapping: [{
         category: String,
         printer_ip: String
-    }]
+    }],
+    zomato_api_key: { type: String, default: '' },
+    swiggy_api_key: { type: String, default: '' },
+    order_integration_enabled: { type: Boolean, default: false }
 }, {
     timestamps: true
 });

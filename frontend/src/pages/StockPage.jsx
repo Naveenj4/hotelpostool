@@ -65,10 +65,13 @@ const StockPage = () => {
     };
 
     // Filter products
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const catName = (typeof p.category === 'object' ? p.category?.name : p.category) || '';
+        return (
+            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            catName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
     // Handle stock update
     const handleStockUpdate = async (productId, newStock) => {
@@ -158,7 +161,7 @@ const StockPage = () => {
                 )}
                 <main className="dashboard-main">
                     <Header toggleSidebar={toggleSidebar} />
-                    <div className="dashboard-content">
+                    <div className="dashboard-content stock-page">
                         <div className="loading-container">
                             <RefreshCw className="animate-spin" size={32} />
                             <p>Loading stock data...</p>
@@ -178,7 +181,7 @@ const StockPage = () => {
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
 
-                <div className="dashboard-content">
+                <div className="dashboard-content stock-page">
                     <div className="page-header">
                         <div className="page-title">
                             <h2>Stock Management</h2>
@@ -280,7 +283,7 @@ const StockPage = () => {
                                                 )}
                                                 <td style={{ fontWeight: 600 }}>{product.name}</td>
                                                 <td>
-                                                    <span className="category-badge">{product.category}</span>
+                                                    <span className="category-badge">{typeof product.category === 'object' ? product.category?.name : product.category}</span>
                                                 </td>
                                                 <td>
                                                     {editingId === product._id ? (

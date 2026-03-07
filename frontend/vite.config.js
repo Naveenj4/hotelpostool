@@ -15,5 +15,22 @@ export default defineConfig({
     hmr: {
       overlay: false
     }
+  },
+  esbuild: {
+    drop: ['console', 'debugger']
+  },
+  build: {
+    minify: 'esbuild',
+    target: 'es2015',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
+          'ui-vendor': ['framer-motion', 'lucide-react']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
   }
 })

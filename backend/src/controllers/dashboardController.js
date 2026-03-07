@@ -53,7 +53,7 @@ exports.getDashboardSummary = async (req, res) => {
 
         // Get today's purchases
         const Purchase = require('../models/Purchase');
-        const todayPurchasesPromise = Purchase.find({ company_id: hotelId, createdAt: { $gte: today, $lt: tomorrow } });
+        const todayPurchasesPromise = Purchase.find({ company_id: hotelId, purchase_date: { $gte: today, $lt: tomorrow } });
 
         // Get total outstanding balances
         const Supplier = require('../models/Supplier');

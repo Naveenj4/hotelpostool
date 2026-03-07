@@ -188,7 +188,7 @@
 }
 
 /* Buttons */
-.btn-secondary {
+.stock-page .btn-secondary {
     background: #ffffff;
     color: #475569;
     border: 1px solid #E2E8F0;
@@ -204,19 +204,19 @@
     font-family: inherit;
 }
 
-.btn-secondary:hover {
+.stock-page .btn-secondary:hover {
     background: #F8FAFC;
     border-color: #CBD5E1;
     color: #0F172A;
 }
 
-.btn-active {
+.stock-page .btn-active {
     background: var(--primary-dk, #5788b7);
     color: white;
     border-color: var(--primary-dk, #5788b7);
 }
 
-.btn-active:hover {
+.stock-page .btn-active:hover {
     background: #4a77a8;
     border-color: #4a77a8;
     color: white;

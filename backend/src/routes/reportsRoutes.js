@@ -4,6 +4,7 @@ const {
     getDailyReport,
     getWeeklyReport,
     getMonthlyReport,
+    getMonthWiseReport,
     getSalesByCategory,
     getTopProducts,
     getSupplierOutstanding,
@@ -13,9 +14,11 @@ const {
     getSalesByBrand,
     getSalesByCaptain,
     getPurchaseSummary,
+    getDayWisePurchaseReport,
     getDaybook,
     getLedgerStatement,
-    getAgingReport
+    getAgingReport,
+    getAccountBalances
 } = require('../controllers/reportsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -31,6 +34,9 @@ router.get('/weekly', getWeeklyReport);
 
 // Monthly sales report
 router.get('/monthly', getMonthlyReport);
+
+// Month-wise sales report for whole year/range
+router.get('/month-wise', getMonthWiseReport);
 
 // Sales by category
 router.get('/sales-by-category', getSalesByCategory);
@@ -59,6 +65,9 @@ router.get('/sales-by-captain', getSalesByCaptain);
 // Purchase summary
 router.get('/purchase-summary', getPurchaseSummary);
 
+// Day-wise purchase report
+router.get('/purchase/day-wise', getDayWisePurchaseReport);
+
 // Daybook
 router.get('/daybook', getDaybook);
 
@@ -67,5 +76,8 @@ router.get('/ledger-statement', getLedgerStatement);
 
 // Aging Report
 router.get('/aging-report', getAgingReport);
+
+// Account Balances (Cash/Bank)
+router.get('/account-balances', getAccountBalances);
 
 module.exports = router;

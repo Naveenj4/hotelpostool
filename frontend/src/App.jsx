@@ -31,6 +31,22 @@ import ReportsPage from './pages/ReportsPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import AccessControlPage from './pages/AccessControlPage.jsx';
 import GenericModulePlaceholder from './pages/dashboard/GenericModulePlaceholder.jsx';
+import DayWiseSales from './pages/dashboard/DayWiseSales.jsx';
+import MonthWiseSales from './pages/dashboard/MonthWiseSales.jsx';
+import ItemWiseSales from './pages/dashboard/ItemWiseSales.jsx';
+import CategoryWiseSales from './pages/dashboard/CategoryWiseSales.jsx';
+import DayWisePurchase from './pages/dashboard/DayWisePurchase.jsx';
+import SupplierWisePurchase from './pages/dashboard/SupplierWisePurchase.jsx';
+import CustomerOutstanding from './pages/dashboard/CustomerOutstanding.jsx';
+import SupplierOutstanding from './pages/dashboard/SupplierOutstanding.jsx';
+import AccountsReceivable from './pages/dashboard/AccountsReceivable.jsx';
+import AccountsPayable from './pages/dashboard/AccountsPayable.jsx';
+import Daybook from './pages/dashboard/Daybook.jsx';
+import CashBalance from './pages/dashboard/CashBalance.jsx';
+import BankBalance from './pages/dashboard/BankBalance.jsx';
+import PrinterSettings from './pages/dashboard/PrinterSettings.jsx';
+import KitchenSettings from './pages/dashboard/KitchenSettings.jsx';
+import OrderIntegrationSettings from './pages/dashboard/OrderIntegrationSettings.jsx';
 
 const ProtectedRoute = ({ children, adminOnly }) => {
     const { user, loading, isAdmin } = useAuth();
@@ -154,30 +170,30 @@ function AppRoutes() {
 
                             {/* Enterprise Extended Routes */}
                             {/* Sales Summary */}
-                            <Route path="reports/sales/day" element={<GenericModulePlaceholder title="Day-wise Sales" moduleName="Sales Summary" />} />
-                            <Route path="reports/sales/month" element={<GenericModulePlaceholder title="Month-wise Sales" moduleName="Sales Summary" />} />
-                            <Route path="reports/sales/item" element={<GenericModulePlaceholder title="Item-wise Sales" moduleName="Sales Summary" />} />
-                            <Route path="reports/sales/category" element={<GenericModulePlaceholder title="Category-wise Sales" moduleName="Sales Summary" />} />
+                            <Route path="reports/sales/day" element={<PermissionRoute pageKey="sales_summary"><DayWiseSales /></PermissionRoute>} />
+                            <Route path="reports/sales/month" element={<PermissionRoute pageKey="sales_summary"><MonthWiseSales /></PermissionRoute>} />
+                            <Route path="reports/sales/item" element={<PermissionRoute pageKey="sales_summary"><ItemWiseSales /></PermissionRoute>} />
+                            <Route path="reports/sales/category" element={<PermissionRoute pageKey="sales_summary"><CategoryWiseSales /></PermissionRoute>} />
 
                             {/* Purchase Summary */}
-                            <Route path="reports/purchase/day" element={<GenericModulePlaceholder title="Day-wise Purchase" moduleName="Purchase Summary" />} />
-                            <Route path="reports/purchase/supplier" element={<GenericModulePlaceholder title="Supplier-wise Purchase" moduleName="Purchase Summary" />} />
+                            <Route path="reports/purchase/day" element={<PermissionRoute pageKey="purchase_summary"><DayWisePurchase /></PermissionRoute>} />
+                            <Route path="reports/purchase/supplier" element={<PermissionRoute pageKey="purchase_summary"><SupplierWisePurchase /></PermissionRoute>} />
 
                             {/* Outstanding */}
-                            <Route path="outstanding/customers" element={<GenericModulePlaceholder title="Customer Outstanding" moduleName="Outstanding" />} />
-                            <Route path="outstanding/suppliers" element={<GenericModulePlaceholder title="Supplier Outstanding" moduleName="Outstanding" />} />
-                            <Route path="outstanding/receivable" element={<GenericModulePlaceholder title="Accounts Receivable" moduleName="Outstanding" />} />
-                            <Route path="outstanding/payable" element={<GenericModulePlaceholder title="Accounts Payable" moduleName="Outstanding" />} />
+                            <Route path="outstanding/customers" element={<PermissionRoute pageKey="outstanding"><CustomerOutstanding /></PermissionRoute>} />
+                            <Route path="outstanding/suppliers" element={<PermissionRoute pageKey="outstanding"><SupplierOutstanding /></PermissionRoute>} />
+                            <Route path="outstanding/receivable" element={<PermissionRoute pageKey="outstanding"><AccountsReceivable /></PermissionRoute>} />
+                            <Route path="outstanding/payable" element={<PermissionRoute pageKey="outstanding"><AccountsPayable /></PermissionRoute>} />
 
                             {/* Accounts */}
-                            <Route path="accounts/daybook" element={<GenericModulePlaceholder title="Real-time Daybook" moduleName="Accounts" />} />
-                            <Route path="accounts/cash" element={<GenericModulePlaceholder title="Cash Balance" moduleName="Accounts" />} />
-                            <Route path="accounts/bank" element={<GenericModulePlaceholder title="Bank Balance" moduleName="Accounts" />} />
+                            <Route path="accounts/daybook" element={<PermissionRoute pageKey="accounts"><Daybook /></PermissionRoute>} />
+                            <Route path="accounts/cash" element={<PermissionRoute pageKey="accounts"><CashBalance /></PermissionRoute>} />
+                            <Route path="accounts/bank" element={<PermissionRoute pageKey="accounts"><BankBalance /></PermissionRoute>} />
 
                             {/* Settings Extensions */}
-                            <Route path="settings/printer" element={<GenericModulePlaceholder title="Printer Settings" moduleName="Settings" />} />
-                            <Route path="settings/kitchen" element={<GenericModulePlaceholder title="Kitchen Display (KDS)" moduleName="Settings" />} />
-                            <Route path="settings/integration" element={<GenericModulePlaceholder title="Third-party Integrations" moduleName="Settings" />} />
+                            <Route path="settings/printer" element={<PermissionRoute pageKey="settings"><PrinterSettings /></PermissionRoute>} />
+                            <Route path="settings/kitchen" element={<PermissionRoute pageKey="settings"><KitchenSettings /></PermissionRoute>} />
+                            <Route path="settings/integration" element={<PermissionRoute pageKey="settings"><OrderIntegrationSettings /></PermissionRoute>} />
 
                             <Route path="*" element={<Navigate to={getLandingPage()} replace />} />
                         </Routes>

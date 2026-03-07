@@ -200,6 +200,22 @@
         grid-template-columns: 1fr;
     }
 
+    .chart-container {
+        height: 180px;
+    }
+
+    .pie-container {
+        height: 180px;
+    }
+
+    .date-filter {
+        padding: 0.75rem;
+    }
+
+    .chart-card {
+        padding: 0.875rem;
+    }
+
     .rank-badge {
         width: 22px;
         height: 22px;

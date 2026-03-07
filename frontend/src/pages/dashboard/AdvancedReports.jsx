@@ -18,19 +18,18 @@ import {
     Truck,
     Package,
     ArrowUpRight,
-    ArrowDownRight,
     DollarSign,
     Calendar,
     Search,
     Download,
     PieChart as PieIcon,
-    ChevronRight,
     Loader2,
     BookOpen,
     Filter,
     BarChart3,
     Activity,
-    Wallet
+    Wallet,
+    ArrowRight
 } from 'lucide-react';
 import './Dashboard.css';
 
@@ -42,6 +41,30 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend
+);
+
+/* ─── KPI Card ─── */
+const KpiCard = ({ label, value, icon, color, trend, sub }) => (
+    <div
+        className="bg-white rounded-2xl p-5 shadow-premium flex flex-col justify-between min-h-[140px] relative overflow-hidden group hover:shadow-xl transition-all duration-300"
+    >
+        <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-10 group-hover:opacity-20 transition-opacity" style={{ backgroundColor: color }}></div>
+        <div className="flex justify-between items-start">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}15`, color }}>
+                {icon}
+            </div>
+            {trend && (
+                <span className={`flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full ${trend.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    <ArrowUpRight size={11} className={trend.startsWith('+') ? '' : 'rotate-90'} />{trend}
+                </span>
+            )}
+        </div>
+        <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">{value}</h3>
+            {sub && <p className="text-[10px] text-slate-400 font-bold mt-0.5">{sub}</p>}
+        </div>
+    </div>
 );
 
 const AdvancedReports = () => {
@@ -160,334 +183,546 @@ const AdvancedReports = () => {
 
             <main className="dashboard-main">
                 <Header toggleSidebar={toggleSidebar} />
+
                 <div className="dashboard-content fade-in p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
-                    <div className="master-header-premium-refined flex-col md:flex-row mb-12">
+
+                    {/* ── search_and_action_bar ── */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-100">
-                                    <BarChart3 size={20} />
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className="p-1.5 bg-indigo-600 rounded-lg text-white">
+                                    <BarChart3 size={16} />
                                 </div>
-                                <span className="metric-pill-modern">Predictive Analytics</span>
+                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Predictive Analytics</span>
                             </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Enterprise Intelligence</h2>
-                            <p className="text-slate-500 font-bold mt-2 text-lg">Multi-module financial health & real-time operational performance.</p>
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Enterprise Intelligence</h2>
+                            <p className="text-slate-500 font-bold text-sm">Multi-module financial health & real-time operational performance.</p>
                         </div>
-                        <div className="flex items-center gap-4 bg-white p-4 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/50">
-                            <div className="flex items-center gap-3 px-5 border-r border-slate-100">
-                                <Calendar size={22} className="text-indigo-300" />
-                                <input type="date" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} className="text-sm font-black text-slate-700 outline-none bg-transparent cursor-pointer" />
-                                <span className="text-slate-200 font-black">/</span>
-                                <input type="date" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} className="text-sm font-black text-slate-700 outline-none bg-transparent cursor-pointer" />
+
+                        {/* Date filters + actions aligned right */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm">
+                                <Calendar size={16} className="text-indigo-400" />
+                                <input
+                                    type="date"
+                                    value={dateRange.start}
+                                    onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
+                                    className="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer"
+                                />
+                                <span className="text-slate-300">→</span>
+                                <input
+                                    type="date"
+                                    value={dateRange.end}
+                                    onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
+                                    className="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer"
+                                />
                             </div>
-                            <button onClick={fetchAllReports} className="btn-glow bg-slate-900 text-white p-4 rounded-2xl hover:bg-indigo-600 transition-all flex items-center justify-center">
-                                <Search size={22} />
+                            <button onClick={fetchAllReports} className="p-2.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:border-indigo-300 transition-colors bg-white shadow-sm">
+                                <Search size={18} />
+                            </button>
+                            <button className="p-2.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors bg-white shadow-sm">
+                                <Filter size={18} />
+                            </button>
+                            <button
+                                onClick={() => exportToCSV(activeTab === 'PURCHASE' ? purchaseSummary : activeTab === 'ACCOUNTS' ? daybook : supplierOutstanding, activeTab)}
+                                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
+                            >
+                                <Download size={16} /> Export
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex gap-2 bg-slate-200/50 p-1.5 rounded-[1.25rem] mb-10 w-fit backdrop-blur-sm">
+                    {/* ── Tab Bar ── */}
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl mb-8 w-fit">
                         {['SUMMARY', 'SALES', 'PURCHASE', 'ACCOUNTS'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-8 py-3 rounded-xl text-xs font-black tracking-widest transition-all ${activeTab === tab ? 'bg-white text-indigo-600 shadow-sm premium-shadow scale-105' : 'text-slate-500 hover:text-slate-800'}`}
+                                className={`px-6 py-2 rounded-lg text-xs font-black tracking-widest transition-all ${activeTab === tab
+                                    ? 'bg-white text-indigo-600 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                    }`}
                             >
                                 {tab}
                             </button>
                         ))}
                     </div>
 
+                    {/* ══════════ SUMMARY TAB ══════════ */}
                     {activeTab === 'SUMMARY' && (
-                        <div className="space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                                <div className="bento-card group h-64 p-10 flex flex-col justify-between border-emerald-100/50 hover:border-emerald-200">
-                                    <div className="flex items-center justify-between">
-                                        <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 ${profitLoss.netProfit >= 0 ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
-                                            <TrendingUp size={28} />
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Fiscal Yield</p>
-                                            <div className="metric-pill-modern mt-2 bg-emerald-50 text-emerald-600 border-none">Net Growth</div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className={`text-5xl font-black tracking-tighter leading-none ${profitLoss.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>₹{(profitLoss.netProfit || 0).toLocaleString()}</h3>
-                                        <p className="text-xs font-black text-slate-400 mt-4 uppercase tracking-widest opacity-50">Operational Net Recalibration</p>
-                                    </div>
-                                </div>
+                        <div className="space-y-8">
 
-                                <div className="bento-card group h-64 p-10 flex flex-col justify-between border-indigo-100/50 hover:border-indigo-200">
-                                    <div className="flex items-center justify-between">
-                                        <div className="w-16 h-16 rounded-[1.5rem] bg-indigo-600 text-white flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
-                                            <DollarSign size={28} />
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Capital Velocity</p>
-                                            <div className="metric-pill-modern mt-2 bg-indigo-50 text-indigo-600 border-none">Topline Gross</div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">₹{(profitLoss.revenue || 0).toLocaleString()}</h3>
-                                        <p className="text-xs font-black text-slate-400 mt-4 uppercase tracking-widest opacity-50">Aggregate Liquidity Staging</p>
-                                    </div>
-                                </div>
-
-                                <div className="bento-card group h-64 p-10 flex flex-col justify-between border-amber-100/50 hover:border-amber-200">
-                                    <div className="flex items-center justify-between">
-                                        <div className="w-16 h-16 rounded-[1.5rem] bg-amber-500 text-white flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
-                                            <Package size={28} />
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Asset Valuation</p>
-                                            <div className="metric-pill-modern mt-2 bg-amber-50 text-amber-600 border-none">Stock Density</div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">₹{(stockValuation.totalValue || 0).toLocaleString()}</h3>
-                                        <p className="text-xs font-black text-slate-400 mt-4 uppercase tracking-widest opacity-50">Current Inventory Capitalization</p>
-                                    </div>
-                                </div>
+                            {/* kpi_metrics_cards — 4 column grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <KpiCard
+                                    label="Net Profit / Loss"
+                                    value={`₹${(profitLoss.netProfit || 0).toLocaleString()}`}
+                                    icon={<TrendingUp size={22} />}
+                                    color={profitLoss.netProfit >= 0 ? '#10b981' : '#ef4444'}
+                                    trend="+8.1%"
+                                    sub="Operational yield"
+                                />
+                                <KpiCard
+                                    label="Total Revenue"
+                                    value={`₹${(profitLoss.revenue || 0).toLocaleString()}`}
+                                    icon={<DollarSign size={22} />}
+                                    color="#6366f1"
+                                    trend="+12.5%"
+                                    sub="Topline gross"
+                                />
+                                <KpiCard
+                                    label="Stock Valuation"
+                                    value={`₹${(stockValuation.totalValue || 0).toLocaleString()}`}
+                                    icon={<Package size={22} />}
+                                    color="#f59e0b"
+                                    trend="+3.2%"
+                                    sub="Inventory capitalisation"
+                                />
+                                <KpiCard
+                                    label="Gross Profit"
+                                    value={`₹${(profitLoss.grossProfit || 0).toLocaleString()}`}
+                                    icon={<Wallet size={22} />}
+                                    color="#8b5cf6"
+                                    trend="+5.4%"
+                                    sub="Before indirect expenses"
+                                />
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                <div className="bento-card p-0 overflow-hidden shadow-2xl">
-                                    <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-rose-50/10">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">
-                                                <Truck size={24} />
+                            {/* analytics_visualization_section — two column */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                                {/* Left panel — Vendor Payables list (large) */}
+                                <div className="lg:col-span-7 bg-white rounded-2xl shadow-premium overflow-hidden">
+                                    <div className="flex justify-between items-center p-6 border-b border-slate-50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500">
+                                                <Truck size={20} />
                                             </div>
                                             <div>
-                                                <h4 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Vendor Payables</h4>
-                                                <p className="text-xs font-black text-slate-400 mt-1 uppercase tracking-widest">Distributed liabilities across supply chain</p>
+                                                <h4 className="font-black text-slate-900">Vendor Payables</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Distributed liabilities across supply chain</p>
                                             </div>
                                         </div>
-                                        <button onClick={() => exportToCSV(supplierOutstanding, 'Suppliers')} className="w-12 h-12 bg-white text-slate-400 hover:text-indigo-600 hover:scale-110 rounded-2xl transition-all shadow-sm flex items-center justify-center"><Download size={24} /></button>
+                                        <button onClick={() => exportToCSV(supplierOutstanding, 'Suppliers')} className="p-2.5 bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-xl transition-all">
+                                            <Download size={18} />
+                                        </button>
                                     </div>
-                                    <div className="max-h-[500px] overflow-y-auto px-6 py-6 space-y-4">
-                                        {supplierOutstanding.map((s, i) => (
-                                            <div key={i} className="flex justify-between items-center p-6 bg-slate-50/50 border border-slate-100 rounded-[2rem] hover:bg-white hover:shadow-xl transition-all group">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-slate-300 text-xl group-hover:scale-110 transition-transform">V</div>
-                                                    <span className="font-black text-slate-800 text-lg uppercase tracking-tight">{s.name}</span>
+                                    <div className="max-h-[380px] overflow-y-auto p-4 space-y-3">
+                                        {supplierOutstanding.length > 0 ? supplierOutstanding.map((s, i) => (
+                                            <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl hover:bg-white hover:shadow-md transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center font-black text-slate-400 text-sm shadow-sm">V</div>
+                                                    <span className="font-bold text-slate-800 text-sm">{s.name}</span>
                                                 </div>
-                                                <div className="text-right">
-                                                    <span className="text-2xl font-black text-rose-600 tracking-tighter">₹{(s.balance || 0).toLocaleString()}</span>
-                                                    <div className="text-[9px] font-black text-rose-300 uppercase tracking-[0.2em] mt-1 italic">Liability Vector</div>
-                                                </div>
+                                                <span className="font-black text-rose-600">₹{(s.balance || 0).toLocaleString()}</span>
                                             </div>
-                                        ))}
+                                        )) : (
+                                            <div className="py-12 text-center text-slate-400 font-bold text-sm">No outstanding vendor payables.</div>
+                                        )}
                                     </div>
                                 </div>
 
-                                <div className="bento-card p-0 overflow-hidden shadow-2xl">
-                                    <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-emerald-50/10">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-500 shadow-sm">
-                                                <Users size={24} />
+                                {/* Right panel — Ledger Credits + donut widgets */}
+                                <div className="lg:col-span-5 flex flex-col gap-6">
+                                    {/* top_customer_list */}
+                                    <div className="bg-white rounded-2xl shadow-premium overflow-hidden">
+                                        <div className="flex justify-between items-center p-5 border-b border-slate-50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500">
+                                                    <Users size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-black text-slate-900 text-sm">Ledger Credits</h4>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending inflows</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h4 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Ledger Credits</h4>
-                                                <p className="text-xs font-black text-slate-400 mt-1 uppercase tracking-widest">Pending inflows from client accounts</p>
-                                            </div>
+                                            <button onClick={() => exportToCSV(customerOutstanding, 'Customers')} className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-xl transition-all">
+                                                <Download size={16} />
+                                            </button>
                                         </div>
-                                        <button onClick={() => exportToCSV(customerOutstanding, 'Customers')} className="w-12 h-12 bg-white text-slate-400 hover:text-indigo-600 hover:scale-110 rounded-2xl transition-all shadow-sm flex items-center justify-center"><Download size={24} /></button>
-                                    </div>
-                                    <div className="max-h-[500px] overflow-y-auto px-6 py-6 space-y-4">
-                                        {customerOutstanding.map((c, i) => (
-                                            <div key={i} className="flex justify-between items-center p-6 bg-slate-50/50 border border-slate-100 rounded-[2rem] hover:bg-white hover:shadow-xl transition-all group">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-slate-300 text-xl group-hover:scale-110 transition-transform">C</div>
-                                                    <span className="font-black text-slate-800 text-lg uppercase tracking-tight">{c.name}</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="text-2xl font-black text-emerald-600 tracking-tighter">₹{(c.balance || 0).toLocaleString()}</span>
-                                                    <div className="text-[9px] font-black text-emerald-300 uppercase tracking-[0.2em] mt-1 italic">Receivable Stream</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'SALES' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-                            <div className="lg:col-span-3 bento-card p-10 h-[650px] flex flex-col shadow-2xl">
-                                <div className="flex justify-between items-center mb-10">
-                                    <div>
-                                        <h4 className="text-3xl font-black text-slate-900 flex items-center gap-4">
-                                            <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100/50">
-                                                <BarChart3 size={28} />
-                                            </div>
-                                            Brand Architecture
-                                        </h4>
-                                        <p className="text-slate-400 font-black mt-2 text-xs uppercase tracking-widest">Revenue distribution per strategic brand entity</p>
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-h-0">
-                                    <Bar data={{
-                                        labels: salesByBrand.map(b => b.brand),
-                                        datasets: [{
-                                            label: 'Fiscal Output',
-                                            data: salesByBrand.map(b => b.amount),
-                                            backgroundColor: '#6366f1',
-                                            borderRadius: 20,
-                                            borderSkipped: false,
-                                            hoverBackgroundColor: '#4f46e5',
-                                            barThickness: 48
-                                        }]
-                                    }} options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: { legend: { display: false }, tooltip: { cornerRadius: 20, padding: 20, titleFont: { size: 16, weight: '900' }, bodyFont: { size: 14, weight: 'bold' }, background: '#0f172a' } },
-                                        scales: {
-                                            y: { border: { display: false }, grid: { color: '#f8fafc', lineWidth: 2 }, ticks: { font: { weight: '900', size: 12 }, color: '#cbd5e1' } },
-                                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { weight: '900', size: 11 }, color: '#64748b', autoSkip: false } }
-                                        }
-                                    }} />
-                                </div>
-                            </div>
-
-                            <div className="lg:col-span-2 bento-card p-10 h-[650px] flex flex-col shadow-2xl overflow-hidden relative">
-                                <div className="absolute -right-20 -top-20 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl"></div>
-                                <div className="mb-12 text-center relative z-10">
-                                    <h4 className="text-3xl font-black text-slate-900 tracking-tighter">Deployment Share</h4>
-                                    <p className="text-slate-400 font-black mt-2 text-xs uppercase tracking-widest">Master Service Distribution Index</p>
-                                </div>
-                                <div className="flex-1 flex items-center justify-center p-6 relative z-10 scale-110">
-                                    <Pie data={{
-                                        labels: salesByCaptain.map(c => c.captain),
-                                        datasets: [{
-                                            data: salesByCaptain.map(c => c.amount),
-                                            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#3b82f6'],
-                                            borderWidth: 8,
-                                            borderColor: '#ffffff',
-                                            hoverOffset: 30
-                                        }]
-                                    }} options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'rectRounded', font: { weight: '900', size: 11 }, padding: 30, color: '#64748b' } }
-                                        },
-                                        cutout: '55%'
-                                    }} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'PURCHASE' && (
-                        <div className="bento-card p-0 overflow-hidden shadow-2xl">
-                            <div className="p-12 border-b border-slate-50 flex justify-between items-center bg-slate-50/20 backdrop-blur-md">
-                                <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-indigo-600 shadow-md border border-slate-50">
-                                        <Truck size={32} />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-4xl font-black text-slate-900 tracking-tighter">Procurement Matrix</h4>
-                                        <p className="text-xs font-black text-slate-400 mt-2 uppercase tracking-[0.3em]">Detailed audit of resource inward and fiscal commitment</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => exportToCSV(purchaseSummary, 'Purchases')} className="btn-glow bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest flex items-center gap-4 group transition-all">
-                                    <Download size={22} className="group-hover:-translate-y-1 transition-transform" /> Manifest Extraction
-                                </button>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="modern-table-premium">
-                                    <thead>
-                                        <tr className="text-[10px] font-black text-slate-300 uppercase tracking-[0.25em]">
-                                            <th className="px-12 py-8 text-left">Vendor Infrastructure</th>
-                                            <th className="px-8 py-8">Aggregated commitment</th>
-                                            <th className="px-8 py-8">Capital Injected</th>
-                                            <th className="px-8 py-8 text-right">Deferred Staging</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {purchaseSummary.map((p, i) => (
-                                            <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                                                <td className="px-12 py-8">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-black text-slate-800 text-xl tracking-tight uppercase group-hover:text-indigo-600 transition-colors">{p.name || 'GLOBAL CORE ENTITY'}</span>
-                                                        <span className="text-[10px] font-black text-indigo-300 mt-2 tracking-widest bg-indigo-50/50 w-fit px-3 py-1 rounded-lg uppercase">System Ref Vector: {i + 102}</span>
+                                        <div className="max-h-[180px] overflow-y-auto p-3 space-y-2">
+                                            {customerOutstanding.length > 0 ? customerOutstanding.slice(0, 5).map((c, i) => (
+                                                <div key={i} className="flex justify-between items-center px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-7 h-7 bg-emerald-50 rounded-full flex items-center justify-center font-black text-emerald-600 text-xs">{c.name?.charAt(0)}</div>
+                                                        <span className="font-bold text-slate-700 text-sm truncate max-w-[120px]">{c.name}</span>
                                                     </div>
-                                                </td>
-                                                <td className="px-8 py-8">
-                                                    <span className="text-2xl font-black text-slate-900 tracking-tighter">₹{p.amount?.toLocaleString()}</span>
-                                                </td>
-                                                <td className="px-8 py-8">
-                                                    <div className="metric-pill-modern bg-emerald-50 text-emerald-600 border-none font-black text-xl px-6 py-2">₹{p.paid?.toLocaleString()}</div>
-                                                </td>
-                                                <td className="px-8 py-8 text-right">
-                                                    <span className="text-3xl font-black text-rose-600 tracking-tighter">₹{p.due?.toLocaleString()}</span>
-                                                    <div className="text-[9px] font-black text-rose-300 uppercase tracking-widest mt-1 opacity-50">Staged Liability</div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'ACCOUNTS' && (
-                        <div className="max-w-5xl mx-auto space-y-10">
-                            <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 premium-shadow relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-32 -mt-32 opacity-50 blur-3xl"></div>
-                                <div className="flex justify-between items-center mb-12 relative z-10">
-                                    <div>
-                                        <h4 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4">
-                                            <div className="p-3 bg-indigo-600 rounded-2xl text-white">
-                                                <BookOpen size={28} />
-                                            </div>
-                                            Financial Daybook
-                                        </h4>
-                                        <p className="text-slate-500 font-medium mt-1">Chronological audit trail of all transactions.</p>
+                                                    <span className="font-black text-emerald-600 text-sm">₹{(c.balance || 0).toLocaleString()}</span>
+                                                </div>
+                                            )) : (
+                                                <div className="py-6 text-center text-slate-400 font-bold text-sm">No outstanding credits.</div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-black text-xs uppercase tracking-widest">Date: {new Date(dateRange.end).toLocaleDateString()}</div>
-                                        <button onClick={() => exportToCSV(daybook, 'Daybook')} className="p-4 bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-2xl transition-all"><Download size={24} /></button>
+
+                                    {/* small_chart_widgets — subscribe + lead source donuts */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white rounded-2xl shadow-premium p-4 flex flex-col items-center text-center">
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Subscribe</h5>
+                                            <div className="w-20 h-20 rounded-full border-[6px] border-slate-100 border-t-indigo-500 border-r-indigo-500 flex items-center justify-center mb-2">
+                                                <span className="text-xs font-black text-slate-900">75%</span>
+                                            </div>
+                                            <p className="text-[10px] font-bold text-slate-500">Active Rate</p>
+                                        </div>
+                                        <div className="bg-white rounded-2xl shadow-premium p-4 flex flex-col items-center text-center">
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Lead Source</h5>
+                                            <PieIcon className="text-indigo-500 mb-2" size={36} />
+                                            <div className="flex gap-1.5 text-[9px] font-black uppercase">
+                                                <span className="text-indigo-600">Direct</span>
+                                                <span className="text-slate-400">•</span>
+                                                <span className="text-slate-500">Referral</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="space-y-6 relative z-10 text-center">
-                                    {daybook.length === 0 ? (
-                                        <div className="py-24 group opacity-20">
-                                            <Activity size={100} className="mx-auto mb-6 group-hover:scale-110 transition-transform" />
-                                            <p className="text-3xl font-black">Audit trail is currently clear.</p>
-                                            <p className="text-lg font-bold">No ledger activities were logged for this specific period.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {daybook.map((tr, i) => (
-                                                <div key={i} className="group p-6 rounded-3xl border border-slate-50 hover:border-indigo-100 hover:bg-slate-50/50 transition-all flex justify-between items-center bg-white shadow-sm hover:shadow-md">
-                                                    <div className="flex items-center gap-6">
-                                                        <div className={`w-16 h-16 rounded-[1.5rem] flex flex-col items-center justify-center font-black shadow-inner ${tr.side === 'IN' ? 'bg-emerald-50 text-emerald-600' : (tr.side === 'OUT' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400')}`}>
-                                                            <span className="text-base leading-none">{tr.side === 'IN' ? '+' : '-'}</span>
-                                                            <span className="text-[10px] uppercase opacity-60 font-black tracking-widest">{tr.side || 'LOG'}</span>
-                                                        </div>
-                                                        <div className="text-left">
-                                                            <p className="font-black text-slate-800 text-xl leading-tight group-hover:text-indigo-700 transition-colors uppercase">{tr.desc}</p>
-                                                            <div className="flex items-center gap-3 mt-1.5">
-                                                                <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-black uppercase">{tr.type}</span>
-                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Time: {new Date(tr.time).toLocaleTimeString()} • Audit ID: {tr.ref}</span>
-                                                            </div>
-                                                        </div>
+                            {/* bottom_analytics_panels — 3 columns */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* 1. Subscription Overview — stock items breakdown */}
+                                <div className="bg-white rounded-2xl shadow-premium p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-black text-slate-900">Subscription Overview</h3>
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Inventory</span>
+                                    </div>
+                                    {stockValuation.items?.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {stockValuation.items.slice(0, 5).map((item, i) => (
+                                                <div key={i}>
+                                                    <div className="flex justify-between text-xs font-bold mb-1">
+                                                        <span className="text-slate-600 truncate max-w-[140px]">{item.name}</span>
+                                                        <span className="font-black text-slate-900">₹{(item.value || 0).toLocaleString()}</span>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <p className={`text-3xl font-black tracking-tighter ${tr.side === 'IN' ? 'text-emerald-600' : (tr.side === 'OUT' ? 'text-rose-600' : 'text-slate-800')}`}>
-                                                            ₹{tr.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                                        </p>
+                                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full rounded-full"
+                                                            style={{
+                                                                width: `${Math.min(100, stockValuation.totalValue > 0 ? (item.value / stockValuation.totalValue) * 100 : 0)}%`,
+                                                                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][i % 5]
+                                                            }}
+                                                        ></div>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
+                                    ) : (
+                                        <div className="py-8 text-center text-slate-400 font-bold text-sm">No stock items found.</div>
+                                    )}
+                                </div>
+
+                                {/* 2. Tickets by Status — P&L cost breakdown */}
+                                <div className="bg-white rounded-2xl shadow-premium p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-black text-slate-900">Tickets by Status</h3>
+                                        <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full">P&L</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {[
+                                            { label: 'Revenue', value: profitLoss.revenue, color: '#10b981' },
+                                            { label: 'Direct Expenses', value: profitLoss.purchases, color: '#f59e0b' },
+                                            { label: 'Indirect Expenses', value: profitLoss.expenses, color: '#ef4444' },
+                                            { label: 'Net Profit', value: profitLoss.netProfit, color: '#6366f1' },
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex justify-between items-center p-3 rounded-xl bg-slate-50">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
+                                                    <span className="text-xs font-bold text-slate-700">{item.label}</span>
+                                                </div>
+                                                <span className="font-black text-sm text-slate-900">₹{(item.value || 0).toLocaleString()}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 3. Recent Activity — daybook feed */}
+                                <div className="bg-white rounded-2xl shadow-premium p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-black text-slate-900">Recent Activity</h3>
+                                        <button className="text-[10px] font-black uppercase text-slate-400 hover:text-indigo-600 tracking-widest flex items-center gap-1">
+                                            All <ArrowRight size={10} />
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {daybook.slice(0, 4).map((tr, i) => (
+                                            <div key={i} className="flex items-start gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-black text-xs
+                                                    ${tr.side === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                    {tr.side === 'IN' ? '↓' : '↑'}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900 truncate">{tr.desc || tr.ref}</p>
+                                                    <div className="flex justify-between items-center mt-0.5">
+                                                        <span className="text-[10px] text-slate-400 font-bold">{tr.type}</span>
+                                                        <span className="text-xs font-black text-slate-900">₹{tr.amount?.toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {daybook.length === 0 && (
+                                            <div className="py-6 text-center text-slate-400 font-bold text-sm">No activity for this period.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ══════════ SALES TAB ══════════ */}
+                    {activeTab === 'SALES' && (
+                        <div className="space-y-8">
+                            {/* KPI strip */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                <KpiCard label="Total Revenue" value={`₹${(profitLoss.revenue || 0).toLocaleString()}`} icon={<TrendingUp size={20} />} color="#6366f1" trend="+12.5%" />
+                                <KpiCard label="Brands Tracked" value={salesByBrand.length} icon={<BarChart3 size={20} />} color="#10b981" />
+                                <KpiCard label="Captains" value={salesByCaptain.length} icon={<Users size={20} />} color="#f59e0b" />
+                                <KpiCard label="Gross Profit" value={`₹${(profitLoss.grossProfit || 0).toLocaleString()}`} icon={<Wallet size={20} />} color="#8b5cf6" trend="+5.4%" />
+                            </div>
+
+                            {/* analytics_visualization_section */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                {/* Bar chart — left */}
+                                <div className="lg:col-span-7 bg-white rounded-2xl shadow-premium p-6 flex flex-col">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                                                <BarChart3 size={20} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black text-slate-900">Brand Architecture</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue by brand entity</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-h-[300px]">
+                                        <Bar
+                                            data={{
+                                                labels: salesByBrand.map(b => b.brand),
+                                                datasets: [{
+                                                    label: 'Fiscal Output',
+                                                    data: salesByBrand.map(b => b.amount),
+                                                    backgroundColor: '#6366f1',
+                                                    borderRadius: 12,
+                                                    borderSkipped: false,
+                                                    hoverBackgroundColor: '#4f46e5',
+                                                    barThickness: 40
+                                                }]
+                                            }}
+                                            options={{
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { display: false }, tooltip: { cornerRadius: 12, padding: 14 } },
+                                                scales: {
+                                                    y: { border: { display: false }, grid: { color: '#f8fafc' }, ticks: { font: { weight: '900', size: 11 }, color: '#cbd5e1' } },
+                                                    x: { border: { display: false }, grid: { display: false }, ticks: { font: { weight: '900', size: 11 }, color: '#64748b', autoSkip: false } }
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Right — Pie chart + lead source donut */}
+                                <div className="lg:col-span-5 flex flex-col gap-6">
+                                    <div className="bg-white rounded-2xl shadow-premium p-6 flex flex-col flex-1">
+                                        <h4 className="font-black text-slate-900 mb-1">Deployment Share</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Service distribution index</p>
+                                        <div className="flex-1 min-h-[220px]">
+                                            <Pie
+                                                data={{
+                                                    labels: salesByCaptain.map(c => c.captain),
+                                                    datasets: [{
+                                                        data: salesByCaptain.map(c => c.amount),
+                                                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#3b82f6'],
+                                                        borderWidth: 6,
+                                                        borderColor: '#ffffff',
+                                                        hoverOffset: 20
+                                                    }]
+                                                }}
+                                                options={{
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: {
+                                                        legend: { position: 'bottom', labels: { usePointStyle: true, font: { weight: '900', size: 11 }, padding: 20, color: '#64748b' } }
+                                                    },
+                                                    cutout: '55%'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white rounded-2xl shadow-premium p-4 text-center">
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subscribe</h5>
+                                            <div className="w-16 h-16 mx-auto rounded-full border-[5px] border-slate-100 border-t-indigo-500 border-r-indigo-500 flex items-center justify-center">
+                                                <span className="text-[11px] font-black text-slate-900">75%</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white rounded-2xl shadow-premium p-4 text-center flex flex-col items-center justify-center">
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lead By Source</h5>
+                                            <PieIcon className="text-indigo-400" size={32} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* bottom_analytics_panels */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="bg-white rounded-2xl shadow-premium p-6">
+                                    <h3 className="font-black text-slate-900 mb-4">Subscription Overview</h3>
+                                    {salesByBrand.slice(0, 5).map((b, i) => (
+                                        <div key={i} className="mb-3">
+                                            <div className="flex justify-between text-xs font-bold mb-1">
+                                                <span className="text-slate-600">{b.brand}</span>
+                                                <span className="font-black">₹{b.amount?.toLocaleString()}</span>
+                                            </div>
+                                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, profitLoss.revenue > 0 ? (b.amount / profitLoss.revenue) * 100 : 0)}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="bg-white rounded-2xl shadow-premium p-6">
+                                    <h3 className="font-black text-slate-900 mb-4">Tickets by Status</h3>
+                                    {salesByCaptain.slice(0, 5).map((c, i) => (
+                                        <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 mb-2">
+                                            <span className="text-sm font-bold text-slate-700">{c.captain}</span>
+                                            <span className="text-sm font-black text-indigo-600">₹{c.amount?.toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="bg-white rounded-2xl shadow-premium p-6">
+                                    <h3 className="font-black text-slate-900 mb-4">Recent Activity</h3>
+                                    {daybook.slice(0, 4).map((tr, i) => (
+                                        <div key={i} className="flex items-center gap-3 mb-3">
+                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 ${tr.side === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                {tr.side === 'IN' ? '↓' : '↑'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-slate-800 truncate">{tr.desc}</p>
+                                                <p className="text-[10px] text-slate-400">₹{tr.amount?.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ══════════ PURCHASE TAB ══════════ */}
+                    {activeTab === 'PURCHASE' && (
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                <KpiCard label="Total Purchases" value={`₹${purchaseSummary.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString()}`} icon={<Truck size={20} />} color="#ef4444" trend="+4.2%" />
+                                <KpiCard label="Amount Paid" value={`₹${purchaseSummary.reduce((s, p) => s + (p.paid || 0), 0).toLocaleString()}`} icon={<DollarSign size={20} />} color="#10b981" />
+                                <KpiCard label="Amount Due" value={`₹${purchaseSummary.reduce((s, p) => s + (p.due || 0), 0).toLocaleString()}`} icon={<Wallet size={20} />} color="#f59e0b" />
+                                <KpiCard label="Vendors" value={purchaseSummary.length} icon={<Package size={20} />} color="#6366f1" />
+                            </div>
+
+                            <div className="bg-white rounded-2xl shadow-premium overflow-hidden">
+                                <div className="flex justify-between items-center p-6 border-b border-slate-50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                                            <Truck size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-slate-900">Procurement Matrix</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detailed audit of resource inward</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => exportToCSV(purchaseSummary, 'Purchases')} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-indigo-600 transition-colors">
+                                        <Download size={16} /> Export
+                                    </button>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                                                <th className="px-6 py-4 text-left">Vendor</th>
+                                                <th className="px-6 py-4 text-right">Total Commitment</th>
+                                                <th className="px-6 py-4 text-right">Capital Injected</th>
+                                                <th className="px-6 py-4 text-right">Deferred</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {purchaseSummary.map((p, i) => (
+                                                <tr key={i} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50/50">
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-bold text-slate-800">{p.name || 'Global Entity'}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold">Ref #{i + 102}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right font-black text-slate-900">₹{p.amount?.toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <span className="text-emerald-600 font-black">₹{p.paid?.toLocaleString()}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right font-black text-rose-600">₹{p.due?.toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ══════════ ACCOUNTS TAB ══════════ */}
+                    {activeTab === 'ACCOUNTS' && (
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                <KpiCard label="Day Inflow" value={`₹${daybook.filter(t => t.side === 'IN').reduce((s, t) => s + t.amount, 0).toLocaleString()}`} icon={<TrendingUp size={20} />} color="#10b981" />
+                                <KpiCard label="Day Outflow" value={`₹${daybook.filter(t => t.side === 'OUT').reduce((s, t) => s + t.amount, 0).toLocaleString()}`} icon={<Activity size={20} />} color="#ef4444" />
+                                <KpiCard label="Entries" value={daybook.length} icon={<BookOpen size={20} />} color="#6366f1" />
+                                <KpiCard label="Net Flow" value={`₹${(daybook.filter(t => t.side === 'IN').reduce((s, t) => s + t.amount, 0) - daybook.filter(t => t.side === 'OUT').reduce((s, t) => s + t.amount, 0)).toLocaleString()}`} icon={<Wallet size={20} />} color="#8b5cf6" />
+                            </div>
+
+                            <div className="bg-white rounded-2xl shadow-premium overflow-hidden">
+                                <div className="flex justify-between items-center p-6 border-b border-slate-50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                                            <BookOpen size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-slate-900">Financial Daybook</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chronological audit trail • {new Date(dateRange.end).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => exportToCSV(daybook, 'Daybook')} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-indigo-600 transition-colors">
+                                        <Download size={16} /> Export
+                                    </button>
+                                </div>
+                                <div className="divide-y divide-slate-50">
+                                    {daybook.length === 0 ? (
+                                        <div className="py-20 text-center opacity-30">
+                                            <Activity size={64} className="mx-auto mb-4" />
+                                            <p className="font-black text-xl">Audit trail is clear.</p>
+                                            <p className="font-bold text-sm mt-1">No ledger activities for this period.</p>
+                                        </div>
+                                    ) : (
+                                        daybook.map((tr, i) => (
+                                            <div key={i} className="flex justify-between items-center p-5 hover:bg-slate-50/60 transition-colors">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center font-black text-sm shadow-inner
+                                                        ${tr.side === 'IN' ? 'bg-emerald-50 text-emerald-600' : tr.side === 'OUT' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400'}`}>
+                                                        <span>{tr.side === 'IN' ? '+' : '-'}</span>
+                                                        <span className="text-[8px] uppercase font-black opacity-60">{tr.side || 'LOG'}</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-slate-800">{tr.desc}</p>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-black uppercase">{tr.type}</span>
+                                                            <span className="text-[10px] font-bold text-slate-400">{new Date(tr.time).toLocaleTimeString()} • {tr.ref}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <p className={`text-xl font-black tracking-tight ${tr.side === 'IN' ? 'text-emerald-600' : tr.side === 'OUT' ? 'text-rose-600' : 'text-slate-800'}`}>
+                                                    ₹{tr.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                        ))
                                     )}
                                 </div>
                             </div>
                         </div>
                     )}
+
                 </div>
             </main>
         </div>

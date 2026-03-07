@@ -37,6 +37,7 @@ app.use('/api/brands', require('./routes/brandRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/tables', require('./routes/tableRoutes'));
+app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/captains', require('./routes/captainRoutes'));
 app.use('/api/waiters', require('./routes/waiterRoutes'));
 app.use('/api/ledgers', require('./routes/ledgerRoutes'));
@@ -54,14 +55,10 @@ app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
+const { errorHandler } = require('./middleware/errorMiddleware');
+
 // Error handling middleware
-app.use((err, req, res, next) => {
-    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-    res.status(statusCode).json({
-        message: err.message,
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-    });
-});
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
