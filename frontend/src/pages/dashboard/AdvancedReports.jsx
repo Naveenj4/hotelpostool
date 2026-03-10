@@ -80,7 +80,6 @@ const AdvancedReports = () => {
     const [profitLoss, setProfitLoss] = useState({ revenue: 0, purchases: 0, expenses: 0, netProfit: 0 });
 
     const [salesByBrand, setSalesByBrand] = useState([]);
-    const [salesByCaptain, setSalesByCaptain] = useState([]);
     const [purchaseSummary, setPurchaseSummary] = useState([]);
     const [daybook, setDaybook] = useState([]);
 
@@ -114,7 +113,6 @@ const AdvancedReports = () => {
                 `${import.meta.env.VITE_API_URL}/reports/stock-valuation`,
                 `${import.meta.env.VITE_API_URL}/reports/profit-loss${query}`,
                 `${import.meta.env.VITE_API_URL}/reports/sales-by-brand${query}`,
-                `${import.meta.env.VITE_API_URL}/reports/sales-by-captain${query}`,
                 `${import.meta.env.VITE_API_URL}/reports/purchase-summary${query}`,
                 `${import.meta.env.VITE_API_URL}/reports/daybook?date=${dateRange.end}`
             ];
@@ -136,9 +134,8 @@ const AdvancedReports = () => {
                 });
             }
             if (data[4].success) setSalesByBrand(data[4].data);
-            if (data[5].success) setSalesByCaptain(data[5].data);
-            if (data[6].success) setPurchaseSummary(data[6].data);
-            if (data[7].success) setDaybook(data[7].data);
+            if (data[5].success) setPurchaseSummary(data[5].data);
+            if (data[6].success) setDaybook(data[6].data);
 
         } catch (err) {
             console.error("Report fetch error", err);
@@ -474,7 +471,6 @@ const AdvancedReports = () => {
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                                 <KpiCard label="Total Revenue" value={`₹${(profitLoss.revenue || 0).toLocaleString()}`} icon={<TrendingUp size={20} />} color="#6366f1" trend="+12.5%" />
                                 <KpiCard label="Brands Tracked" value={salesByBrand.length} icon={<BarChart3 size={20} />} color="#10b981" />
-                                <KpiCard label="Captains" value={salesByCaptain.length} icon={<Users size={20} />} color="#f59e0b" />
                                 <KpiCard label="Gross Profit" value={`₹${(profitLoss.grossProfit || 0).toLocaleString()}`} icon={<Wallet size={20} />} color="#8b5cf6" trend="+5.4%" />
                             </div>
 
@@ -528,10 +524,10 @@ const AdvancedReports = () => {
                                         <div className="flex-1 min-h-[220px]">
                                             <Pie
                                                 data={{
-                                                    labels: salesByCaptain.map(c => c.captain),
+                                                    labels: ['Direct', 'Referral', 'Partners'],
                                                     datasets: [{
-                                                        data: salesByCaptain.map(c => c.amount),
-                                                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#3b82f6'],
+                                                        data: [65, 20, 15],
+                                                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b'],
                                                         borderWidth: 6,
                                                         borderColor: '#ffffff',
                                                         hoverOffset: 20
@@ -581,13 +577,8 @@ const AdvancedReports = () => {
                                     ))}
                                 </div>
                                 <div className="bg-white rounded-2xl shadow-premium p-6">
-                                    <h3 className="font-black text-slate-900 mb-4">Tickets by Status</h3>
-                                    {salesByCaptain.slice(0, 5).map((c, i) => (
-                                        <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 mb-2">
-                                            <span className="text-sm font-bold text-slate-700">{c.captain}</span>
-                                            <span className="text-sm font-black text-indigo-600">₹{c.amount?.toLocaleString()}</span>
-                                        </div>
-                                    ))}
+                                    <h3 className="font-black text-slate-900 mb-4">Analytics</h3>
+                                    <p className="text-slate-500 text-sm">Deployment share analytics have been restructured.</p>
                                 </div>
                                 <div className="bg-white rounded-2xl shadow-premium p-6">
                                     <h3 className="font-black text-slate-900 mb-4">Recent Activity</h3>

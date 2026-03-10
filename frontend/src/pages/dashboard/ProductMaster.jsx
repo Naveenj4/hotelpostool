@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import './Dashboard.css';
@@ -42,6 +42,7 @@ const ProductMaster = () => {
     const [submitting, setSubmitting] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [categories, setCategories] = useState([]);
+    const fileInputRef = useRef(null);
 
     const initialFormState = {
         code: '',
@@ -234,9 +235,18 @@ const ProductMaster = () => {
                 body: fData
             });
             const result = await response.json();
-            if (result.success) setFormData(prev => ({ ...prev, image: result.data }));
-        } catch (err) { setError('Upload failed: ' + err.message); }
-        finally { setUploading(false); }
+            if (result.success) {
+                setFormData(prev => ({ ...prev, image: result.data }));
+            } else {
+                throw new Error(result.message || 'Unknown upload error');
+            }
+        } catch (err) {
+            console.error("Upload Error:", err);
+            setError('Upload failed: ' + err.message);
+            alert('Upload failed: ' + err.message);
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleEdit = (product) => {
@@ -420,39 +430,39 @@ const ProductMaster = () => {
                 {showDrawer && (
                     <>
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[999] animate-in fade-in transition-all" onClick={() => setShowDrawer(false)}></div>
-                        <div className="drawer-premium !max-w-[1100px]">
-                            <div className="drawer-header-premium !bg-slate-900 !text-white !border-none">
+                        <div className="drawer-premium !max-w-[1000px]">
+                            <div className="drawer-header">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <div className="p-1 bg-indigo-600 rounded">
-                                            <Package size={14} className="text-white" />
+                                        <div className="p-1 bg-indigo-100 rounded text-indigo-600">
+                                            <Package size={14} />
                                         </div>
-                                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic">Item Architect</span>
+                                        <span className="text-xs font-semibold text-indigo-600 uppercase tracking-widest">Item Architect</span>
                                     </div>
-                                    <h3 className="text-4xl font-black tracking-tighter uppercase">{isEditing ? 'Reconfigure Master' : 'Create New SKU'}</h3>
+                                    <h3 className="text-2xl font-bold text-slate-800">{isEditing ? 'Reconfigure Master' : 'Create New SKU'}</h3>
                                 </div>
-                                <button onClick={() => setShowDrawer(false)} className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
-                                    <XCircle size={28} />
+                                <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-all">
+                                    <XCircle size={24} />
                                 </button>
                             </div>
-                            <div className="drawer-body-premium !bg-slate-50">
+                            <div className="drawer-body">
                                 {error && (
-                                    <div className="bg-rose-50 border-2 border-rose-100 p-6 rounded-[2rem] flex items-center gap-4 text-rose-700 font-black text-sm mb-10 shadow-xl shadow-rose-100/50">
-                                        <div className="p-3 bg-rose-600 text-white rounded-2xl"><AlertCircle size={24} /></div>
+                                    <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-3 text-rose-700 font-medium text-sm mb-6 shadow-sm">
+                                        <AlertCircle size={20} />
                                         {error}
                                     </div>
                                 )}
 
-                                <form id="product-form" onSubmit={handleSubmit} className="space-y-12 pb-10">
-                                    <div className="premium-card bg-white p-10 rounded-[3rem] premium-shadow border border-slate-100">
-                                        <div className="flex items-center gap-3 mb-8">
-                                            <Layers className="text-indigo-600" size={24} />
-                                            <h4 className="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase">Physical Identity</h4>
+                                <form id="product-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                                            <Layers className="text-indigo-600" size={20} />
+                                            <h4 className="text-lg font-bold text-slate-800">Physical Identity</h4>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                             <div className="form-group-premium col-span-2">
                                                 <label>Global Item Label *</label>
-                                                <input type="text" name="name" required className="input-premium !text-xl" placeholder="e.g. ORGANIC TRUFFLE OIL" value={formData.name} onChange={handleInputChange} />
+                                                <input type="text" name="name" required className="input-premium" placeholder="e.g. ORGANIC TRUFFLE OIL" value={formData.name} onChange={handleInputChange} />
                                             </div>
                                             <div className="form-group-premium">
                                                 <label>Registry ID</label>
@@ -462,60 +472,62 @@ const ProductMaster = () => {
                                                 <label>Classification *</label>
                                                 <select name="category" required className="input-premium" value={formData.category} onChange={handleInputChange}>
                                                     <option value="">Select Domain</option>
-                                                    {categories.map(c => <option key={c._id} value={c.name}>{c.name.toUpperCase()}</option>)}
+                                                    {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                                             <div className="form-group-premium">
                                                 <label>Print Identity</label>
                                                 <input type="text" name="print_name" className="input-premium" placeholder="Short Name for Bills" value={formData.print_name} onChange={handleInputChange} />
                                             </div>
                                             <div className="form-group-premium">
                                                 <label>Food Classification</label>
-                                                <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100">
+                                                <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
                                                     {['VEG', 'NON_VEG', 'NONE'].map(type => (
-                                                        <button key={type} type="button" onClick={() => setFormData(p => ({ ...p, food_type: type }))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.food_type === type ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{type.replace('_', ' ')}</button>
+                                                        <button key={type} type="button" onClick={() => setFormData(p => ({ ...p, food_type: type }))} className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${formData.food_type === type ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{type.replace('_', ' ')}</button>
                                                     ))}
                                                 </div>
                                             </div>
                                             <div className="form-group-premium">
                                                 <label>Item Nature</label>
-                                                <div className="flex gap-4 p-2 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <div className="flex gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
                                                     {['GOOD', 'SERVICE'].map(n => (
-                                                        <button key={n} type="button" onClick={() => setFormData(p => ({ ...p, item_nature: n }))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.item_nature === n ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>{n}</button>
+                                                        <button key={n} type="button" onClick={() => setFormData(p => ({ ...p, item_nature: n }))} className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${formData.item_nature === n ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{n}</button>
                                                     ))}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                        <div className="premium-card bg-white p-10 rounded-[3rem] premium-shadow border border-slate-100">
-                                            <div className="flex items-center gap-3 mb-8">
-                                                <Tag className="text-indigo-600" size={24} />
-                                                <h4 className="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase">Pricing Matrix</h4>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                                                <Tag className="text-indigo-600" size={20} />
+                                                <h4 className="text-lg font-bold text-slate-800">Pricing Matrix</h4>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-8">
-                                                <div className="form-group-premium">
-                                                    <label>Procurement Rate</label>
-                                                    <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">₹</span>
-                                                        <input type="number" name="purchase_price" className="input-premium !pl-10" value={formData.purchase_price} onChange={handleInputChange} />
+                                            <div className="grid grid-cols-2 gap-6">
+                                                {formData.item_nature !== 'SERVICE' && (
+                                                    <div className="form-group-premium">
+                                                        <label>Procurement Rate</label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
+                                                            <input type="number" name="purchase_price" className="input-premium !pl-8" value={formData.purchase_price} onChange={handleInputChange} />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="form-group-premium">
+                                                )}
+                                                <div className={`form-group-premium ${formData.item_nature === 'SERVICE' ? 'col-span-2' : ''}`}>
                                                     <label>External MRP</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">₹</span>
-                                                        <input type="number" name="mrp" className="input-premium !pl-10" value={formData.mrp} onChange={handleInputChange} />
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
+                                                        <input type="number" name="mrp" className="input-premium !pl-8" value={formData.mrp} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                                 <div className="form-group-premium col-span-2">
                                                     <label className="!text-indigo-600">Enterprise Sales Value *</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-300 font-black text-2xl">₹</span>
-                                                        <input type="number" name="selling_price" required className="input-premium !pl-12 !text-3xl !py-4 !bg-indigo-50/30 !border-indigo-100 !text-indigo-900" value={formData.selling_price} onChange={handleInputChange} />
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-500 font-bold text-lg">₹</span>
+                                                        <input type="number" name="selling_price" required className="input-premium !pl-8 !text-xl !py-2 !bg-indigo-50/50 !border-indigo-200 !text-indigo-900" value={formData.selling_price} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                                 <div className="form-group-premium">
@@ -529,69 +541,75 @@ const ProductMaster = () => {
                                             </div>
                                         </div>
 
-                                        <div className="premium-card bg-white p-10 rounded-[3rem] premium-shadow border border-slate-100">
-                                            <div className="flex items-center gap-3 mb-8">
-                                                <ShoppingCart className="text-indigo-600" size={24} />
-                                                <h4 className="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase">Reserve Logistics</h4>
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                                                <ShoppingCart className="text-indigo-600" size={20} />
+                                                <h4 className="text-lg font-bold text-slate-800">Reserve Logistics</h4>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-8">
-                                                <div className="form-group-premium">
-                                                    <label>Opening Inventory</label>
-                                                    <input type="number" name="opening_stock" className="input-premium" value={formData.opening_stock} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
+                                            <div className="grid grid-cols-2 gap-6">
+                                                {formData.item_nature !== 'SERVICE' && (
+                                                    <div className="form-group-premium">
+                                                        <label>Opening Inventory</label>
+                                                        <input type="number" name="opening_stock" className="input-premium" value={formData.opening_stock} onChange={handleInputChange} />
+                                                    </div>
+                                                )}
+                                                <div className={`form-group-premium ${formData.item_nature === 'SERVICE' ? 'col-span-2' : ''}`}>
                                                     <label>Reorder Threshold</label>
                                                     <input type="number" name="reorder_level" className="input-premium" value={formData.reorder_level} onChange={handleInputChange} />
                                                 </div>
-                                                <div className="form-group-premium">
-                                                    <label>Minimum Stable Reserve</label>
-                                                    <input type="number" name="min_stock" className="input-premium" value={formData.min_stock} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label>Maximum Storage Capacity</label>
-                                                    <input type="number" name="max_stock" className="input-premium" value={formData.max_stock} onChange={handleInputChange} />
-                                                </div>
+                                                {formData.item_nature !== 'SERVICE' && (
+                                                    <>
+                                                        <div className="form-group-premium">
+                                                            <label>Minimum Stable Reserve</label>
+                                                            <input type="number" name="min_stock" className="input-premium" value={formData.min_stock} onChange={handleInputChange} />
+                                                        </div>
+                                                        <div className="form-group-premium">
+                                                            <label>Maximum Storage Capacity</label>
+                                                            <input type="number" name="max_stock" className="input-premium" value={formData.max_stock} onChange={handleInputChange} />
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
-                                            <div className="mt-6 p-6 bg-slate-900 rounded-[2rem] text-center">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Asset Valuation</p>
-                                                <h5 className="text-2xl font-black text-emerald-400">₹{formData.stock_value.toLocaleString()}</h5>
-                                            </div>
+                                            {formData.item_nature !== 'SERVICE' && (
+                                                <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-500 uppercase">Asset Valuation</span>
+                                                    <h5 className="text-xl font-bold text-emerald-600">₹{formData.stock_value.toLocaleString()}</h5>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-                                        <div className="lg:col-span-3 premium-card bg-white p-10 rounded-[3rem] premium-shadow border border-slate-100 flex flex-col">
-                                            <div className="flex justify-between items-center mb-10">
-                                                <div className="flex items-center gap-3">
-                                                    <Clock className="text-indigo-600" size={24} />
-                                                    <h4 className="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase">Temporal Availability</h4>
-                                                </div>
+                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                                        <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                                            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                                                <Clock className="text-indigo-600" size={20} />
+                                                <h4 className="text-lg font-bold text-slate-800">Temporal Availability</h4>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
                                                 {formData.available_timings.map((t, i) => (
-                                                    <div key={i} className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col justify-between ${t.enabled ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-50 bg-slate-50/50 opacity-40'}`}>
-                                                        <div className="flex justify-between items-start mb-4">
-                                                            <span className={`text-base font-black uppercase tracking-tighter ${t.enabled ? 'text-indigo-900' : 'text-slate-400'}`}>{t.label}</span>
+                                                    <div key={i} className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${t.enabled ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <span className={`text-sm font-bold ${t.enabled ? 'text-indigo-800' : 'text-slate-500'}`}>{t.label}</span>
                                                             <button type="button" onClick={() => {
                                                                 const nt = [...formData.available_timings];
                                                                 nt[i].enabled = !nt[i].enabled;
                                                                 setFormData(p => ({ ...p, available_timings: nt }));
-                                                            }} className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${t.enabled ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-200 text-slate-400'}`}>
-                                                                {t.enabled ? <Check size={16} /> : <XCircle size={16} />}
+                                                            }} className={`w-6 h-6 rounded flex items-center justify-center transition-all ${t.enabled ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400 hover:bg-slate-300'}`}>
+                                                                {t.enabled ? <Check size={14} /> : <XCircle size={14} />}
                                                             </button>
                                                         </div>
-                                                        <div className="space-y-3">
+                                                        <div className="space-y-2">
                                                             <div>
-                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Begin</span>
-                                                                <input type="time" className="w-full bg-white/50 border-none p-2 rounded-xl text-xs font-black" value={t.start_time} onChange={(e) => {
+                                                                <span className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">Begin</span>
+                                                                <input type="time" className="w-full bg-white border border-slate-200 p-1.5 rounded text-xs font-medium" value={t.start_time} onChange={(e) => {
                                                                     const nt = [...formData.available_timings];
                                                                     nt[i].start_time = e.target.value;
                                                                     setFormData(p => ({ ...p, available_timings: nt }));
                                                                 }} />
                                                             </div>
                                                             <div>
-                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Terminate</span>
-                                                                <input type="time" className="w-full bg-white/50 border-none p-2 rounded-xl text-xs font-black" value={t.end_time} onChange={(e) => {
+                                                                <span className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">Terminate</span>
+                                                                <input type="time" className="w-full bg-white border border-slate-200 p-1.5 rounded text-xs font-medium" value={t.end_time} onChange={(e) => {
                                                                     const nt = [...formData.available_timings];
                                                                     nt[i].end_time = e.target.value;
                                                                     setFormData(p => ({ ...p, available_timings: nt }));
@@ -603,49 +621,53 @@ const ProductMaster = () => {
                                             </div>
                                         </div>
 
-                                        <div className="lg:col-span-2 premium-card bg-slate-900 p-10 rounded-[3rem] shadow-2xl overflow-hidden relative">
-                                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
-                                            <div className="relative z-10 flex flex-col h-full">
-                                                <div className="flex items-center gap-3 mb-10">
-                                                    <ImageIcon className="text-indigo-400" size={24} />
-                                                    <h4 className="text-2xl font-black text-white tracking-tight leading-none uppercase">Visual Asset</h4>
+                                        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                            <div className="flex flex-col h-full">
+                                                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                                                    <ImageIcon className="text-indigo-600" size={20} />
+                                                    <h4 className="text-lg font-bold text-slate-800">Visual Asset</h4>
                                                 </div>
                                                 <div className="flex-1 flex flex-col items-center justify-center">
-                                                    <div className="w-56 h-56 bg-white/5 rounded-[3rem] border-2 border-white/10 flex items-center justify-center relative group backdrop-blur-sm overflow-hidden mb-8">
+                                                    <div
+                                                        className="w-40 h-40 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center relative group overflow-hidden mb-6 cursor-pointer"
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                    >
                                                         {formData.image ? (
-                                                            <img src={`${getBaseUrl()}${formData.image}`} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                            <img src={`${getBaseUrl()}${formData.image}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                                         ) : (
-                                                            <Package size={80} className="text-white/10" />
+                                                            <Package size={48} className="text-slate-300" />
                                                         )}
-                                                        <label className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/60 transition-all flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100">
-                                                            <div className="text-center group-hover:translate-y-0 translate-y-4 transition-transform">
-                                                                <Upload size={40} className="text-white mx-auto mb-2" />
-                                                                <span className="text-white font-black uppercase text-[10px] tracking-widest">Update Visual</span>
+                                                        <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                                            <div className="text-center group-hover:translate-y-0 translate-y-2 transition-transform">
+                                                                <Upload size={24} className="text-white mx-auto mb-1" />
+                                                                <span className="text-white font-medium text-xs">Upload Image</span>
                                                             </div>
-                                                            <input type="file" onChange={handleFileChange} className="hidden" />
-                                                        </label>
+                                                        </div>
+                                                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" title="Upload Image" />
                                                     </div>
                                                 </div>
                                                 <div className="mt-auto">
-                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Availability Switch</p>
-                                                    <button type="button" onClick={() => setFormData(p => ({ ...p, is_active: !p.is_active }))} className={`w-full py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 ${formData.is_active ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-slate-700 text-slate-400'}`}>
-                                                        {formData.is_active ? (
-                                                            <><Eye size={20} /> Active Master</>
-                                                        ) : (
-                                                            <><EyeOff size={20} /> Dark Master</>
-                                                        )}
-                                                    </button>
+                                                    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50">
+                                                        <span className="text-sm font-semibold text-slate-700">Item Status</span>
+                                                        <button type="button" onClick={() => setFormData(p => ({ ...p, is_active: !p.is_active }))} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${formData.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
+                                                            {formData.is_active ? (
+                                                                <><CheckCircle2 size={14} /> Active</>
+                                                            ) : (
+                                                                <><EyeOff size={14} /> Inactive</>
+                                                            )}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </form>
                             </div>
-                            <div className="drawer-footer-premium !bg-slate-900 !border-white/5 !pb-10">
-                                <button type="submit" form="product-form" disabled={submitting || uploading} className="btn-premium-primary !bg-white !text-slate-900 !flex-1 !justify-center !py-6 !text-lg !rounded-[2.5rem] !shadow-none hover:!bg-indigo-500 hover:!text-white transition-all transform hover:scale-[0.98]">
-                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? 'COMMIT MODIFICATIONS' : 'DEPLOY MASTER ITEM')}
+                            <div className="drawer-footer">
+                                <button onClick={() => setShowDrawer(false)} className="btn-premium-outline">Cancel</button>
+                                <button type="submit" form="product-form" disabled={submitting || uploading} className="btn-premium-primary">
+                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? 'Save Changes' : 'Create Item')}
                                 </button>
-                                <button onClick={() => setShowDrawer(false)} className="px-10 bg-white/5 hover:bg-white/10 text-white font-black uppercase text-xs tracking-widest rounded-[2.5rem] border border-white/10 transition-all">TERMINATE</button>
                             </div>
                         </div>
                     </>

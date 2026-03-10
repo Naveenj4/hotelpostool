@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import SidebarPaymentFlow from './SidebarPaymentFlow';
 import './BillingPage.css';
-import PaymentFlow from './PaymentFlow';
 import BillPreviewModal from './BillPreviewModal';
 import { CardSkeleton } from '../../components/Skeleton';
 import {
@@ -40,9 +40,21 @@ import {
     Wallet,
     MoveHorizontal,
     ArrowLeftRight,
-    Undo2
+    Undo2,
+    Edit
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+
+// Custom Table Logo (Furniture style)
+const TableLogo = ({ size = 18, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3v18" opacity="0" />
+        <path d="M3 7h18" />
+        <path d="M6 7v10" />
+        <path d="M18 7v10" />
+        <path d="M6 11h12" />
+    </svg>
+);
 
 const BillingPage = () => {
     const navigate = useNavigate();
@@ -70,7 +82,6 @@ const BillingPage = () => {
     const [showSidebar, setShowSidebar] = useState(true);
     const [checkoutActive, setCheckoutActive] = useState(false);
     const [checkoutType, setCheckoutType] = useState('');
-    const [showMoreOptions, setShowMoreOptions] = useState(false);
     const [stepProceeded, setStepProceeded] = useState(false);
     const [extraCharges, setExtraCharges] = useState(0);
     const [discount, setDiscount] = useState(0);
@@ -94,18 +105,45 @@ const BillingPage = () => {
     const [isHoldPanelOpen, setIsHoldPanelOpen] = useState(false);
     const [heldBills, setHeldBills] = useState(() => JSON.parse(localStorage.getItem('pos_held_bills') || '[]'));
 
-    const [captains, setCaptains] = useState([]);
-    const [selectedCaptain, setSelectedCaptain] = useState("");
     const [tables, setTables] = useState([]);
     const [selectedTableId, setSelectedTableId] = useState("");
 
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
     const [customerAddress, setCustomerAddress] = useState("");
+    const [customerGst, setCustomerGst] = useState("");
+    const [showPersonsForm, setShowPersonsForm] = useState(false);
     const [showCustomerForm, setShowCustomerForm] = useState(false);
+    const [showTableForm, setShowTableForm] = useState(false);
+    const [showAlterForm, setShowAlterForm] = useState(false);
+    const [showTransferForm, setShowTransferForm] = useState(false);
+    const [showReturnForm, setShowReturnForm] = useState(false);
+    const [showSplitForm, setShowSplitForm] = useState(false);
+    const [showLoyaltyForm, setShowLoyaltyForm] = useState(false);
+    const [showMoreForm, setShowMoreForm] = useState(false);
+    const [showComplementaryForm, setShowComplementaryForm] = useState(false);
+
+    const toggleExpandableForm = (formName) => {
+        setShowPersonsForm(formName === 'PERSONS' ? !showPersonsForm : false);
+        setShowCustomerForm(formName === 'CUSTOMER' ? !showCustomerForm : false);
+        setShowTableForm(formName === 'TABLE' ? !showTableForm : false);
+        setShowAlterForm(formName === 'ALTER' ? !showAlterForm : false);
+        setShowTransferForm(formName === 'TRANSFER' ? !showTransferForm : false);
+        setShowReturnForm(formName === 'RETURN' ? !showReturnForm : false);
+        setShowSplitForm(formName === 'SPLIT' ? !showSplitForm : false);
+        setShowLoyaltyForm(formName === 'LOYALTY' ? !showLoyaltyForm : false);
+        setShowMoreForm(formName === 'MORE' ? !showMoreForm : false);
+        setShowComplementaryForm(formName === 'COMPLEMENTARY' ? !showComplementaryForm : false);
+        setStepProceeded(formName === 'PAYMODE' ? !stepProceeded : false);
+        setCheckoutActive(formName === 'PAYMODE' ? !checkoutActive : false);
+
+        setSelectionOverlay('NONE');
+        if (formName === 'ALTER' && !showAlterForm) fetchKots();
+    };
     const [isOrderListCollapsed, setIsOrderListCollapsed] = useState(false);
 
     // -- SELECTION OVERLAYS --
+    const [activeItemActions, setActiveItemActions] = useState(null);
     const [selectionOverlay, setSelectionOverlay] = useState('NONE'); // NONE, TABLE, CAPTAIN, ALTER, TRANSFER, RETURN, SPLIT
     const [selectedItemForAction, setSelectedItemForAction] = useState(null);
     const [billSearchKots, setBillSearchKots] = useState([]);
@@ -147,8 +185,12 @@ const BillingPage = () => {
 
     // Get base API URL for images
     const getBaseUrl = () => {
-        const fullUrl = import.meta.env.VITE_API_URL;
-        return fullUrl.replace('/api', '');
+        const fullUrl = import.meta.env.VITE_API_URL || '';
+        // If the URL ends with /api, remove it to get the server root for images
+        if (fullUrl.endsWith('/api')) {
+            return fullUrl.slice(0, -4);
+        }
+        return fullUrl;
     };
 
     useEffect(() => {
@@ -208,13 +250,10 @@ const BillingPage = () => {
                 const tableData = await tableRes.json();
                 if (tableData.success) setTables(tableData.data);
 
-                // 6. Fetch Captains
-                const captainRes = await fetch(`${import.meta.env.VITE_API_URL}/captains`, { headers });
-                const captainData = await captainRes.json();
-                if (captainData.success) setCaptains(captainData.data);
 
             } catch (error) {
                 console.error("Billing init error", error);
+                alert("Connection failed. If you just deployed to Render, the server might be waking up. Please refresh in 30 seconds.");
             } finally {
                 setLoading(false);
             }
@@ -265,7 +304,7 @@ const BillingPage = () => {
 
     // Create New Bill
     const createNewBill = async () => {
-        if (!selectedCounter) return;
+        if (!selectedCounter) return null;
         try {
             const savedUser = localStorage.getItem('user');
             const { token } = JSON.parse(savedUser);
@@ -286,10 +325,14 @@ const BillingPage = () => {
                 setCurrentBillId(data.data._id);
                 setBillNumber(data.data.bill_number);
                 setBillItems([]);
+                return data.data._id;
+            } else {
+                alert(data.message || "Could not create bill.");
             }
         } catch (error) {
             console.error("Create bill error", error);
         }
+        return null;
     };
 
     const createManualNewBill = async () => {
@@ -301,10 +344,14 @@ const BillingPage = () => {
     };
 
     useEffect(() => {
-        if (selectedCounter && !currentBillId) {
-            createNewBill();
-        }
-    }, [selectedCounter]);
+        // Automatically create a new bill if we have a counter but no active bill
+        const autoCreate = async () => {
+            if (selectedCounter && !currentBillId && !loading) {
+                await createNewBill();
+            }
+        };
+        autoCreate();
+    }, [selectedCounter, currentBillId, loading]);
 
     const updateItemQuantity = async (productId, delta) => {
         const item = billItems.find(i => i.product_id === productId);
@@ -340,7 +387,19 @@ const BillingPage = () => {
     };
 
     const addToBill = async (product) => {
-        if (!currentBillId) return alert("No active bill. Please wait or refresh.");
+        // Fix: Automatically try to create a bill if one is missing (e.g. initial load failed)
+        let activeId = currentBillId;
+        if (!activeId) {
+            if (!selectedCounter) {
+                alert("Please select a counter in Settings, or create one in Counter Master if none exist.");
+                return;
+            }
+            setBillNumber('Auto-Generating...');
+            activeId = await createNewBill();
+            if (!activeId) {
+                return alert("Failed to generate a bill. Please check your connection or counter setup.");
+            }
+        }
 
         const existingItem = billItems.find(item => item.product_id === product._id);
         if (existingItem) {
@@ -360,7 +419,7 @@ const BillingPage = () => {
         try {
             const savedUser = localStorage.getItem('user');
             const { token } = JSON.parse(savedUser);
-            await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}/items`, {
+            await fetch(`${import.meta.env.VITE_API_URL}/bills/${activeId}/items`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -463,8 +522,7 @@ const BillingPage = () => {
                     customer_name: customerName,
                     customer_phone: customerPhone,
                     table_no: tableNo,
-                    persons: persons,
-                    waiter_name: selectedCaptain
+                    persons: persons
                 })
             });
             const data = await res.json();
@@ -536,10 +594,20 @@ const BillingPage = () => {
         setTableNo("");
         setPersons("");
         setSelectedTableId("");
-        setSelectedCaptain("");
         setCustomerName("");
+        setShowPersonsForm(false);
+        setShowCustomerForm(false);
+        setShowTableForm(false);
+        setShowAlterForm(false);
+        setShowTransferForm(false);
+        setShowReturnForm(false);
+        setShowSplitForm(false);
+        setShowLoyaltyForm(false);
+        setShowMoreForm(false);
+        setShowComplementaryForm(false);
         setCustomerPhone("");
         setCustomerAddress("");
+        setCustomerGst("");
         setDiscount(0);
         setDeliveryCharge(0);
         setContainerCharge(0);
@@ -551,7 +619,7 @@ const BillingPage = () => {
 
     const handleTransferItem = (idx) => {
         setSelectedItemForAction(idx);
-        setSelectionOverlay('TRANSFER');
+        toggleExpandableForm('TRANSFER');
     };
 
     const handleReturnItem = (idx) => {
@@ -591,7 +659,7 @@ const BillingPage = () => {
 
     const handleSplitBill = () => {
         if (billItems.length < 2) return alert("Need at least 2 items to split!");
-        setSelectionOverlay('SPLIT');
+        toggleExpandableForm('SPLIT');
     };
 
     const loadBillForAlter = (bill) => {
@@ -696,7 +764,8 @@ const BillingPage = () => {
             {/* Top Navigation Bar */}
             <div className="pos-nav">
                 <div className="nav-left">
-                    <div className="pos-brand-info">
+                    <div className="pos-brand-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <img src="/logo.jpeg" alt="Yugam Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' }} />
                         <h2>Yugam Software</h2>
                     </div>
                 </div>
@@ -720,9 +789,6 @@ const BillingPage = () => {
                         </button>
                         <button type="button" className="nav-action-btn" onClick={handleNotificationClick} title="System Alerts">
                             NOTIFICATION
-                        </button>
-                        <button type="button" className="nav-action-btn" onClick={logout} title="Sign Out">
-                            LOGOUT
                         </button>
                     </div>
 
@@ -754,6 +820,16 @@ const BillingPage = () => {
                                 </div>
 
                                 <div className="settings-option">
+                                    <span>Counter</span>
+                                    <select value={selectedCounter} onChange={(e) => setSelectedCounter(e.target.value)}>
+                                        <option value="" disabled>Select Counter</option>
+                                        {counters.map(c => (
+                                            <option key={c._id} value={c._id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="settings-option">
                                     <span>Loyalty System</span>
                                     <label className="switch">
                                         <input type="checkbox" checked={loyaltyEnabled} onChange={() => setLoyaltyEnabled(!loyaltyEnabled)} />
@@ -772,20 +848,17 @@ const BillingPage = () => {
                                     </label>
                                 </div>
                                 <div className="settings-divider"></div>
-                                <div className="settings-option">
-                                    <span>Swiggy Sync</span>
-                                    <span className="badge-beta">PRO</span>
-                                </div>
-                                <div className="settings-option">
-                                    <span>Zomato Sync</span>
-                                    <span className="badge-beta">PRO</span>
-                                </div>
-                                <div className="settings-divider"></div>
                                 <button className="set-logout-btn" onClick={logout}>
                                     <LogOut size={16} /> Logout
                                 </button>
                             </div>
                         )}
+                    </div>
+
+                    <div className="nav-actions-group">
+                        <button type="button" className="nav-action-btn" onClick={logout} title="Sign Out">
+                            LOGOUT
+                        </button>
                     </div>
                 </div>
             </div>
@@ -831,7 +904,7 @@ const BillingPage = () => {
                     {/* 4. Order Mode Selector */}
                     <div className="mode-selector-header">
                         {[
-                            { id: 'DINE_IN', label: 'Dine In', icon: <Users2 size={16} /> },
+                            { id: 'DINE_IN', label: 'Dine In', icon: <TableLogo size={16} /> },
                             { id: 'PARCEL', label: 'Parcel', icon: <Package size={16} /> },
                             { id: 'DELIVERY', label: 'Delivery', icon: <Truck size={16} /> },
                             { id: 'PARTY', label: 'Party', icon: <Gift size={16} /> }
@@ -851,460 +924,505 @@ const BillingPage = () => {
 
 
             {/* Main POS Container */}
-            {
-                checkoutActive ? (
-                    <div className="pos-checkout-overlay">
-                        <PaymentFlow
-                            grandTotal={grandTotal}
-                            onPaymentSubmit={handlePaymentSubmit}
-                            onCancel={() => { setCheckoutActive(false); setStepProceeded(false); }}
-                            loading={paymentLoading}
-                            initialType={checkoutType}
-                        />
-                    </div>
-                ) : (
-                    <div className={`pos-main ${showSidebar ? '' : 'full-width'}`}>
-                        {/* Mobile Sidebar Overlay */}
-                        {showSidebar && window.innerWidth <= 768 && (
-                            <div className="mobile-overlay" onClick={() => setShowSidebar(false)} style={{ zIndex: 1999 }}></div>
-                        )}
+            <div className={`pos-main ${showSidebar ? '' : 'full-width'}`}>
+                {/* Mobile Sidebar Overlay */}
+                {showSidebar && window.innerWidth <= 768 && (
+                    <div className="mobile-overlay" onClick={() => setShowSidebar(false)} style={{ zIndex: 1999 }}></div>
+                )}
 
-                        {/* 1. Category Sidebar (Left) - Only if Layout 1 */}
-                        {billingLayout === 'SIDEBAR' && (
-                            <div className={`category-sidebar ${showSidebar ? 'open' : 'closed'}`}>
-                                <div className="sidebar-header">
-                                    <span>CATEGORY</span>
-                                    <button onClick={() => setShowSidebar(false)} className="icon-btn-sm">
-                                        <ArrowLeft size={16} />
-                                    </button>
-                                </div>
-                                <div className="category-list">
+                {/* 1. Category Sidebar (Left) - Only if Layout 1 */}
+                {billingLayout === 'SIDEBAR' && (
+                    <div className={`category-sidebar ${showSidebar ? 'open' : 'closed'}`}>
+                        <div className="sidebar-header">
+                            <span>CATEGORY</span>
+                            <button onClick={() => setShowSidebar(false)} className="icon-btn-sm">
+                                <ArrowLeft size={16} />
+                            </button>
+                        </div>
+                        <div className="category-list">
+                            <button
+                                className={`category-item ${activeCategory === "ALL" ? 'active' : ''}`}
+                                onClick={() => setActiveCategory("ALL")}
+                            >
+                                All Items <ChevronDown size={14} />
+                            </button>
+                            {categories.map(cat => (
+                                <button
+                                    key={cat._id}
+                                    className={`category-item ${activeCategory === cat.name ? 'active' : ''}`}
+                                    onClick={() => setActiveCategory(cat.name)}
+                                >
+                                    {cat.name} <ChevronDown size={14} />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* 2. Product Area (Middle) */}
+                <div className="product-area">
+                    <>
+                        {/* Top Category Header - Only if Layout 2 */}
+                        {billingLayout === 'TOP_HEADER' && (
+                            <div className="top-category-header">
+                                <button
+                                    className={`top-cat-btn ${activeCategory === "ALL" ? 'active' : ''}`}
+                                    onClick={() => setActiveCategory("ALL")}
+                                >
+                                    ALL ITEMS
+                                </button>
+                                {categories.map(cat => (
                                     <button
-                                        className={`category-item ${activeCategory === "ALL" ? 'active' : ''}`}
-                                        onClick={() => setActiveCategory("ALL")}
+                                        key={cat._id}
+                                        className={`top-cat-btn ${activeCategory === cat.name ? 'active' : ''}`}
+                                        onClick={() => setActiveCategory(cat.name)}
                                     >
-                                        All Items <ChevronDown size={14} />
+                                        {cat.name}
                                     </button>
-                                    {categories.map(cat => (
-                                        <button
-                                            key={cat._id}
-                                            className={`category-item ${activeCategory === cat.name ? 'active' : ''}`}
-                                            onClick={() => setActiveCategory(cat.name)}
-                                        >
-                                            {cat.name} <ChevronDown size={14} />
-                                        </button>
-                                    ))}
-                                </div>
+                                ))}
                             </div>
                         )}
 
-                        {/* 2. Product Area (Middle) */}
-                        <div className="product-area">
-                            {checkoutActive ? (
-                                <PaymentFlow
-                                    grandTotal={grandTotal}
-                                    onPaymentSubmit={handlePaymentSubmit}
-                                    onCancel={() => { setCheckoutActive(false); setCheckoutType(''); setStepProceeded(false); }}
-                                    loading={paymentLoading}
-                                    initialType={checkoutType}
-                                />
-                            ) : (
-                                <>
-                                    {/* Top Category Header - Only if Layout 2 */}
-                                    {billingLayout === 'TOP_HEADER' && (
-                                        <div className="top-category-header">
-                                            <button
-                                                className={`top-cat-btn ${activeCategory === "ALL" ? 'active' : ''}`}
-                                                onClick={() => setActiveCategory("ALL")}
-                                            >
-                                                ALL ITEMS
-                                            </button>
-                                            {categories.map(cat => (
-                                                <button
-                                                    key={cat._id}
-                                                    className={`top-cat-btn ${activeCategory === cat.name ? 'active' : ''}`}
-                                                    onClick={() => setActiveCategory(cat.name)}
-                                                >
-                                                    {cat.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                        {billingLayout === 'SIDEBAR' && !showSidebar && (
+                            <button className="toggle-sidebar-btn" onClick={() => setShowSidebar(true)}>
+                                <MenuIcon size={18} /> <span>Show Categories</span>
+                            </button>
+                        )}
 
-                                    {billingLayout === 'SIDEBAR' && !showSidebar && (
-                                        <button className="toggle-sidebar-btn" onClick={() => setShowSidebar(true)}>
-                                            <MenuIcon size={18} /> <span>Show Categories</span>
-                                        </button>
-                                    )}
-
-                                    <div className="product-scroll-grid">
-                                        {loading ? (
-                                            <CardSkeleton count={12} />
-                                        ) : filteredProducts.length === 0 ? (
-                                            <div className="flex-center h-full text-gray-400 w-full py-20">
-                                                No products found in this category.
+                        <div className="product-scroll-grid">
+                            {loading ? (
+                                <CardSkeleton count={12} />
+                            ) : filteredProducts.length === 0 ? (
+                                <div className="flex-center h-full text-gray-400 w-full py-20">
+                                    No products found in this category.
+                                </div>
+                            ) : filteredProducts.map(product => (
+                                <div
+                                    key={product._id}
+                                    className="pos-product-card"
+                                    onClick={() => addToBill(product)}
+                                >
+                                    <div className="p-image-container">
+                                        {product.image ? (
+                                            <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
+                                        ) : (
+                                            <div className="p-img-placeholder">
+                                                <ShoppingBag size={32} color="#cbd5e0" />
                                             </div>
-                                        ) : filteredProducts.map(product => (
-                                            <div
-                                                key={product._id}
-                                                className="pos-product-card"
-                                                onClick={() => addToBill(product)}
-                                            >
-                                                <div className="p-image-container">
-                                                    {product.image ? (
-                                                        <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
-                                                    ) : (
-                                                        <div className="p-img-placeholder">
-                                                            <ShoppingBag size={32} color="#cbd5e0" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="p-details">
-                                                    <div className="p-name">{product.name}</div>
-                                                    <div className="p-price">₹{product.selling_price}</div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                        )}
                                     </div>
-
-
-                                </>
-                            )}
+                                    <div className="p-details">
+                                        <div className="p-name">{product.name}</div>
+                                        <div className="p-price">₹{product.selling_price}</div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
-                        {/* 3. Bill Panel (Right) */}
-                        <div className="bill-sidebar">
-                            {/* Meta Icons row from reference image */}
-                            <div className="sidebar-meta-icons">
-                                <button className={`meta-icon-btn ${selectionOverlay === 'TABLE' ? 'active' : ''}`} onClick={() => setSelectionOverlay('TABLE')}>
-                                    <div className="icon-bg"><Table size={18} /></div>
-                                    <span>{tableNo || 'TABLE'}</span>
-                                </button>
-                                <button className={`meta-icon-btn ${selectionOverlay === 'CAPTAIN' ? 'active' : ''}`} onClick={() => setSelectionOverlay('CAPTAIN')}>
-                                    <div className="icon-bg"><UserCheck size={18} /></div>
-                                    <span>{selectedCaptain || 'CAPTAIN'}</span>
-                                </button>
-                                <button className={`meta-icon-btn ${showCustomerForm ? 'active' : ''}`} onClick={() => setShowCustomerForm(!showCustomerForm)}>
-                                    <div className="icon-bg"><User size={18} /></div>
-                                    <span>CUSTOMER</span>
-                                </button>
-                                <button className={`meta-icon-btn ${selectionOverlay === 'ALTER' ? 'active' : ''}`} onClick={() => { fetchKots(); setSelectionOverlay('ALTER'); }}>
-                                    <div className="icon-bg"><MoveHorizontal size={18} /></div>
-                                    <span>ALTER</span>
-                                </button>
-                                <button className={`meta-icon-btn ${selectionOverlay === 'TRANSFER' ? 'active' : ''}`} onClick={() => setSelectionOverlay('TRANSFER')}>
-                                    <div className="icon-bg"><ArrowLeftRight size={18} /></div>
-                                    <span>TRANSFER</span>
-                                </button>
-                                <button className={`meta-icon-btn ${selectionOverlay === 'RETURN' ? 'active' : ''}`} onClick={() => setSelectionOverlay('RETURN')}>
-                                    <div className="icon-bg"><Undo2 size={18} /></div>
-                                    <span>RETURN</span>
-                                </button>
-                            </div>
 
-                            {/* Customer Form Section */}
-                            {showCustomerForm && (
-                                <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
-                                    <div className="form-grid">
-                                        <div className="form-group">
-                                            <label>Name</label>
-                                            <input type="text" placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Phone</label>
-                                            <input type="text" placeholder="Phone Number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-                                        </div>
-                                        <div className="form-group full-width">
-                                            <label>Address</label>
-                                            <textarea rows="2" placeholder="Delivery Address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)}></textarea>
-                                        </div>
-                                    </div>
+                    </>
+                </div>
+
+                {/* 3. Bill Panel (Right) */}
+                <div className="bill-sidebar">
+                    {/* Meta Icons row from reference image */}
+                    <div className="sidebar-meta-icons">
+                        <button className={`meta-icon-btn ${showTableForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('TABLE')}>
+                            <div className="icon-bg"><TableLogo size={18} /></div>
+                            <span>{tableNo || 'TABLE'}</span>
+                        </button>
+                        <button className={`meta-icon-btn ${showPersonsForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('PERSONS')}>
+                            <div className="icon-bg"><Users size={18} /></div>
+                            <span>{persons ? `${persons} PAX` : 'PERSONS'}</span>
+                        </button>
+                        <button className={`meta-icon-btn ${showCustomerForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('CUSTOMER')}>
+                            <div className="icon-bg"><User size={18} /></div>
+                            <span>CUSTOMER</span>
+                        </button>
+                        <button className={`meta-icon-btn ${showAlterForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('ALTER')}>
+                            <div className="icon-bg"><Edit size={18} /></div>
+                            <span>ALTER</span>
+                        </button>
+                        <button className={`meta-icon-btn ${showTransferForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('TRANSFER')}>
+                            <div className="icon-bg"><ArrowLeftRight size={18} /></div>
+                            <span>TRANSFER</span>
+                        </button>
+                        <button className={`meta-icon-btn ${showReturnForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('RETURN')}>
+                            <div className="icon-bg"><Undo2 size={18} /></div>
+                            <span>RETURN</span>
+                        </button>
+                    </div>
+
+                    {/* Table Form Section */}
+                    {showTableForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div className="selection-grid-horizontal" style={{ padding: '0 15px 15px', display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'thin' }}>
+                                {tables.map(t => (
+                                    <button
+                                        key={t._id}
+                                        className={`selection-card ${tableNo === t.table_no ? 'active' : ''}`}
+                                        onClick={() => { setTableNo(t.table_no); setSelectedTableId(t._id); setShowTableForm(false); }}
+                                        style={{
+                                            flex: '0 0 auto',
+                                            padding: '4px 8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            background: tableNo === t.table_no ? 'var(--primary)' : '#f8fafc',
+                                            color: tableNo === t.table_no ? '#fff' : '#1e293b',
+                                            borderRadius: '4px',
+                                            border: '1px solid #e2e8f0',
+                                            transition: 'all 0.2s',
+                                            minWidth: '70px',
+                                            justifyContent: 'center',
+                                            height: '28px'
+                                        }}
+                                    >
+                                        <TableLogo size={12} />
+                                        <span style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}>{t.table_no}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Persons Form Section */}
+                    {showPersonsForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div className="form-grid">
+                                <div className="form-group full-width">
+                                    <label>Number of Persons (PAX)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="Enter number of persons"
+                                        value={persons}
+                                        onChange={(e) => setPersons(e.target.value)}
+                                    />
                                 </div>
-                            )}
-
-                            {/* Item List */}
-                            <div className={`order-items-header ${showRateColumn ? 'with-rate' : 'no-rate'}`}>
-                                <span className="col-name">ITEM</span>
-                                <span className="col-qty">QTY</span>
-                                {showRateColumn && <span className="col-rate">RATE</span>}
-                                <span className="col-amt">AMT</span>
-                                <button className="collapse-toggle-btn" onClick={() => setIsOrderListCollapsed(!isOrderListCollapsed)}>
-                                    {isOrderListCollapsed ? <ChevronDown size={14} /> : <ArrowLeft className="rotate-90" size={14} />}
-                                </button>
                             </div>
+                        </div>
+                    )}
 
-                            {/* Scrollable area: items list + bill footer together */}
-                            <div className={`bill-scroll-area ${isOrderListCollapsed ? 'collapsed' : ''}`}>
-                                <div className="order-items-list">
-                                    {billItems.length === 0 ? (
-                                        <div className="empty-cart">
-                                            <ShoppingBag size={48} />
-                                            <p>Order is empty</p>
+                    {/* Customer Form Section */}
+                    {showCustomerForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div className="form-grid">
+                                <div className="form-group">
+                                    <label>Name</label>
+                                    <input type="text" placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                </div>
+                                <div className="form-group">
+                                    <label>Phone</label>
+                                    <input type="text" placeholder="Phone Number" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                                </div>
+                                <div className="form-group">
+                                    <label>Address</label>
+                                    <textarea rows="1" placeholder="Address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} style={{ minHeight: '38px' }}></textarea>
+                                </div>
+                                <div className="form-group">
+                                    <label>GST Number</label>
+                                    <input type="text" placeholder="GSTIN" value={customerGst} onChange={(e) => setCustomerGst(e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Alter Form Section */}
+                    {showAlterForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div style={{ padding: '0 15px 15px' }}>
+                                <div className="search-box" style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', marginBottom: '10px' }}>
+                                    <Search size={16} color="#94a3b8" />
+                                    <input type="text" placeholder="Search by Table, Bill No..." value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', marginLeft: '8px', width: '100%', fontSize: '13px' }} />
+                                </div>
+                                <div className="alter-list-container" style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {billSearchKots.filter(b => b.bill_number.includes(billSearchQuery) || b.table_no?.includes(billSearchQuery) || b.customer_name?.includes(billSearchQuery)).map(b => (
+                                        <div key={b._id} className="alter-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                                            <div className="bill-info" style={{ display: 'flex', gap: '10px', fontSize: '13px', fontWeight: 'bold' }}>
+                                                <span style={{ color: 'var(--primary)' }}>#{b.bill_number}</span>
+                                                <span>Table: {b.table_no || 'N/A'}</span>
+                                                <span style={{ color: '#64748b' }}>{b.customer_name || 'Walk-in'}</span>
+                                            </div>
+                                            <button className="alter-action-btn" onClick={() => { loadBillForAlter(b); setShowAlterForm(false); }} style={{ background: 'var(--primary)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'black', letterSpacing: '0.5px' }}>ALTER BILL</button>
                                         </div>
-                                    ) : billItems.map((item, idx) => (
-                                        <div key={idx} className={`order-item-row ${showRateColumn ? 'with-rate' : 'no-rate'} ${item.is_complementary ? 'complementary' : ''}`}>
-                                            <div className="item-name-cell">
-                                                <div className="item-name-wrap">
-                                                    <span>{item.name}</span>
-                                                    <button
-                                                        className={`comp-toggle ${item.is_complementary ? 'active' : ''}`}
-                                                        onClick={() => toggleComplementary(idx)}
-                                                        title="Complementary"
-                                                    >
-                                                        <Gift size={12} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="item-qty-cell">
-                                                <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
-                                                <span>{item.quantity}</span>
-                                                <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
-                                            </div>
-                                            {showRateColumn && <div className="item-rate">{item.is_complementary ? 0 : item.unit_price}</div>}
-                                            <div className="item-amt">{item.is_complementary ? 0 : item.total_price}</div>
-                                            <div className="item-actions-cell">
-                                                <button className="row-action-btn" onClick={() => handleTransferItem(idx)} title="Transfer Item"><ArrowLeftRight size={14} /></button>
-                                                <button className="row-action-btn" onClick={() => handleReturnItem(idx)} title="Return Item"><Undo2 size={14} /></button>
-                                                <button className="remove-btn" onClick={() => removeFromBill(idx)} title="Remove Item"><Trash2 size={14} /></button>
-                                            </div>
+                                    ))}
+                                    {billSearchKots.length === 0 && <div style={{ textAlign: 'center', padding: '20px', fontSize: '13px', color: '#94a3b8' }}>No active bills found.</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Transfer Form Section */}
+                    {showTransferForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div style={{ padding: '0 15px 15px' }}>
+                                <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px', fontWeight: 'bold' }}>Select destination table to transfer <strong>{selectedItemForAction !== null ? billItems[selectedItemForAction]?.name : 'an item'}</strong>.</p>
+                                <div className="selection-grid tables" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                                    {tables.map(t => (
+                                        <button key={t._id} onClick={() => { alert(`Transferred item to Table ${t.table_no}`); removeFromBill(selectedItemForAction); setShowTransferForm(false); }} style={{ padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc', color: '#1e293b', borderRadius: '8px', border: '1px solid #e2e8f0', transition: 'all 0.2s' }}>
+                                            <Table size={20} />
+                                            <span style={{ fontSize: '12px', fontWeight: '700', marginTop: '4px' }}>{t.table_no}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Return Form Section */}
+                    {showReturnForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div style={{ padding: '0 15px 15px' }}>
+                                <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px', fontWeight: 'bold' }}>Specify return details for selected items.</p>
+                                <textarea placeholder="Reason for return..." style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', height: '60px', resize: 'none', marginBottom: '10px', fontSize: '13px' }}></textarea>
+                                <button onClick={() => { alert("Return logged successfully."); setShowReturnForm(false); }} style={{ width: '100%', background: '#ef4444', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'black', letterSpacing: '0.5px' }}>LOG RETURN</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Split Form Section */}
+                    {showSplitForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div style={{ padding: '0 15px 15px' }}>
+                                <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px', fontWeight: 'bold' }}>Select items to move to a new bill.</p>
+                                <div className="split-items-list" style={{ maxHeight: '150px', overflowY: 'auto', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    {billItems.map((item, i) => (
+                                        <div key={i} className="split-item-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: '#f8fafc', borderRadius: '6px', fontSize: '13px', border: '1px solid #e2e8f0' }}>
+                                            <span style={{ fontWeight: '500' }}>{item.name} (x{item.quantity})</span>
+                                            <input type="checkbox" style={{ transform: 'scale(1.2)' }} />
                                         </div>
                                     ))}
                                 </div>
+                                <button onClick={() => { alert("Bill split successfully."); setShowSplitForm(false); }} style={{ width: '100%', background: 'var(--primary)', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'black', letterSpacing: '0.5px' }}>CREATE NEW BILL</button>
+                            </div>
+                        </div>
+                    )}
 
-                                {/* Bill Footer */}
-                                <div className="order-footer">
-                                    <div className="summary-section">
-                                        <div className="sum-row">
-                                            <span>Subtotal ({billItems.length} items)</span>
-                                            <span className="mono">₹{subTotal.toFixed(2)}</span>
+                    {/* Item List */}
+                    <div className={`order-items-header ${showRateColumn ? 'with-rate' : 'no-rate'}`}>
+                        <span className="col-name">ITEM</span>
+                        <span className="col-qty">QTY</span>
+                        {showRateColumn && <span className="col-rate">RATE</span>}
+                        <span className="col-amt">AMT</span>
+                        <button className="collapse-toggle-btn" onClick={() => setIsOrderListCollapsed(!isOrderListCollapsed)}>
+                            {isOrderListCollapsed ? <ChevronDown size={14} /> : <ArrowLeft className="rotate-90" size={14} />}
+                        </button>
+                    </div>
+
+                    {/* Scrollable area: items list + bill footer together */}
+                    <div className="bill-scroll-area">
+                        <div className={`order-items-list ${isOrderListCollapsed ? 'hidden' : ''}`}>
+                            {billItems.length === 0 ? (
+                                <div className="empty-cart">
+                                    <ShoppingBag size={48} />
+                                    <p>Order is empty</p>
+                                </div>
+                            ) : billItems.map((item, idx) => (
+                                <div key={idx} className={`order-item-row ${showRateColumn ? 'with-rate' : 'no-rate'} ${item.is_complementary ? 'complementary' : ''}`}>
+                                    <div className="item-name-cell">
+                                        <div className="item-name-wrap">
+                                            <span>{item.name}</span>
+                                        </div>
+                                    </div>
+                                    <div className="item-qty-cell">
+                                        <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
+                                        <span>{item.quantity}</span>
+                                        <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
+                                    </div>
+                                    {showRateColumn && <div className="item-rate">{item.is_complementary ? 0 : item.unit_price}</div>}
+                                    <div className="item-amt">{item.is_complementary ? 0 : item.total_price}</div>
+                                    <div className="item-actions-cell">
+                                        {activeItemActions === idx && (
+                                            <div className="extra-actions-layer">
+                                                <button className="row-action-btn" onClick={() => handleTransferItem(idx)} title="Transfer Item"><ArrowLeftRight size={14} /></button>
+                                                <button className="row-action-btn" onClick={() => handleReturnItem(idx)} title="Return Item"><Undo2 size={14} /></button>
+                                            </div>
+                                        )}
+                                        <button
+                                            className={`item-action-toggle ${activeItemActions === idx ? 'active' : ''}`}
+                                            onClick={() => setActiveItemActions(activeItemActions === idx ? null : idx)}
+                                            title="Action Toggle"
+                                        >
+                                            <MoreHorizontal size={14} />
+                                        </button>
+                                        <button
+                                            className={`comp-toggle-sm ${item.is_complementary ? 'active' : ''}`}
+                                            onClick={() => toggleComplementary(idx)}
+                                            title="Complementary"
+                                        >
+                                            <Gift size={14} />
+                                        </button>
+                                        <button className="remove-btn" onClick={() => removeFromBill(idx)} title="Remove Item"><Trash2 size={14} /></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Bill Footer */}
+                        <div className="order-footer">
+                            <div className="summary-section">
+                                <div className={`collapsible-summary-area ${isOrderListCollapsed ? 'hidden' : ''}`}>
+                                    <div className="sum-row">
+                                        <span>Subtotal ({billItems.length} items)</span>
+                                        <span className="mono">₹{subTotal.toFixed(2)}</span>
+                                    </div>
+
+                                    {/* Detailed Summary Sections */}
+                                    <div className="summary-details-grid">
+                                        <div className="sum-detail-row">
+                                            <label>Discount</label>
+                                            <div className="input-with-toggle">
+                                                <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+                                                <button onClick={() => setDiscountType(discountType === 'PERCENT' ? 'FIXED' : 'PERCENT')}>
+                                                    {discountType === 'PERCENT' ? '%' : '₹'}
+                                                </button>
+                                            </div>
+                                            <span className="calc-val">- ₹{billCalculations.discountAmount.toFixed(2)}</span>
                                         </div>
 
-                                        {/* Detailed Summary Sections */}
-                                        <div className="summary-details-grid">
+                                        {(orderMode === 'DELIVERY' || showMoreForm) && (
                                             <div className="sum-detail-row">
-                                                <label>Discount</label>
-                                                <div className="input-with-toggle">
-                                                    <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
-                                                    <button onClick={() => setDiscountType(discountType === 'PERCENT' ? 'FIXED' : 'PERCENT')}>
-                                                        {discountType === 'PERCENT' ? '%' : '₹'}
-                                                    </button>
-                                                </div>
-                                                <span className="calc-val">- ₹{billCalculations.discountAmount.toFixed(2)}</span>
-                                            </div>
-
-                                            {(orderMode === 'DELIVERY' || showMoreOptions) && (
-                                                <div className="sum-detail-row">
-                                                    <label>Deliv. Chg</label>
-                                                    <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} />
-                                                    <span className="calc-val">+ ₹{billCalculations.deliveryCharge.toFixed(2)}</span>
-                                                </div>
-                                            )}
-
-                                            {(orderMode === 'PARCEL' || showMoreOptions) && (
-                                                <div className="sum-detail-row">
-                                                    <label>Pack. Chg</label>
-                                                    <input type="number" value={containerCharge} onChange={(e) => setContainerCharge(e.target.value)} />
-                                                    <span className="calc-val">+ ₹{billCalculations.containerCharge.toFixed(2)}</span>
-                                                </div>
-                                            )}
-
-                                            <div className="sum-detail-row">
-                                                <label>Tax ({gstPercentage}%)</label>
-                                                <div className="empty-input"></div>
-                                                <span className="calc-val">+ ₹{taxAmount.toFixed(2)}</span>
-                                            </div>
-
-                                            {roundOff !== 0 && (
-                                                <div className="sum-detail-row">
-                                                    <label>Round Off</label>
-                                                    <div className="empty-input"></div>
-                                                    <span className="calc-val">{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {showLoyalty && (
-                                            <div className="loyalty-promo-compact fade-in">
-                                                <div className="loyalty-input">
-                                                    <Gift size={14} />
-                                                    <input type="text" placeholder="Loyalty / Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
-                                                    <button onClick={applyPromoCode}>Apply</button>
-                                                </div>
+                                                <label>Deliv. Chg</label>
+                                                <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} />
+                                                <span className="calc-val">+ ₹{billCalculations.deliveryCharge.toFixed(2)}</span>
                                             </div>
                                         )}
 
-                                        <div className="sum-total-enhanced">
-                                            <div className="total-label">
-                                                <span className="main-total">TOTAL PAYABLE</span>
-                                                <span className="items-count">{billItems.length} Items</span>
+                                        {(orderMode === 'PARCEL' || showMoreForm) && (
+                                            <div className="sum-detail-row">
+                                                <label>Pack. Chg</label>
+                                                <input type="number" value={containerCharge} onChange={(e) => setContainerCharge(e.target.value)} />
+                                                <span className="calc-val">+ ₹{billCalculations.containerCharge.toFixed(2)}</span>
                                             </div>
-                                            <span className="total-value">₹{grandTotal.toFixed(2)}</span>
-                                        </div>
-                                    </div>
+                                        )}
 
-                                    {/* Top Control Buttons */}
-                                    <div className="billing-actions-panel">
-                                        <div className="panel-controls">
-                                            <button className={`control-btn ${showLoyalty ? 'active' : ''}`} onClick={() => setShowLoyalty(!showLoyalty)}>
-                                                <Gift size={15} /> Loyalty
-                                            </button>
-                                            <button className="control-btn" onClick={toggleFullBillComplimentary}>
-                                                <Gift size={15} /> Comp.
-                                            </button>
-                                            <button className={`control-btn ${showMoreOptions ? 'active' : ''}`} onClick={() => setShowMoreOptions(!showMoreOptions)}>
-                                                <MoreHorizontal size={15} /> More
-                                            </button>
-                                            <button className="control-btn paymode-btn" onClick={() => setStepProceeded(true)} disabled={billItems.length === 0}>
-                                                <CreditCard size={15} /> PAYMODE
-                                            </button>
+                                        <div className="sum-detail-row">
+                                            <label>Tax ({gstPercentage}%)</label>
+                                            <div className="empty-input"></div>
+                                            <span className="calc-val">+ ₹{taxAmount.toFixed(2)}</span>
                                         </div>
-                                    </div>
 
-                                    {/* Fast Payment - Show only after Check Out/Proceed */}
-                                    {stepProceeded && (
-                                        <div className="fast-payment fade-in">
-                                            <div className="pay-methods-grid">
-                                                <button className="pay-method cash" onClick={() => handlePayment('CASH')}><Wallet size={20} /> CASH</button>
-                                                <button className="pay-method card" onClick={() => handlePayment('CARD')}><CreditCard size={20} /> CARD</button>
-                                                <button className="pay-method upi" onClick={() => handlePayment('UPI')}><Smartphone size={20} /> UPI</button>
+                                        {roundOff !== 0 && (
+                                            <div className="sum-detail-row">
+                                                <label>Round Off</label>
+                                                <div className="empty-input"></div>
+                                                <span className="calc-val">{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
                                             </div>
-                                            <button className="cancel-proceed-btn" onClick={() => setStepProceeded(false)}>
-                                                <Undo2 size={16} /> BACK TO EDIT
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    <div className="footer-actions-grid">
-                                        <button type="button" className="action-btn hold-bill" onClick={holdCurrentBill} title="Hold this bill for later">
-                                            <Pause size={18} /> HOLD
-                                        </button>
-                                        <button type="button" className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
-                                            <Printer size={18} /> KOT PRINT
-                                        </button>
-                                        <button type="button" className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
-                                            <Save size={18} /> SAVE
-                                        </button>
-                                        <button type="button" className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
-                                            <Printer size={18} /> SAVE & PRINT
-                                        </button>
+                                        )}
                                     </div>
                                 </div>
+
+                                {showLoyaltyForm && (
+                                    <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
+                                        <div className="loyalty-promo-compact" style={{ padding: '15px' }}>
+                                            <div className="loyalty-input">
+                                                <Gift size={14} />
+                                                <input type="text" placeholder="Loyalty / Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
+                                                <button onClick={() => { applyPromoCode(); toggleExpandableForm('LOYALTY'); }}>Apply</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {showComplementaryForm && (
+                                    <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
+                                        <div className="comp-form-internal" style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Mark All Items as Complementary?</span>
+                                            <button
+                                                onClick={() => { toggleFullBillComplimentary(); toggleExpandableForm('COMPLEMENTARY'); }}
+                                                style={{ background: '#f97316', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '900', fontSize: '0.75rem' }}
+                                            >
+                                                TOGGLE ALL
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {showMoreForm && (
+                                    <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
+                                        <div className="form-grid" style={{ padding: '15px' }}>
+                                            <div className="form-group">
+                                                <label>Delivery Charge (₹)</label>
+                                                <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Packaging Charge (₹)</label>
+                                                <input type="number" value={containerCharge} onChange={(e) => setContainerCharge(e.target.value)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="sum-total-enhanced">
+                                    <div className="total-label">
+                                        <span className="main-total">TOTAL PAYABLE</span>
+                                        <span className="items-count">{billItems.length} Items</span>
+                                    </div>
+                                    <span className="total-value">₹{grandTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {/* Top Control Buttons */}
+                            <div className="billing-actions-panel">
+                                <div className="panel-controls">
+                                    <button className={`control-btn ${showLoyaltyForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('LOYALTY')}>
+                                        <Gift size={15} /> Loyalty
+                                    </button>
+                                    <button className={`control-btn ${showComplementaryForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COMPLEMENTARY')}>
+                                        <Gift size={15} /> COMPLEMENTARY
+                                    </button>
+                                    <button className={`control-btn ${showMoreForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('MORE')}>
+                                        <MoreHorizontal size={15} /> More
+                                    </button>
+                                    <button className={`control-btn paymode-btn ${stepProceeded ? 'active' : ''}`} onClick={() => toggleExpandableForm('PAYMODE')} disabled={billItems.length === 0}>
+                                        <CreditCard size={15} /> PAYMODE
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Integrated Sidebar Payment Flow */}
+                            {stepProceeded && (
+                                <SidebarPaymentFlow
+                                    grandTotal={grandTotal}
+                                    onPaymentSubmit={handlePaymentSubmit}
+                                    onCancel={() => setStepProceeded(false)}
+                                    loading={paymentLoading}
+                                />
+                            )}
+
+                            <div className="footer-actions-grid">
+                                <button type="button" className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
+                                    <Save size={18} /> SAVE
+                                </button>
+                                <button type="button" className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
+                                    <Printer size={18} /> SAVE & PRINT
+                                </button>
+                                <button type="button" className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
+                                    <Printer size={18} /> KOT PRINT
+                                </button>
+                                <button type="button" className="action-btn hold-bill" onClick={holdCurrentBill} title="Hold this bill for later">
+                                    <Pause size={18} /> HOLD
+                                </button>
                             </div>
                         </div>
                     </div>
-                )
-            }
-
-            {/* Selection Overlays */}
-            {selectionOverlay !== 'NONE' && (
-                <div className="selection-overlay-portal">
-                    <div className="selection-modal animate-in zoom-in-95 duration-200">
-                        <div className="selection-header">
-                            <h3>{selectionOverlay} SELECTION</h3>
-                            <button className="close-selection" onClick={() => setSelectionOverlay('NONE')}><Plus className="rotate-45" /></button>
-                        </div>
-
-                        <div className="selection-body">
-                            {selectionOverlay === 'TABLE' && (
-                                <div className="selection-grid tables">
-                                    {tables.map(t => (
-                                        <button key={t._id} className={`selection-card ${tableNo === t.table_no ? 'active' : ''}`} onClick={() => { setTableNo(t.table_no); setSelectedTableId(t._id); setSelectionOverlay('NONE'); }}>
-                                            <Table size={24} />
-                                            <span>{t.table_no}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-
-                            {selectionOverlay === 'CAPTAIN' && (
-                                <div className="selection-list captains">
-                                    {captains.map(c => (
-                                        <button key={c._id} className={`selection-row ${selectedCaptain === c.name ? 'active' : ''}`} onClick={() => { setSelectedCaptain(c.name); setSelectionOverlay('NONE'); }}>
-                                            <UserCheck size={20} />
-                                            <span>{c.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-
-                            {selectionOverlay === 'ALTER' && (
-                                <div className="selection-list alter-bills">
-                                    <div className="search-box">
-                                        <Search size={18} />
-                                        <input type="text" placeholder="Search by Table, Bill No or Customer..." value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
-                                    </div>
-                                    <div className="alter-list-container">
-                                        {billSearchKots.filter(b => b.bill_number.includes(billSearchQuery) || b.table_no?.includes(billSearchQuery) || b.customer_name?.includes(billSearchQuery)).map(b => (
-                                            <div key={b._id} className="alter-row">
-                                                <div className="bill-info">
-                                                    <span className="b-no">#{b.bill_number}</span>
-                                                    <span className="b-table">Table: {b.table_no || 'N/A'}</span>
-                                                    <span className="b-cust">{b.customer_name || 'Walk-in'}</span>
-                                                </div>
-                                                <button className="alter-action-btn" onClick={() => loadBillForAlter(b)}>ALTER BILL</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {selectionOverlay === 'TRANSFER' && (
-                                <div className="selection-form transfer-box">
-                                    <p className="instr">Select destination table to transfer <strong>{billItems[selectedItemForAction]?.name}</strong>.</p>
-                                    <div className="selection-grid tables">
-                                        {tables.map(t => (
-                                            <button key={t._id} className="selection-card" onClick={() => {
-                                                alert(`Transferred item to Table ${t.table_no}`);
-                                                removeFromBill(selectedItemForAction);
-                                                setSelectionOverlay('NONE');
-                                            }}>
-                                                <Table size={24} />
-                                                <span>{t.table_no}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {selectionOverlay === 'RETURN' && (
-                                <div className="selection-form return-box">
-                                    <p className="instr">Specify return details for selected items.</p>
-                                    <textarea placeholder="Reason for return..." className="return-reason-input"></textarea>
-                                    <button className="confirm-return-btn" onClick={() => { alert("Return logged successfully."); setSelectionOverlay('NONE'); }}>LOG RETURN</button>
-                                </div>
-                            )}
-
-                            {selectionOverlay === 'SPLIT' && (
-                                <div className="selection-form split-box">
-                                    <p className="instr">Select items to move to a new bill.</p>
-                                    <div className="split-items-list">
-                                        {billItems.map((item, i) => (
-                                            <div key={i} className="split-item-row">
-                                                <span>{item.name} (x{item.quantity})</span>
-                                                <input type="checkbox" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <button className="confirm-split-btn" onClick={() => { alert("Bill split successfully."); setSelectionOverlay('NONE'); }}>CREATE NEW BILL</button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
                 </div>
-            )}
 
-            {/* Modals */}
-            {
-                showBillPreview && (
-                    <BillPreviewModal
-                        isOpen={showBillPreview}
-                        onClose={() => setShowBillPreview(false)}
-                        billId={lastBillId}
-                        paymentModes={lastPaymentModes}
-                    />
-                )
-            }
-        </div >
+                {/* Modals */}
+                {
+                    showBillPreview && (
+                        <BillPreviewModal
+                            isOpen={showBillPreview}
+                            onClose={() => setShowBillPreview(false)}
+                            billId={lastBillId}
+                            paymentModes={lastPaymentModes}
+                        />
+                    )
+                }
+            </div>
+        </div>
+
     );
 };
 

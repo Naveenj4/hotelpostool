@@ -12,7 +12,7 @@ const orderSchema = z.object({
             quantity: z.number().min(1, 'Quantity must be at least 1')
         })).min(1, 'Order must contain at least 1 item'),
         table_id: z.string().optional(),
-        captain_id: z.string().optional(),
+        no_of_persons: z.number().int().min(1).optional(),
         customer_id: z.string().optional()
     })
 });

@@ -38,7 +38,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             pageKey: "dashboard"
         },
         {
-            label: "Admin Dashboard",
+            label: "Entry",
             icon: <Shield size={20} />,
             pageKey: "admin_dashboard",
             subItems: [
@@ -56,7 +56,6 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 { label: "Category", route: "/dashboard/self-service/categories", icon: <Layers size={18} /> },
                 { label: "Brand", route: "/dashboard/self-service/brands", icon: <Tag size={18} /> },
                 { label: "Table", route: "/dashboard/self-service/tables", icon: <Grid size={18} /> },
-                { label: "Captain", route: "/dashboard/self-service/captains", icon: <Pocket size={18} /> },
                 { label: "Waiter", route: "/dashboard/self-service/waiters", icon: <UserCircle size={18} /> },
                 { label: "Ledger", route: "/dashboard/self-service/ledgers", icon: <Book size={18} /> }
             ]

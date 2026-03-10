@@ -30,7 +30,7 @@ export const CardSkeleton = ({ count = 6 }) => {
     return (
         <>
             {[...Array(count)].map((_, i) => (
-                <div key={i} className="pos-product-card skeleton" style={{ height: '140px' }}>
+                <div key={i} className="pos-product-card skeleton" style={{ height: '125px' }}>
                     {/* The .skeleton class in index.css handles the animation */}
                 </div>
             ))}

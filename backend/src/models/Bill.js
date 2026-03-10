@@ -14,6 +14,10 @@ const billSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Counter'
     },
+    table_no: {
+        type: String,
+        trim: true
+    },
     order_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Order'
@@ -25,6 +29,9 @@ const billSchema = new mongoose.Schema({
     customer_phone: {
         type: String,
         trim: true
+    },
+    persons: {
+        type: Number
     },
     status: {
         type: String,

@@ -21,11 +21,12 @@ import {
 } from 'lucide-react';
 import './Dashboard.css';
 
+
 const StatCard = ({ label, value, icon, color, trend, percentage }) => (
-    <div className="bento-card group flex flex-col justify-between relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white h-full">
+    <div className="bento-card group flex flex-col justify-between relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white h-full p-6">
         <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" style={{ backgroundColor: color }}></div>
         <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        
+
         <div className="relative z-10 flex flex-col flex-1">
             <div className="flex justify-between items-start mb-3">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-md" style={{ backgroundColor: `${color}14`, color: color }}>
@@ -38,10 +39,10 @@ const StatCard = ({ label, value, icon, color, trend, percentage }) => (
                     </div>
                 )}
             </div>
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">{label}</p>
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight mt-auto">
-                {value}
-            </h3>
+            <div className="flex-1 flex flex-col justify-end">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                <p className="text-xl font-black text-slate-900 tracking-tighter">{value}</p>
+            </div>
         </div>
     </div>
 );
@@ -49,7 +50,7 @@ const StatCard = ({ label, value, icon, color, trend, percentage }) => (
 const SelfServiceDashboard = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-    const [dashboardData, setDashboardData] = useState(null);
+    const [dashboardData, setDashboardData] = useState({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -70,6 +71,8 @@ const SelfServiceDashboard = () => {
             }
         };
         fetchDashboardData();
+
+
     }, []);
 
     const toggleSidebar = () => {
@@ -125,10 +128,10 @@ const SelfServiceDashboard = () => {
                         <div className="flex items-center gap-2 w-full md:w-auto md:flex-nowrap">
                             <div className="relative flex-1 md:flex-none md:w-72">
                                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex-shrink-0" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search..." 
-                                    className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm font-medium bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 hover:border-slate-300 transition-all duration-200 placeholder-slate-400" 
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm font-medium bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 hover:border-slate-300 transition-all duration-200 placeholder-slate-400"
                                 />
                             </div>
                             <button className="h-10 w-10 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 flex items-center justify-center flex-shrink-0" title="Filter">
@@ -141,13 +144,48 @@ const SelfServiceDashboard = () => {
                     </div>
 
                     {/* kpi_metrics_cards - Responsive grid layout */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 mb-10">
-                        <StatCard label="Total Revenue" value={`₹${(dashboardData?.todaySales || 0).toLocaleString()}`} icon={<TrendingUp size={24} />} color="#10b981" trend="+12.5%" />
-                        <StatCard label="Total Expenses" value={`₹${(dashboardData?.todayPurchases || 0).toLocaleString()}`} icon={<ShoppingBag size={24} />} color="#ef4444" trend="-4.2%" />
-                        <StatCard label="Gross Profit" value={`₹${grossProfit.toLocaleString()}`} icon={<Wallet size={24} />} color="#8b5cf6" trend="+8.1%" />
-                        <StatCard label="Current Ratio" value="1.5x" icon={<Activity size={24} />} color="#f59e0b" trend="+0.2" />
-                        <StatCard label="Total Clients" value={dashboardData?.totalBills || 0} icon={<Users size={24} />} color="#3b82f6" trend="+15%" />
-                        <StatCard label="Total Employers" value="12" icon={<Briefcase size={24} />} color="#14b8a6" trend="0%" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 mb-10 items-stretch">
+                        {[{
+                            label: 'Total Revenue',
+                            value: `₹${(dashboardData?.todaySales || 0).toLocaleString()}`,
+                            icon: <TrendingUp size={24} />, 
+                            color: '#10b981', 
+                            trend: '+12.5%'
+                        }, {
+                            label: 'Total Expenses',
+                            value: `₹${(dashboardData?.todayPurchases || 0).toLocaleString()}`,
+                            icon: <ShoppingBag size={24} />, 
+                            color: '#ef4444', 
+                            trend: '-4.2%'
+                        }, {
+                            label: 'Gross Profit',
+                            value: `₹${grossProfit.toLocaleString()}`,
+                            icon: <Wallet size={24} />, 
+                            color: '#8b5cf6', 
+                            trend: '+8.1%'
+                        }, {
+                            label: 'Current Ratio',
+                            value: '1.5x',
+                            icon: <Activity size={24} />, 
+                            color: '#f59e0b', 
+                            trend: '+0.2'
+                        }, {
+                            label: 'Total Clients',
+                            value: dashboardData?.totalBills || 0,
+                            icon: <Users size={24} />, 
+                            color: '#3b82f6', 
+                            trend: '+15%'
+                        }, {
+                            label: 'Total Employers',
+                            value: dashboardData?.totalEmployers || 0,
+                            icon: <Briefcase size={24} />, 
+                            color: '#14b8a6', 
+                            trend: '0%'
+                        }].map(({ label, value, icon, color, trend }) => (
+                            <div key={label} className="flex items-stretch">
+                                <StatCard label={label} value={value} icon={icon} color={color} trend={trend} />
+                            </div>
+                        ))}
                     </div>
 
                     {/* analytics_visualization_section & top_entities_lists */}

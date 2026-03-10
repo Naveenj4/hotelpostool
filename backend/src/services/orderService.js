@@ -7,7 +7,6 @@ class OrderService {
     static async getAllOrders(companyId) {
         return await Order.find({ company_id: companyId, is_deleted: false })
             .populate('table', 'table_number seating_capacity')
-            .populate('captain', 'name')
             .populate('customer', 'name phone')
             .sort({ createdAt: -1 });
     }
@@ -15,12 +14,11 @@ class OrderService {
     static async getOrderById(orderId, companyId) {
         return await Order.findOne({ _id: orderId, company_id: companyId })
             .populate('table')
-            .populate('captain')
             .populate('customer');
     }
 
     static async createOrder(orderData, companyId, userId) {
-        const { table_id, captain_id, customer_id, items, notes } = orderData;
+        const { table_id, no_of_persons, customer_id, items, notes } = orderData;
 
         let sub_total = 0;
         const processedItems = await Promise.all(items.map(async (item) => {
@@ -49,7 +47,7 @@ class OrderService {
             company_id: companyId,
             order_number,
             table: table_id,
-            captain: captain_id,
+            no_of_persons: no_of_persons,
             customer: customer_id,
             items: processedItems,
             sub_total,

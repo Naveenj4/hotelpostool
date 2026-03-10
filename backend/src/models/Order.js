@@ -42,9 +42,9 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Table'
     },
-    captain: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Captain'
+    no_of_persons: {
+        type: Number,
+        default: 1
     },
     customer: {
         type: mongoose.Schema.Types.ObjectId,
