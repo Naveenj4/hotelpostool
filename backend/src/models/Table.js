@@ -15,6 +15,18 @@ const tableSchema = new mongoose.Schema({
         type: Number,
         default: 4
     },
+    captain: {
+        type: String,
+        trim: true
+    },
+    waiter: {
+        type: String,
+        trim: true
+    },
+    table_type: {
+        type: String,
+        default: 'G Floor'
+    },
     status: {
         type: String,
         enum: ['AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE'],
@@ -23,7 +35,12 @@ const tableSchema = new mongoose.Schema({
     is_active: {
         type: Boolean,
         default: true
-    }
+    },
+    // Reservation details
+    reservation_name: { type: String, trim: true },
+    reservation_phone: { type: String, trim: true },
+    reservation_time: { type: String, trim: true },
+    reservation_note: { type: String, trim: true }
 }, {
     timestamps: true
 });

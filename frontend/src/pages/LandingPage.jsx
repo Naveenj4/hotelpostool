@@ -3,28 +3,19 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     BarChart3,
-    Utensils,
     Zap,
     ArrowRight,
-    Star,
     Layers,
     ShieldCheck,
     Cpu,
     CheckCircle2,
     Users
 } from 'lucide-react';
+import LandingHeader from '../components/landing/LandingHeader';
+import LandingFooter from '../components/landing/LandingFooter';
 
 
 const LandingPage = () => {
-    const [scrolled, setScrolled] = useState(false);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 50);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     const fadeInUp = {
         initial: { opacity: 0, y: 40 },
@@ -37,30 +28,7 @@ const LandingPage = () => {
         <div>
 
 
-            {/* Professional Navigation */}
-            <nav className={`fixed top-0 w-full z-50 py-6 transition-all duration-400 ${scrolled ? 'py-3 bg-white/80 backdrop-blur-xl border-b border-slate-200' : ''}`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                    <Link to="/" className="flex items-center gap-3 no-underline">
-                        <div className="bg-primary-500 p-2.5 rounded-2xl shadow-lg shadow-primary-500/20 flex items-center justify-center">
-                            <Utensils className="w-6 h-6 text-white" />
-                        </div>
-                        <span className="text-2xl font-extrabold tracking-tight text-slate-900">Resto<span className="text-primary-500">SaaS</span></span>
-                    </Link>
-                    <div className="flex items-center gap-10">
-                        <div className="hidden lg:flex gap-8">
-                            <Link to="/" className="text-base font-bold text-slate-600 hover:text-primary-500 transition-colors no-underline">Solution</Link>
-                            <Link to="/features" className="text-base font-bold text-slate-600 hover:text-primary-500 transition-colors no-underline">Network</Link>
-                            <Link to="/pricing" className="text-base font-bold text-slate-600 hover:text-primary-500 transition-colors no-underline">Enterprise</Link>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <Link to="/login" className="text-base font-extrabold text-slate-900 no-underline">Sign In</Link>
-                            <Link to="/register" className="btn-primary no-underline px-8 py-3.5 rounded-xl text-base shadow-lg shadow-primary-500/40">
-                                Initialize
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            <LandingHeader />
 
             {/* Creative Split Hero Section */}
             <section className="relative pt-48 pb-32 z-10">
@@ -240,65 +208,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Professional Footer */}
-            <footer className="pt-32 pb-16 bg-white border-t border-slate-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-24 mb-24">
-                        <div className="lg:col-span-1">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="bg-primary-500 p-2 rounded-2xl flex items-center justify-center">
-                                    <Utensils className="w-8 h-8 text-white" />
-                                </div>
-                                <span className="text-3xl font-black tracking-tighter text-slate-900">Resto<span className="text-primary-500">SaaS</span></span>
-                            </div>
-                            <p className="text-slate-500 font-bold mb-8 leading-relaxed">
-                                RestoSaaS is the definitive enterprise operating system for the modern hospitality industry. Scaling excellence through modular innovation.
-                            </p>
-                            <div className="flex gap-4">
-                                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center font-black cursor-pointer transition-all duration-300 hover:bg-primary-500 hover:text-white hover:-translate-y-1">
-                                    <Link to="/" className="no-underline text-xl">X</Link>
-                                </div>
-                                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center font-black cursor-pointer transition-all duration-300 hover:bg-primary-500 hover:text-white hover:-translate-y-1">
-                                    <Link to="/" className="no-underline text-xl">In</Link>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 className="text-lg font-extrabold text-slate-900 mb-8 uppercase tracking-wider">Solution</h4>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Dashboard Intelligence</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Modular Inventory</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Staff Architecture</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">POS Integration</Link>
-                        </div>
-
-                        <div>
-                            <h4 className="text-lg font-extrabold text-slate-900 mb-8 uppercase tracking-wider">Platform</h4>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Security Matrix</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Global Network</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">API Access</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Status Center</Link>
-                        </div>
-
-                        <div>
-                            <h4 className="text-lg font-extrabold text-slate-900 mb-8 uppercase tracking-wider">Corporate</h4>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Terms of Service</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Privacy Protocol</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Cookie Policy</Link>
-                            <Link to="/" className="block text-base text-slate-600 font-semibold mb-5 transition-all duration-200 hover:text-primary-500 hover:translate-x-1">Contact Support</Link>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-12 border-t border-slate-200">
-                        <div className="text-slate-400 font-bold">
-                            © 2026 RestoSaaS Operations Center. All Rights Reserved.
-                        </div>
-                        <div className="text-slate-400 font-black tracking-widest uppercase text-xs">
-                            Built for professional scale.
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            <LandingFooter />
         </div>
     );
 };

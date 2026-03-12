@@ -80,6 +80,10 @@ const productSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    unit: {
+        type: String,
+        trim: true
+    },
     opening_stock: {
         type: Number,
         default: 0
@@ -126,6 +130,10 @@ const productSchema = new mongoose.Schema({
         order: { type: Boolean, default: true }
     },
 
+    online_order: {
+        type: Boolean,
+        default: false
+    },
     is_active: {
         type: Boolean,
         default: true

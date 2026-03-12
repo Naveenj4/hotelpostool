@@ -12,8 +12,10 @@ import ProductMaster from './pages/dashboard/ProductMaster.jsx';
 import CategoryMaster from './pages/dashboard/CategoryMaster.jsx';
 import BrandMaster from './pages/dashboard/BrandMaster.jsx';
 import TableMaster from './pages/dashboard/TableMaster.jsx';
+import TableTypeMaster from './pages/dashboard/TableTypeMaster.jsx';
 import CaptainMaster from './pages/dashboard/CaptainMaster.jsx';
 import WaiterMaster from './pages/dashboard/WaiterMaster.jsx';
+import StaffMaster from './pages/dashboard/StaffMaster.jsx';
 import SupplierMaster from './pages/dashboard/SupplierMaster.jsx';
 import CustomerMaster from './pages/dashboard/CustomerMaster.jsx';
 import LedgerMaster from './pages/dashboard/LedgerMaster.jsx';
@@ -24,6 +26,7 @@ import LedgerStatement from './pages/dashboard/LedgerStatement.jsx';
 import VoucherManagement from './pages/dashboard/VoucherManagement.jsx';
 import CounterMaster from './pages/dashboard/CounterMaster.jsx';
 import BillingPage from './pages/dashboard/BillingPage.jsx';
+import TableSelectionPage from './pages/dashboard/TableSelectionPage.jsx';
 import HoldBillsPage from './pages/dashboard/HoldBillsPage.jsx';
 import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage.jsx';
 import StockPage from './pages/StockPage.jsx';
@@ -113,11 +116,17 @@ function AppRoutes() {
                             <Route path="tables" element={
                                 <PermissionRoute pageKey="tables"><TableMaster /></PermissionRoute>
                             } />
+                            <Route path="table-types" element={
+                                <PermissionRoute pageKey="master"><TableTypeMaster /></PermissionRoute>
+                            } />
                             <Route path="captains" element={
-                                <PermissionRoute pageKey="captains"><CaptainMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="captains"><StaffMaster /></PermissionRoute>
                             } />
                             <Route path="waiters" element={
-                                <PermissionRoute pageKey="waiters"><WaiterMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="waiters"><StaffMaster /></PermissionRoute>
+                            } />
+                            <Route path="staff" element={
+                                <PermissionRoute pageKey="master"><StaffMaster /></PermissionRoute>
                             } />
                             <Route path="suppliers" element={
                                 <PermissionRoute pageKey="suppliers"><SupplierMaster /></PermissionRoute>
@@ -145,6 +154,9 @@ function AppRoutes() {
                             } />
                             <Route path="counters" element={
                                 <PermissionRoute pageKey="counters"><CounterMaster /></PermissionRoute>
+                            } />
+                            <Route path="table-select" element={
+                                <PermissionRoute pageKey="billing"><TableSelectionPage /></PermissionRoute>
                             } />
                             <Route path="billing" element={
                                 <PermissionRoute pageKey="billing"><BillingPage /></PermissionRoute>

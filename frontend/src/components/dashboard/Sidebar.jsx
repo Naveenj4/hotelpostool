@@ -42,7 +42,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             icon: <Shield size={20} />,
             pageKey: "admin_dashboard",
             subItems: [
-                { label: "Sales Bill", route: "/dashboard/self-service/billing", icon: <PlusCircle size={18} /> },
+                { label: "Sales Bill", route: "/dashboard/self-service/table-select", icon: <PlusCircle size={18} /> },
                 { label: "Purchase Bill", route: "/dashboard/self-service/purchase", icon: <ShoppingCart size={18} /> },
                 { label: "Voucher", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
             ]
@@ -56,7 +56,8 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 { label: "Category", route: "/dashboard/self-service/categories", icon: <Layers size={18} /> },
                 { label: "Brand", route: "/dashboard/self-service/brands", icon: <Tag size={18} /> },
                 { label: "Table", route: "/dashboard/self-service/tables", icon: <Grid size={18} /> },
-                { label: "Waiter", route: "/dashboard/self-service/waiters", icon: <UserCircle size={18} /> },
+                { label: "Table Type", route: "/dashboard/self-service/table-types", icon: <Layers size={18} /> },
+                { label: "Captain/Waiter", route: "/dashboard/self-service/staff", icon: <Users size={18} /> },
                 { label: "Ledger", route: "/dashboard/self-service/ledgers", icon: <Book size={18} /> }
             ]
         },

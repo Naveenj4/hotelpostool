@@ -2,15 +2,20 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadDir = 'uploads/products';
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Redundant hardcoded check removed, handled dynamically in storage
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, uploadDir);
+        let subDir = 'products';
+        if (req.originalUrl.includes('staff')) subDir = 'staff';
+        if (req.originalUrl.includes('products')) subDir = 'products';
+        if (req.originalUrl.includes('restaurant')) subDir = 'restaurant';
+        
+        const dir = `uploads/${subDir}`;
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

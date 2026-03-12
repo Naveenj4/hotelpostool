@@ -42,6 +42,7 @@ const ProductMaster = () => {
     const [submitting, setSubmitting] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [categories, setCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
     const fileInputRef = useRef(null);
 
     const initialFormState = {
@@ -62,6 +63,7 @@ const ProductMaster = () => {
         gst_sales: 0,
         gst_purchase: 0,
         hsn_code: '',
+        unit: '',
         opening_stock: 0,
         stock_value: 0,
         min_stock: 0,
@@ -82,6 +84,7 @@ const ProductMaster = () => {
             order: true
         },
         image: '',
+        online_order: false,
         is_active: true
     };
 
@@ -100,16 +103,19 @@ const ProductMaster = () => {
             const { token } = JSON.parse(savedUser);
             const headers = { 'Authorization': `Bearer ${token}` };
 
-            const [prodRes, catRes] = await Promise.all([
+            const [prodRes, catRes, brandRes] = await Promise.all([
                 fetch(`${import.meta.env.VITE_API_URL}/products`, { headers }),
-                fetch(`${import.meta.env.VITE_API_URL}/categories`, { headers })
+                fetch(`${import.meta.env.VITE_API_URL}/categories`, { headers }),
+                fetch(`${import.meta.env.VITE_API_URL}/brands`, { headers })
             ]);
 
             const prodData = await prodRes.json();
             const catData = await catRes.json();
+            const brandData = await brandRes.json();
 
             if (prodData.success) setProducts(prodData.data);
             if (catData.success) setCategories(catData.data);
+            if (brandData.success) setBrands(brandData.data);
 
         } catch (err) {
             console.error("Failed to fetch data", err);
@@ -184,6 +190,20 @@ const ProductMaster = () => {
             ...prev,
             serve_types: { ...prev.serve_types, [type]: !prev.serve_types[type] }
         }));
+    };
+
+    const handleAddAddon = () => {
+        setFormData(prev => ({ ...prev, addons: [...prev.addons, { name: '', rate: 0 }] }));
+    };
+
+    const handleAddonChange = (index, field, value) => {
+        const newAddons = [...formData.addons];
+        newAddons[index][field] = value;
+        setFormData(prev => ({ ...prev, addons: newAddons }));
+    };
+
+    const handleRemoveAddon = (index) => {
+        setFormData(prev => ({ ...prev, addons: prev.addons.filter((_, i) => i !== index) }));
     };
 
     const handleSubmit = async (e) => {
@@ -454,47 +474,105 @@ const ProductMaster = () => {
                                 )}
 
                                 <form id="product-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
-                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
                                         <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
                                             <Layers className="text-indigo-600" size={20} />
-                                            <h4 className="text-lg font-bold text-slate-800">Physical Identity</h4>
+                                            <h4 className="text-lg font-bold text-slate-800">Primary Product Configuration</h4>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                            <div className="form-group-premium col-span-2">
-                                                <label>Global Item Label *</label>
-                                                <input type="text" name="name" required className="input-premium" placeholder="e.g. ORGANIC TRUFFLE OIL" value={formData.name} onChange={handleInputChange} />
-                                            </div>
-                                            <div className="form-group-premium">
-                                                <label>Registry ID</label>
-                                                <input type="text" name="code" className="input-premium" placeholder="ITM-99" value={formData.code} onChange={handleInputChange} />
-                                            </div>
-                                            <div className="form-group-premium">
-                                                <label>Classification *</label>
-                                                <select name="category" required className="input-premium" value={formData.category} onChange={handleInputChange}>
-                                                    <option value="">Select Domain</option>
-                                                    {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                                            <div className="form-group-premium">
-                                                <label>Print Identity</label>
-                                                <input type="text" name="print_name" className="input-premium" placeholder="Short Name for Bills" value={formData.print_name} onChange={handleInputChange} />
-                                            </div>
-                                            <div className="form-group-premium">
-                                                <label>Food Classification</label>
-                                                <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
-                                                    {['VEG', 'NON_VEG', 'NONE'].map(type => (
-                                                        <button key={type} type="button" onClick={() => setFormData(p => ({ ...p, food_type: type }))} className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${formData.food_type === type ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{type.replace('_', ' ')}</button>
-                                                    ))}
+                                        <div className="flex flex-col lg:flex-row gap-8">
+                                            {/* Image Upload Column */}
+                                            <div className="flex flex-col items-center">
+                                                <div
+                                                    className="w-48 h-48 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center relative group overflow-hidden cursor-pointer hover:border-indigo-400 transition-all"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                >
+                                                    {formData.image ? (
+                                                        <img src={`${getBaseUrl()}${formData.image}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                    ) : (
+                                                        <div className="text-center p-4">
+                                                            <ImageIcon size={40} className="text-slate-300 mx-auto mb-2" />
+                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tap to Upload<br/>Product Photo</p>
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                                        <div className="text-center group-hover:translate-y-0 translate-y-2 transition-transform">
+                                                            <Upload size={24} className="text-white mx-auto mb-1" />
+                                                            <span className="text-white font-bold text-[10px] uppercase tracking-widest">Update Photo</span>
+                                                        </div>
+                                                    </div>
+                                                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                                                </div>
+                                                <div className="mt-4 flex gap-4 w-full">
+                                                    <div className="flex-1 p-2 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Online</span>
+                                                        <label className="relative inline-flex items-center cursor-pointer scale-75">
+                                                            <input type="checkbox" className="sr-only peer" checked={formData.online_order} onChange={(e) => setFormData(p => ({ ...p, online_order: e.target.checked }))} />
+                                                            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                        </label>
+                                                    </div>
+                                                    <div className="flex-1 p-2 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Active</span>
+                                                        <label className="relative inline-flex items-center cursor-pointer scale-75">
+                                                            <input type="checkbox" className="sr-only peer" checked={formData.is_active} onChange={(e) => setFormData(p => ({ ...p, is_active: e.target.checked }))} />
+                                                            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="form-group-premium">
-                                                <label>Item Nature</label>
-                                                <div className="flex gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
-                                                    {['GOOD', 'SERVICE'].map(n => (
-                                                        <button key={n} type="button" onClick={() => setFormData(p => ({ ...p, item_nature: n }))} className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${formData.item_nature === n ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{n}</button>
-                                                    ))}
+
+                                            {/* Form Fields Column */}
+                                            <div className="flex-1">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                                    <div className="form-group-premium">
+                                                        <label>Item Name *</label>
+                                                        <input type="text" name="name" required className="input-premium" placeholder="e.g. Traditional Margherita" value={formData.name} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="form-group-premium">
+                                                            <label>Item Code</label>
+                                                            <input type="text" name="code" className="input-premium" placeholder="AUTO" value={formData.code} onChange={handleInputChange} />
+                                                        </div>
+                                                        <div className="form-group-premium">
+                                                            <label>Barcode</label>
+                                                            <input type="text" name="barcode" className="input-premium" placeholder="SCAN" value={formData.barcode} onChange={handleInputChange} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                                    <div className="form-group-premium">
+                                                        <label>Category *</label>
+                                                        <select name="category" required className="input-premium" value={formData.category} onChange={handleInputChange}>
+                                                            <option value="">Select</option>
+                                                            {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Brand</label>
+                                                        <select name="brand" className="input-premium" value={formData.brand} onChange={handleInputChange}>
+                                                            <option value="">Select</option>
+                                                            {brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Food Type</label>
+                                                        <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
+                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-black transition-all ${formData.food_type === 'VEG' ? 'bg-white text-emerald-600 shadow-sm border border-emerald-200' : 'text-slate-400 hover:text-emerald-600'}`}>
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> VEG
+                                                            </button>
+                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'NON_VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-black transition-all ${formData.food_type === 'NON_VEG' ? 'bg-white text-rose-600 shadow-sm border border-rose-200' : 'text-slate-400 hover:text-rose-600'}`}>
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> NON
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Unit</label>
+                                                        <input type="text" name="unit" className="input-premium" placeholder="PCS / KG" value={formData.unit} onChange={handleInputChange} />
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>HSN</label>
+                                                        <input type="text" name="hsn_code" className="input-premium" placeholder="HSN" value={formData.hsn_code} onChange={handleInputChange} />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -504,39 +582,40 @@ const ProductMaster = () => {
                                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                             <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
                                                 <Tag className="text-indigo-600" size={20} />
-                                                <h4 className="text-lg font-bold text-slate-800">Pricing Matrix</h4>
+                                                <h4 className="text-lg font-bold text-slate-800">Pricing Details</h4>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-6">
-                                                {formData.item_nature !== 'SERVICE' && (
-                                                    <div className="form-group-premium">
-                                                        <label>Procurement Rate</label>
-                                                        <div className="relative">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
-                                                            <input type="number" name="purchase_price" className="input-premium !pl-8" value={formData.purchase_price} onChange={handleInputChange} />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <div className={`form-group-premium ${formData.item_nature === 'SERVICE' ? 'col-span-2' : ''}`}>
-                                                    <label>External MRP</label>
-                                                    <div className="relative">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
-                                                        <input type="number" name="mrp" className="input-premium !pl-8" value={formData.mrp} onChange={handleInputChange} />
-                                                    </div>
-                                                </div>
-                                                <div className="form-group-premium col-span-2">
-                                                    <label className="!text-indigo-600">Enterprise Sales Value *</label>
-                                                    <div className="relative">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-500 font-bold text-lg">₹</span>
-                                                        <input type="number" name="selling_price" required className="input-premium !pl-8 !text-xl !py-2 !bg-indigo-50/50 !border-indigo-200 !text-indigo-900" value={formData.selling_price} onChange={handleInputChange} />
-                                                    </div>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                                <div className="form-group-premium">
+                                                    <label>Purchase Rate</label>
+                                                    <input type="number" name="purchase_price" className="input-premium" value={formData.purchase_price} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Tax Bracket (GST%)</label>
+                                                    <label>Cost Rate</label>
+                                                    <input type="number" name="cost_price" className="input-premium" value={formData.cost_price} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>MRP</label>
+                                                    <input type="number" name="mrp" className="input-premium" value={formData.mrp} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>Sales Rate *</label>
+                                                    <input type="number" name="selling_price" required className="input-premium font-bold text-indigo-700 bg-indigo-50/30" value={formData.selling_price} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>GST Purchase (%)</label>
+                                                    <input type="number" name="gst_purchase" className="input-premium" value={formData.gst_purchase} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>GST Sales (%)</label>
                                                     <input type="number" name="gst_sales" className="input-premium" value={formData.gst_sales} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Audit HSN Ref</label>
-                                                    <input type="text" name="hsn_code" className="input-premium" placeholder="HSN-000" value={formData.hsn_code} onChange={handleInputChange} />
+                                                    <label>HSN Code</label>
+                                                    <input type="text" name="hsn_code" className="input-premium" value={formData.hsn_code} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>Unit</label>
+                                                    <input type="text" name="unit" className="input-premium" placeholder="e.g. PCS, KG" value={formData.unit} onChange={handleInputChange} />
                                                 </div>
                                             </div>
                                         </div>
@@ -544,43 +623,76 @@ const ProductMaster = () => {
                                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                             <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
                                                 <ShoppingCart className="text-indigo-600" size={20} />
-                                                <h4 className="text-lg font-bold text-slate-800">Reserve Logistics</h4>
+                                                <h4 className="text-lg font-bold text-slate-800">Stock Details & Level</h4>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-6">
-                                                {formData.item_nature !== 'SERVICE' && (
-                                                    <div className="form-group-premium">
-                                                        <label>Opening Inventory</label>
-                                                        <input type="number" name="opening_stock" className="input-premium" value={formData.opening_stock} onChange={handleInputChange} />
-                                                    </div>
-                                                )}
-                                                <div className={`form-group-premium ${formData.item_nature === 'SERVICE' ? 'col-span-2' : ''}`}>
-                                                    <label>Reorder Threshold</label>
+                                            
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6 pb-6 border-b border-slate-100">
+                                                <div className="form-group-premium">
+                                                    <label>Opening Stock</label>
+                                                    <input type="number" name="opening_stock" className="input-premium" value={formData.opening_stock} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>Stock Value</label>
+                                                    <input type="number" disabled className="input-premium bg-slate-50 text-emerald-700 font-bold" value={formData.stock_value} />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                                <div className="form-group-premium">
+                                                    <label>Maximum</label>
+                                                    <input type="number" name="max_stock" className="input-premium" value={formData.max_stock} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>Minimum</label>
+                                                    <input type="number" name="min_stock" className="input-premium" value={formData.min_stock} onChange={handleInputChange} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>Re-order</label>
                                                     <input type="number" name="reorder_level" className="input-premium" value={formData.reorder_level} onChange={handleInputChange} />
                                                 </div>
-                                                {formData.item_nature !== 'SERVICE' && (
-                                                    <>
-                                                        <div className="form-group-premium">
-                                                            <label>Minimum Stable Reserve</label>
-                                                            <input type="number" name="min_stock" className="input-premium" value={formData.min_stock} onChange={handleInputChange} />
-                                                        </div>
-                                                        <div className="form-group-premium">
-                                                            <label>Maximum Storage Capacity</label>
-                                                            <input type="number" name="max_stock" className="input-premium" value={formData.max_stock} onChange={handleInputChange} />
-                                                        </div>
-                                                    </>
-                                                )}
+                                                <div className="form-group-premium">
+                                                    <label>Urgent</label>
+                                                    <input type="number" name="urgent_order_level" className="input-premium" value={formData.urgent_order_level} onChange={handleInputChange} />
+                                                </div>
                                             </div>
-                                            {formData.item_nature !== 'SERVICE' && (
-                                                <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
-                                                    <span className="text-xs font-bold text-slate-500 uppercase">Asset Valuation</span>
-                                                    <h5 className="text-xl font-bold text-emerald-600">₹{formData.stock_value.toLocaleString()}</h5>
+                                        </div>
+
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
+                                            <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Plus className="text-indigo-600" size={20} />
+                                                    <h4 className="text-lg font-bold text-slate-800">Addons (Example: Pizza)</h4>
+                                                </div>
+                                                <button type="button" onClick={handleAddAddon} className="btn-premium-outline !py-1 !px-3 !text-xs">
+                                                    <Plus size={14} /> Add row
+                                                </button>
+                                            </div>
+                                            {formData.addons.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {formData.addons.map((addon, idx) => (
+                                                        <div key={idx} className="flex gap-4 items-center">
+                                                            <div className="form-group-premium flex-1 !mb-0">
+                                                                <input type="text" placeholder="Item Name (e.g. Small)" className="input-premium" value={addon.name} onChange={(e) => handleAddonChange(idx, 'name', e.target.value)} />
+                                                            </div>
+                                                            <div className="form-group-premium flex-1 !mb-0">
+                                                                <input type="number" placeholder="Rate (e.g. 200)" className="input-premium" value={addon.rate} onChange={(e) => handleAddonChange(idx, 'rate', parseFloat(e.target.value) || 0)} />
+                                                            </div>
+                                                            <button type="button" onClick={() => handleRemoveAddon(idx)} className="text-rose-500 hover:text-rose-700 bg-rose-50 p-2 rounded-lg mt-1 transition-colors">
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-6 text-slate-400 text-sm border-2 border-dashed border-slate-100 rounded-xl">
+                                                    No addons configured. Click 'Add row' to create.
                                                 </div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                                        <div className="lg:col-span-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                                    <div className="grid grid-cols-1 gap-8">
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                                             <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
                                                 <Clock className="text-indigo-600" size={20} />
                                                 <h4 className="text-lg font-bold text-slate-800">Temporal Availability</h4>
@@ -621,45 +733,6 @@ const ProductMaster = () => {
                                             </div>
                                         </div>
 
-                                        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                                            <div className="flex flex-col h-full">
-                                                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                                                    <ImageIcon className="text-indigo-600" size={20} />
-                                                    <h4 className="text-lg font-bold text-slate-800">Visual Asset</h4>
-                                                </div>
-                                                <div className="flex-1 flex flex-col items-center justify-center">
-                                                    <div
-                                                        className="w-40 h-40 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center relative group overflow-hidden mb-6 cursor-pointer"
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                    >
-                                                        {formData.image ? (
-                                                            <img src={`${getBaseUrl()}${formData.image}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                        ) : (
-                                                            <Package size={48} className="text-slate-300" />
-                                                        )}
-                                                        <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                                                            <div className="text-center group-hover:translate-y-0 translate-y-2 transition-transform">
-                                                                <Upload size={24} className="text-white mx-auto mb-1" />
-                                                                <span className="text-white font-medium text-xs">Upload Image</span>
-                                                            </div>
-                                                        </div>
-                                                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" title="Upload Image" />
-                                                    </div>
-                                                </div>
-                                                <div className="mt-auto">
-                                                    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50">
-                                                        <span className="text-sm font-semibold text-slate-700">Item Status</span>
-                                                        <button type="button" onClick={() => setFormData(p => ({ ...p, is_active: !p.is_active }))} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${formData.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
-                                                            {formData.is_active ? (
-                                                                <><CheckCircle2 size={14} /> Active</>
-                                                            ) : (
-                                                                <><EyeOff size={14} /> Inactive</>
-                                                            )}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                 </form>
                             </div>

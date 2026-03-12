@@ -37,6 +37,7 @@ app.use('/api/brands', require('./routes/brandRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/tables', require('./routes/tableRoutes'));
+app.use('/api/table-types', require('./routes/tableTypeRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/captains', require('./routes/captainRoutes'));
 app.use('/api/waiters', require('./routes/waiterRoutes'));

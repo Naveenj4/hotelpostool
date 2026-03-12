@@ -93,6 +93,7 @@ const BillingPage = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [loyaltyEnabled, setLoyaltyEnabled] = useState(false);
     const [showRateColumn, setShowRateColumn] = useState(() => localStorage.getItem('pos_show_rate') !== 'false');
+    const [showProductPrice, setShowProductPrice] = useState(() => localStorage.getItem('pos_show_prod_price') !== 'false');
 
     const [billSearchQuery, setBillSearchQuery] = useState("");
     const [dailySearchQuery, setDailySearchQuery] = useState("");
@@ -106,7 +107,10 @@ const BillingPage = () => {
     const [heldBills, setHeldBills] = useState(() => JSON.parse(localStorage.getItem('pos_held_bills') || '[]'));
 
     const [tables, setTables] = useState([]);
+    const [tableTypes, setTableTypes] = useState([]);
+    const [activeTableType, setActiveTableType] = useState("ALL");
     const [selectedTableId, setSelectedTableId] = useState("");
+    const [isTablePreSelected, setIsTablePreSelected] = useState(false);
 
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
@@ -124,6 +128,12 @@ const BillingPage = () => {
     const [showComplementaryForm, setShowComplementaryForm] = useState(false);
 
     const toggleExpandableForm = (formName) => {
+        // Validation: For ALTER, TRANSFER, RETURN, we need an active bill loaded via search
+        const needsBill = ['ALTER', 'TRANSFER', 'RETURN'].includes(formName);
+        if (needsBill && !currentBillId) {
+            return alert("Search and load a bill in the header first before using this feature.");
+        }
+
         setShowPersonsForm(formName === 'PERSONS' ? !showPersonsForm : false);
         setShowCustomerForm(formName === 'CUSTOMER' ? !showCustomerForm : false);
         setShowTableForm(formName === 'TABLE' ? !showTableForm : false);
@@ -138,7 +148,7 @@ const BillingPage = () => {
         setCheckoutActive(formName === 'PAYMODE' ? !checkoutActive : false);
 
         setSelectionOverlay('NONE');
-        if (formName === 'ALTER' && !showAlterForm) fetchKots();
+        // No longer fetching KOTs here as we use the header search
     };
     const [isOrderListCollapsed, setIsOrderListCollapsed] = useState(false);
 
@@ -245,10 +255,16 @@ const BillingPage = () => {
                     localStorage.setItem('cachedBillingLayout', layout);
                 }
 
-                // 5. Fetch Tables
-                const tableRes = await fetch(`${import.meta.env.VITE_API_URL}/tables`, { headers });
+                // 5. Fetch Tables & Types
+                const [tableRes, typeRes] = await Promise.all([
+                    fetch(`${import.meta.env.VITE_API_URL}/tables`, { headers }),
+                    fetch(`${import.meta.env.VITE_API_URL}/table-types`, { headers })
+                ]);
                 const tableData = await tableRes.json();
+                const typeData = await typeRes.json();
+
                 if (tableData.success) setTables(tableData.data);
+                if (typeData.success) setTableTypes(typeData.data);
 
 
             } catch (error) {
@@ -282,6 +298,32 @@ const BillingPage = () => {
             setHeldBills(updated);
 
             // Use window.history.replaceState to clear location.state without triggering reload
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
+    // Handle navigation FROM TableSelectionPage
+    useEffect(() => {
+        if (location.state && location.state.fromTable) {
+            setTableNo(location.state.tableNo || '');
+            setSelectedTableId(location.state.tableId || '');
+            setPersons(location.state.persons || '');
+            setOrderMode('DINE_IN');
+            setIsTablePreSelected(true);
+
+            // Pre-fill customer details if it's a reservation
+            if (location.state.reservationName) {
+                setCustomerName(location.state.reservationName);
+            }
+            if (location.state.reservationPhone) {
+                setCustomerPhone(location.state.reservationPhone);
+            }
+
+            // Clear state so refresh doesn't re-apply
+            window.history.replaceState({}, document.title);
+        } else if (location.state && location.state.orderMode) {
+            setOrderMode(location.state.orderMode);
+            setIsTablePreSelected(false);
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
@@ -819,15 +861,7 @@ const BillingPage = () => {
                                     </select>
                                 </div>
 
-                                <div className="settings-option">
-                                    <span>Counter</span>
-                                    <select value={selectedCounter} onChange={(e) => setSelectedCounter(e.target.value)}>
-                                        <option value="" disabled>Select Counter</option>
-                                        {counters.map(c => (
-                                            <option key={c._id} value={c._id}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
+
 
                                 <div className="settings-option">
                                     <span>Loyalty System</span>
@@ -847,10 +881,18 @@ const BillingPage = () => {
                                         <span className="slider round"></span>
                                     </label>
                                 </div>
-                                <div className="settings-divider"></div>
-                                <button className="set-logout-btn" onClick={logout}>
-                                    <LogOut size={16} /> Logout
-                                </button>
+                                <div className="settings-option">
+                                    <span>Show Item Price</span>
+                                    <label className="switch">
+                                        <input type="checkbox" checked={showProductPrice} onChange={() => {
+                                            const next = !showProductPrice;
+                                            setShowProductPrice(next);
+                                            localStorage.setItem('pos_show_prod_price', String(next));
+                                        }} />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+
                             </div>
                         )}
                     </div>
@@ -863,33 +905,20 @@ const BillingPage = () => {
                 </div>
             </div>
 
-            {/* Enhanced Search & Mode Bar */}
+            {/* Enhanced Search & Mode Bar - Restored to Global Position */}
             <div className="pos-search-section">
                 <div className="search-flex-container">
-                    {/* 1. Product Search */}
+                    {/* Searches Grouped on Left */}
                     <div className="search-input-wrapper main-search">
                         <Search size={18} className="search-icon" />
                         <input
                             type="text"
-                            placeholder="Search by product name or code..."
+                            placeholder="Product Search..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
 
-                    {/* 2. Bill Number Search */}
-                    <div className="search-input-wrapper secondary-search">
-                        <Search size={16} className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Bill No."
-                            value={billSearchQuery}
-                            onChange={(e) => setBillSearchQuery(e.target.value)}
-                            onKeyDown={(e) => handleBillSearch(e, billSearchQuery)}
-                        />
-                    </div>
-
-                    {/* 3. KOT Search */}
                     <div className="search-input-wrapper secondary-search">
                         <History size={16} className="search-icon" />
                         <input
@@ -901,7 +930,18 @@ const BillingPage = () => {
                         />
                     </div>
 
-                    {/* 4. Order Mode Selector */}
+                    <div className="search-input-wrapper secondary-search">
+                        <Search size={16} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Bill No."
+                            value={billSearchQuery}
+                            onChange={(e) => setBillSearchQuery(e.target.value)}
+                            onKeyDown={(e) => handleBillSearch(e, billSearchQuery)}
+                        />
+                    </div>
+
+                    {/* Order Mode Selector - Restored to Far Right */}
                     <div className="mode-selector-header">
                         {[
                             { id: 'DINE_IN', label: 'Dine In', icon: <TableLogo size={16} /> },
@@ -921,6 +961,8 @@ const BillingPage = () => {
                     </div>
                 </div>
             </div>
+
+
 
 
             {/* Main POS Container */}
@@ -1013,7 +1055,7 @@ const BillingPage = () => {
                                     </div>
                                     <div className="p-details">
                                         <div className="p-name">{product.name}</div>
-                                        <div className="p-price">₹{product.selling_price}</div>
+                                        {showProductPrice && <div className="p-price">₹{product.selling_price}</div>}
                                     </div>
                                 </div>
                             ))}
@@ -1027,14 +1069,30 @@ const BillingPage = () => {
                 <div className="bill-sidebar">
                     {/* Meta Icons row from reference image */}
                     <div className="sidebar-meta-icons">
-                        <button className={`meta-icon-btn ${showTableForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('TABLE')}>
-                            <div className="icon-bg"><TableLogo size={18} /></div>
-                            <span>{tableNo || 'TABLE'}</span>
-                        </button>
-                        <button className={`meta-icon-btn ${showPersonsForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('PERSONS')}>
-                            <div className="icon-bg"><Users size={18} /></div>
-                            <span>{persons ? `${persons} PAX` : 'PERSONS'}</span>
-                        </button>
+                        {isTablePreSelected ? (
+                            // Table was pre-selected — show read-only pill
+                            <div className="meta-icon-btn active" style={{ cursor: 'default', pointerEvents: 'none' }}>
+                                <div className="icon-bg"><TableLogo size={18} /></div>
+                                <span style={{ color: '#ea580c', fontWeight: 900 }}>{tableNo}</span>
+                            </div>
+                        ) : (
+                            <button className={`meta-icon-btn ${showTableForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('TABLE')}>
+                                <div className="icon-bg"><TableLogo size={18} /></div>
+                                <span>{tableNo || 'TABLE'}</span>
+                            </button>
+                        )}
+                        {isTablePreSelected ? (
+                            // Persons pre-filled from table — read-only
+                            <div className="meta-icon-btn active" style={{ cursor: 'default', pointerEvents: 'none' }}>
+                                <div className="icon-bg"><Users size={18} /></div>
+                                <span style={{ color: '#ea580c', fontWeight: 900 }}>{persons ? `${persons} PAX` : 'PERSONS'}</span>
+                            </div>
+                        ) : (
+                            <button className={`meta-icon-btn ${showPersonsForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('PERSONS')}>
+                                <div className="icon-bg"><Users size={18} /></div>
+                                <span>{persons ? `${persons} PAX` : 'PERSONS'}</span>
+                            </button>
+                        )}
                         <button className={`meta-icon-btn ${showCustomerForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('CUSTOMER')}>
                             <div className="icon-bg"><User size={18} /></div>
                             <span>CUSTOMER</span>
@@ -1056,32 +1114,71 @@ const BillingPage = () => {
                     {/* Table Form Section */}
                     {showTableForm && (
                         <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
-                            <div className="selection-grid-horizontal" style={{ padding: '0 15px 15px', display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'thin' }}>
-                                {tables.map(t => (
+                            {/* Table Type Tabs - Derived from actual table data */}
+                            <div className="flex gap-2 px-4 py-2 border-b border-slate-100 overflow-x-auto scrollbar-hide">
+                                <button
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTableType === 'ALL' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                    onClick={() => setActiveTableType('ALL')}
+                                >
+                                    All Areas
+                                </button>
+                                {[...new Set(tables.map(t => t.table_type))].filter(Boolean).sort().map(typeName => (
                                     <button
-                                        key={t._id}
-                                        className={`selection-card ${tableNo === t.table_no ? 'active' : ''}`}
-                                        onClick={() => { setTableNo(t.table_no); setSelectedTableId(t._id); setShowTableForm(false); }}
-                                        style={{
-                                            flex: '0 0 auto',
-                                            padding: '4px 8px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '5px',
-                                            background: tableNo === t.table_no ? 'var(--primary)' : '#f8fafc',
-                                            color: tableNo === t.table_no ? '#fff' : '#1e293b',
-                                            borderRadius: '4px',
-                                            border: '1px solid #e2e8f0',
-                                            transition: 'all 0.2s',
-                                            minWidth: '70px',
-                                            justifyContent: 'center',
-                                            height: '28px'
-                                        }}
+                                        key={typeName}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTableType === typeName ? 'bg-[#ea580c] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                        onClick={() => setActiveTableType(typeName)}
                                     >
-                                        <TableLogo size={12} />
-                                        <span style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}>{t.table_no}</span>
+                                        {typeName}
                                     </button>
                                 ))}
+                            </div>
+
+                            <div className="table-selection-container" style={{ padding: '10px 0', maxHeight: '350px', overflowY: 'auto' }}>
+                                {[...new Set(tables.map(t => t.table_type))]
+                                    .filter(Boolean)
+                                    .filter(typeName => activeTableType === 'ALL' || activeTableType === typeName)
+                                    .sort()
+                                    .map(typeName => {
+                                        const filteredTables = tables.filter(t => t.table_type === typeName);
+                                        return (
+                                            <div key={typeName} className="table-zone-group" style={{ marginBottom: '20px' }}>
+                                                <div style={{ padding: '0 15px 8px', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    {typeName}
+                                                </div>
+                                                <div className="selection-grid" style={{ padding: '0 15px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
+                                                    {filteredTables.map(t => (
+                                                        <button
+                                                            key={t._id}
+                                                            className={`selection-card ${tableNo === t.table_number ? 'active' : ''}`}
+                                                            onClick={() => { setTableNo(t.table_number); setSelectedTableId(t._id); setShowTableForm(false); }}
+                                                            style={{
+                                                                padding: '8px',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: tableNo === t.table_number ? '#ea580c' : (t.status === 'AVAILABLE' ? '#f0fdf4' : '#f8fafc'),
+                                                                color: tableNo === t.table_number ? '#fff' : (t.status === 'AVAILABLE' ? '#166534' : '#1e293b'),
+                                                                borderRadius: '8px',
+                                                                border: tableNo === t.table_number ? '1px solid #ea580c' : '1px solid #e2e8f0',
+                                                                transition: 'all 0.2s',
+                                                                minWidth: '80px'
+                                                            }}
+                                                        >
+                                                            <TableLogo size={14} />
+                                                            <span style={{ fontSize: '11px', fontWeight: '700' }}>{t.table_number}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                {tables.length === 0 && (
+                                    <div style={{ padding: '20px', textAlign: 'center' }}>
+                                        <p className="text-[11px] text-slate-400 font-medium italic">No tables available.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -1132,23 +1229,11 @@ const BillingPage = () => {
                     {showAlterForm && (
                         <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
                             <div style={{ padding: '0 15px 15px' }}>
-                                <div className="search-box" style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', marginBottom: '10px' }}>
-                                    <Search size={16} color="#94a3b8" />
-                                    <input type="text" placeholder="Search by Table, Bill No..." value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', marginLeft: '8px', width: '100%', fontSize: '13px' }} />
+                                <div style={{ background: '#e0e7ff', padding: '10px', borderRadius: '8px', border: '1px solid #c7d2fe', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Edit size={16} color="#4338ca" />
+                                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#4338ca' }}>ALTERATION MODE ACTIVE</span>
                                 </div>
-                                <div className="alter-list-container" style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {billSearchKots.filter(b => b.bill_number.includes(billSearchQuery) || b.table_no?.includes(billSearchQuery) || b.customer_name?.includes(billSearchQuery)).map(b => (
-                                        <div key={b._id} className="alter-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                                            <div className="bill-info" style={{ display: 'flex', gap: '10px', fontSize: '13px', fontWeight: 'bold' }}>
-                                                <span style={{ color: 'var(--primary)' }}>#{b.bill_number}</span>
-                                                <span>Table: {b.table_no || 'N/A'}</span>
-                                                <span style={{ color: '#64748b' }}>{b.customer_name || 'Walk-in'}</span>
-                                            </div>
-                                            <button className="alter-action-btn" onClick={() => { loadBillForAlter(b); setShowAlterForm(false); }} style={{ background: 'var(--primary)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'black', letterSpacing: '0.5px' }}>ALTER BILL</button>
-                                        </div>
-                                    ))}
-                                    {billSearchKots.length === 0 && <div style={{ textAlign: 'center', padding: '20px', fontSize: '13px', color: '#94a3b8' }}>No active bills found.</div>}
-                                </div>
+                                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>You are currently modifying Bill #{billNumber}. Update items and click "SAVE" or "KOT" to confirm changes.</p>
                             </div>
                         </div>
                     )}
@@ -1174,9 +1259,11 @@ const BillingPage = () => {
                     {showReturnForm && (
                         <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
                             <div style={{ padding: '0 15px 15px' }}>
-                                <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px', fontWeight: 'bold' }}>Specify return details for selected items.</p>
-                                <textarea placeholder="Reason for return..." style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', height: '60px', resize: 'none', marginBottom: '10px', fontSize: '13px' }}></textarea>
-                                <button onClick={() => { alert("Return logged successfully."); setShowReturnForm(false); }} style={{ width: '100%', background: '#ef4444', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'black', letterSpacing: '0.5px' }}>LOG RETURN</button>
+                                <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '8px', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                                    <Undo2 size={16} color="#dc2626" />
+                                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc2626' }}>RETURN MODE ACTIVE</span>
+                                </div>
+                                <p style={{ fontSize: '11px', color: '#64748b' }}>Select items from the bill to return and specify quantities below.</p>
                             </div>
                         </div>
                     )}
@@ -1262,56 +1349,51 @@ const BillingPage = () => {
                         {/* Bill Footer */}
                         <div className="order-footer">
                             <div className="summary-section">
-                                <div className={`collapsible-summary-area ${isOrderListCollapsed ? 'hidden' : ''}`}>
-                                    <div className="sum-row">
-                                        <span>Subtotal ({billItems.length} items)</span>
-                                        <span className="mono">₹{subTotal.toFixed(2)}</span>
-                                    </div>
-
-                                    {/* Detailed Summary Sections */}
-                                    <div className="summary-details-grid">
-                                        <div className="sum-detail-row">
-                                            <label>Discount</label>
-                                            <div className="input-with-toggle">
-                                                <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
-                                                <button onClick={() => setDiscountType(discountType === 'PERCENT' ? 'FIXED' : 'PERCENT')}>
-                                                    {discountType === 'PERCENT' ? '%' : '₹'}
-                                                </button>
-                                            </div>
-                                            <span className="calc-val">- ₹{billCalculations.discountAmount.toFixed(2)}</span>
+                                {showMoreForm && (
+                                    <div className={`collapsible-summary-area animate-in fade-in slide-in-from-top-2 duration-300`}>
+                                        <div className="sum-row" style={{ padding: '5px 0', borderBottom: '1px dashed #e2e8f0' }}>
+                                            <span>Subtotal ({billItems.length} items)</span>
+                                            <span className="mono">₹{subTotal.toFixed(2)}</span>
                                         </div>
 
-                                        {(orderMode === 'DELIVERY' || showMoreForm) && (
+                                        <div className="summary-details-grid">
+                                            <div className="sum-detail-row">
+                                                <label>Discount</label>
+                                                <div className="input-with-toggle">
+                                                    <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+                                                    <button onClick={() => setDiscountType(discountType === 'PERCENT' ? 'FIXED' : 'PERCENT')}>
+                                                        {discountType === 'PERCENT' ? '%' : '₹'}
+                                                    </button>
+                                                </div>
+                                                <span className="calc-val">- ₹{billCalculations.discountAmount.toFixed(2)}</span>
+                                            </div>
+
                                             <div className="sum-detail-row">
                                                 <label>Deliv. Chg</label>
                                                 <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} />
                                                 <span className="calc-val">+ ₹{billCalculations.deliveryCharge.toFixed(2)}</span>
                                             </div>
-                                        )}
 
-                                        {(orderMode === 'PARCEL' || showMoreForm) && (
                                             <div className="sum-detail-row">
                                                 <label>Pack. Chg</label>
                                                 <input type="number" value={containerCharge} onChange={(e) => setContainerCharge(e.target.value)} />
                                                 <span className="calc-val">+ ₹{billCalculations.containerCharge.toFixed(2)}</span>
                                             </div>
-                                        )}
 
-                                        <div className="sum-detail-row">
-                                            <label>Tax ({gstPercentage}%)</label>
-                                            <div className="empty-input"></div>
-                                            <span className="calc-val">+ ₹{taxAmount.toFixed(2)}</span>
-                                        </div>
+                                            <div className="sum-detail-row">
+                                                <label>Tax ({gstPercentage}%)</label>
+                                                <div className="empty-input"></div>
+                                                <span className="calc-val">+ ₹{taxAmount.toFixed(2)}</span>
+                                            </div>
 
-                                        {roundOff !== 0 && (
                                             <div className="sum-detail-row">
                                                 <label>Round Off</label>
                                                 <div className="empty-input"></div>
                                                 <span className="calc-val">{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {showLoyaltyForm && (
                                     <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
@@ -1331,7 +1413,7 @@ const BillingPage = () => {
                                             <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Mark All Items as Complementary?</span>
                                             <button
                                                 onClick={() => { toggleFullBillComplimentary(); toggleExpandableForm('COMPLEMENTARY'); }}
-                                                style={{ background: '#f97316', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '900', fontSize: '0.75rem' }}
+                                                style={{ background: '#ea580c', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '900', fontSize: '0.75rem' }}
                                             >
                                                 TOGGLE ALL
                                             </button>
@@ -1339,26 +1421,15 @@ const BillingPage = () => {
                                     </div>
                                 )}
 
-                                {showMoreForm && (
-                                    <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
-                                        <div className="form-grid" style={{ padding: '15px' }}>
-                                            <div className="form-group">
-                                                <label>Delivery Charge (₹)</label>
-                                                <input type="number" value={deliveryCharge} onChange={(e) => setDeliveryCharge(e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Packaging Charge (₹)</label>
-                                                <input type="number" value={containerCharge} onChange={(e) => setContainerCharge(e.target.value)} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+
 
                                 <div className="sum-total-enhanced">
                                     <div className="total-label">
                                         <span className="main-total">TOTAL PAYABLE</span>
-                                        <span className="items-count">{billItems.length} Items</span>
                                     </div>
+                                    <span className="items-count" style={{ fontSize: '0.9rem', fontWeight: '900', opacity: 1 }}>
+                                        {billItems.reduce((sum, item) => sum + item.quantity, 0)} QTY
+                                    </span>
                                     <span className="total-value">₹{grandTotal.toFixed(2)}</span>
                                 </div>
                             </div>

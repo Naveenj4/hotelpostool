@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, ArrowRight, Loader2, AlertCircle, Store, CheckCircle, Lock } from 'lucide-react';
+import { Mail, ArrowRight, Loader2, AlertCircle, Utensils, CheckCircle, Lock } from 'lucide-react';
+import LandingHeader from '../components/landing/LandingHeader';
+import LandingFooter from '../components/landing/LandingFooter';
 import './Login.css'; // Reusing Login styles for consistency
 
 const ForgotPassword = () => {
@@ -117,48 +119,54 @@ const ForgotPassword = () => {
     };
 
     return (
-        <div className="login-container">
-            {/* Left Side - Info */}
-            <div className="login-sidebar">
-                <div className="sidebar-glow"></div>
-                <div className="sidebar-content">
-                    <Link to="/" className="logo-link">
-                        <div className="logo-icon-box">
-                            <Store size={32} className="text-primary-500" />
-                        </div>
-                        <span className="logo-text text-white">Resto<span className="text-primary-500">SaaS</span></span>
-                    </Link>
+        <div className="min-h-screen flex flex-col pt-24 bg-slate-50">
+            <LandingHeader />
 
-                    <div>
-                        <h1 className="sidebar-title text-white">Account Recovery</h1>
-                        <p className="sidebar-desc text-white opacity-80">
-                            Don't worry, it happens to the best of us. Let's get you back into your system secure and fast.
-                        </p>
+            <div className="auth-container flex-1">
+                {/* Left Side - Info */}
+                <div className="auth-sidebar">
+                    <div className="sidebar-glow"></div>
+                    <div className="sidebar-main-content">
+                        <Link to="/" className="auth-logo-box no-underline mb-8">
+                            <div className="logo-icon-white">
+                                <Utensils size={32} />
+                            </div>
+                            <span className="logo-text-white">Resto<span className="opacity-80">SaaS</span></span>
+                        </Link>
+
+                        <div>
+                            <h2 className="sidebar-tagline">
+                                Account <br />
+                                <span className="opacity-70">Recovery.</span>
+                            </h2>
+                            <p className="text-white opacity-80 text-lg font-medium leading-relaxed">
+                                Don't worry, it happens to the best of us. Let's get you back into your system secure and fast.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Right Side - Form */}
-            <div className="login-main">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="form-wrapper"
-                >
-                    <div className="form-header">
-                        <h1 className="text-title">
-                            {step === 1 && 'Forgot Password?'}
-                            {step === 2 && 'Enter OTP'}
-                            {step === 3 && 'Reset Password'}
-                        </h1>
-                        <p className="text-muted">
-                            {step === 1 && 'Enter your restaurant details to receive a recovery code.'}
-                            {step === 2 && 'We sent a 6-digit code to your email.'}
-                            {step === 3 && 'Create a strong password for your account.'}
-                        </p>
-                    </div>
+                {/* Right Side - Form */}
+                <main className="auth-main">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="auth-form-wrapper"
+                    >
+                        <div className="form-header">
+                            <h1 className="form-title">
+                                {step === 1 && 'Forgot Password?'}
+                                {step === 2 && 'Enter OTP'}
+                                {step === 3 && 'Reset Password'}
+                            </h1>
+                            <p className="form-subtitle">
+                                {step === 1 && 'Enter your restaurant details to receive a recovery code.'}
+                                {step === 2 && 'We sent a 6-digit code to your email.'}
+                                {step === 3 && 'Create a strong password for your account.'}
+                            </p>
+                        </div>
 
-                    <div className="login-form-card">
+                        <div className="auth-card-clean">
                         {error && (
                             <div className="error-box">
                                 <AlertCircle size={18} /> {error}
@@ -272,12 +280,15 @@ const ForgotPassword = () => {
                             </form>
                         )}
 
-                        <div className="login-footer">
-                            <p>Remember your password? <Link to="/login" className="footer-link">Log In</Link></p>
+                            <div className="auth-footer">
+                                <p>Remember your password? <Link to="/login" className="auth-redirect no-underline">Log In</Link></p>
+                            </div>
                         </div>
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </main>
             </div>
+
+            <LandingFooter />
         </div>
     );
 };

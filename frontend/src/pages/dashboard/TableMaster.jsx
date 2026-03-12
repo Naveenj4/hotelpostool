@@ -14,13 +14,16 @@ import {
     AlertCircle,
     Users,
     Activity,
-    Map
+    Layers
 } from 'lucide-react';
 
 const TableMaster = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [tables, setTables] = useState([]);
+    const [tableTypes, setTableTypes] = useState([]);
+    const [captains, setCaptains] = useState([]);
+    const [waiters, setWaiters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showDrawer, setShowDrawer] = useState(false);
@@ -28,6 +31,9 @@ const TableMaster = () => {
     const [formData, setFormData] = useState({
         table_number: '',
         seating_capacity: 4,
+        captain: '',
+        waiter: '',
+        table_type: 'G Floor',
         status: 'AVAILABLE'
     });
     const [error, setError] = useState('');
@@ -49,15 +55,33 @@ const TableMaster = () => {
             if (!savedUser) return;
             const { token } = JSON.parse(savedUser);
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/tables`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (data.success) {
-                setTables(data.data);
-            }
+            const [tableRes, typeRes, captRes, waitRes] = await Promise.all([
+                fetch(`${import.meta.env.VITE_API_URL}/tables`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${import.meta.env.VITE_API_URL}/table-types`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${import.meta.env.VITE_API_URL}/captains`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${import.meta.env.VITE_API_URL}/waiters`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            const tableData = await tableRes.json();
+            const typeData = await typeRes.json();
+            const captData = await captRes.json();
+            const waitData = await waitRes.json();
+
+            if (tableData.success) setTables(tableData.data);
+            if (typeData.success) setTableTypes(typeData.data);
+            if (captData.success) setCaptains(captData.data);
+            if (waitData.success) setWaiters(waitData.data);
+
         } catch (err) {
-            console.error("Failed to fetch tables", err);
+            console.error("Failed to fetch data", err);
         } finally {
             setLoading(false);
         }
@@ -155,8 +179,9 @@ const TableMaster = () => {
         setShowDrawer(true);
     };
 
+
     const resetForm = () => {
-        setFormData({ table_number: '', seating_capacity: 4, status: 'AVAILABLE' });
+        setFormData({ table_number: '', seating_capacity: 4, captain: '', waiter: '', table_type: 'G Floor', status: 'AVAILABLE' });
         setIsEditing(false);
         setError('');
     };
@@ -190,7 +215,7 @@ const TableMaster = () => {
                     <div className="master-header-premium">
                         <div className="master-title-premium">
                             <div className="flex items-center gap-2 mb-2">
-                                <Map className="text-indigo-600" size={18} />
+                                <Layers className="text-indigo-600" size={18} />
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Floor Logic Architect</span>
                             </div>
                             <h2>Table Master</h2>
@@ -236,16 +261,23 @@ const TableMaster = () => {
                                         <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20 group-hover:bg-indigo-600 transition-colors">
                                             <span className="text-xl font-black">{table.table_number.charAt(0)}</span>
                                         </div>
-                                        <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">Zone: Area-01</span>
+                                        <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">{table.table_type || 'G Floor'}</span>
                                     </div>
 
                                     <div className="mb-6">
                                         <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase group-hover:text-indigo-600 transition-colors">{table.table_number}</h3>
                                         <div className="flex items-center gap-2 text-slate-400 mt-1">
                                             <Users size={14} />
-                                            <span className="text-xs font-bold uppercase tracking-widest">{table.seating_capacity} Occupancy Units</span>
+                                            <span className="text-xs font-bold uppercase tracking-widest">{table.seating_capacity} Persons</span>
                                         </div>
                                     </div>
+
+                                    {(table.captain || table.waiter) && (
+                                        <div className="mb-4 flex flex-col gap-1">
+                                            {table.captain && <div className="text-xs font-bold text-slate-500 uppercase">C: <span className="text-slate-700">{table.captain}</span></div>}
+                                            {table.waiter && <div className="text-xs font-bold text-slate-500 uppercase">W: <span className="text-slate-700">{table.waiter}</span></div>}
+                                        </div>
+                                    )}
 
                                     <div className="flex items-center justify-between mt-auto">
                                         <div className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em]" style={{
@@ -288,27 +320,77 @@ const TableMaster = () => {
                                     </div>
                                 )}
                                 <form id="table-form" onSubmit={handleSubmit} className="space-y-8">
-                                    <div className="form-group-premium">
-                                        <label>Unit Identifier *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            className="input-premium"
-                                            placeholder="e.g. TABLE-01"
-                                            value={formData.table_number}
-                                            onChange={(e) => setFormData({ ...formData, table_number: e.target.value.toUpperCase() })}
-                                        />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="form-group-premium">
+                                            <label>Table Name *</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="input-premium"
+                                                placeholder="e.g. G1"
+                                                value={formData.table_number}
+                                                onChange={(e) => setFormData({ ...formData, table_number: e.target.value.toUpperCase() })}
+                                            />
+                                        </div>
+                                        <div className="form-group-premium">
+                                            <label>Persons</label>
+                                            <input
+                                                type="number"
+                                                className="input-premium"
+                                                value={formData.seating_capacity}
+                                                onChange={(e) => setFormData({ ...formData, seating_capacity: parseInt(e.target.value) || 0 })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="form-group-premium">
+                                            <label>Captain</label>
+                                            <select
+                                                className="input-premium"
+                                                value={formData.captain}
+                                                onChange={(e) => setFormData({ ...formData, captain: e.target.value })}
+                                            >
+                                                <option value="">-- Select Captain --</option>
+                                                {captains.map(c => (
+                                                    <option key={c._id} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="form-group-premium">
+                                            <label>Waiter</label>
+                                            <select
+                                                className="input-premium"
+                                                value={formData.waiter}
+                                                onChange={(e) => setFormData({ ...formData, waiter: e.target.value })}
+                                            >
+                                                <option value="">-- Select Waiter --</option>
+                                                {waiters.map(w => (
+                                                    <option key={w._id} value={w.name}>{w.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
                                     <div className="form-group-premium">
-                                        <label>Seating Threshold</label>
-                                        <input
-                                            type="number"
-                                            className="input-premium"
-                                            value={formData.seating_capacity}
-                                            onChange={(e) => setFormData({ ...formData, seating_capacity: parseInt(e.target.value) || 0 })}
-                                        />
+                                        <label>Table Type</label>
+                                        <div className="relative">
+                                            <Layers size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                            <select
+                                                className="input-premium !pl-12 !appearance-none"
+                                                value={formData.table_type}
+                                                onChange={(e) => setFormData({ ...formData, table_type: e.target.value })}
+                                            >
+                                                <option value="">-- Select Table Type --</option>
+                                                {tableTypes.map(type => (
+                                                    <option key={type._id} value={type.name}>{type.name}</option>
+                                                ))}
+                                                {tableTypes.length === 0 && (
+                                                    <option disabled>No types yet — create in Table Type Master</option>
+                                                )}
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div className="form-group-premium">
+
+                                    <div className="form-group-premium hidden">
                                         <label>Operational Status</label>
                                         <div className="grid grid-cols-2 gap-4">
                                             {['AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE'].map(st => (

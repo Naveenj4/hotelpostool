@@ -16,7 +16,12 @@ import {
     UserCircle,
     Activity,
     ShieldCheck,
-    Smartphone
+    Smartphone,
+    MapPin,
+    Calendar,
+    Upload,
+    Camera,
+    CreditCard
 } from 'lucide-react';
 
 const CaptainMaster = () => {
@@ -29,7 +34,12 @@ const CaptainMaster = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
-        phone: ''
+        phone: '',
+        cell_no_2: '',
+        address: '',
+        joining_date: new Date().toISOString().split('T')[0],
+        id_proof_type: 'NONE',
+        image: ''
     });
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -139,28 +149,70 @@ const CaptainMaster = () => {
 
             const result = await response.json();
 
-            if (result.success) {
-                fetchCaptains();
-            } else {
-                alert(`Error: ${result.error || result.message}`);
-            }
-        } catch (err) {
-            console.error('Error deleting captain:', err);
-            alert('An error occurred while deleting the captain.');
+        if (result.success) {
+            fetchCaptains();
+        } else {
+            alert(`Error: ${result.error || result.message}`);
         }
-    };
+    } catch (err) {
+        console.error('Error deleting captain:', err);
+        alert('An error occurred while deleting the captain.');
+    }
+};
 
-    const handleEdit = (captain) => {
-        setFormData(captain);
-        setIsEditing(true);
-        setShowDrawer(true);
-    };
+const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    const resetForm = () => {
-        setFormData({ name: '', phone: '' });
-        setIsEditing(false);
-        setError('');
-    };
+    const uploadData = new FormData();
+    uploadData.append('image', file);
+
+    try {
+        const savedUser = localStorage.getItem('user');
+        const { token } = JSON.parse(savedUser);
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/captains/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: uploadData
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            setFormData({ ...formData, image: result.data });
+        } else {
+            alert(result.message || 'Upload failed');
+        }
+    } catch (err) {
+        console.error('Upload error:', err);
+        alert('Error uploading image');
+    }
+};
+
+const handleEdit = (captain) => {
+    setFormData({
+        ...captain,
+        joining_date: captain.joining_date ? new Date(captain.joining_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+    });
+    setIsEditing(true);
+    setShowDrawer(true);
+};
+
+const resetForm = () => {
+    setFormData({
+        name: '',
+        phone: '',
+        cell_no_2: '',
+        address: '',
+        joining_date: new Date().toISOString().split('T')[0],
+        id_proof_type: 'NONE',
+        image: ''
+    });
+    setIsEditing(false);
+    setError('');
+};
 
     const filteredCaptains = captains.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -239,8 +291,12 @@ const CaptainMaster = () => {
                                     <tr key={cap._id} className="group">
                                         <td>
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-slate-900/10 group-hover:bg-indigo-600 transition-all">
-                                                    {cap.name.charAt(0).toUpperCase()}
+                                                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-slate-900/10 group-hover:bg-indigo-600 transition-all overflow-hidden">
+                                                    {cap.image ? (
+                                                        <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${cap.image}`} alt={cap.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        cap.name.charAt(0).toUpperCase()
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <div className="text-lg font-black text-slate-800 uppercase tracking-tight leading-none group-hover:text-indigo-600 transition-colors">{cap.name}</div>
@@ -299,31 +355,118 @@ const CaptainMaster = () => {
                                     </div>
                                 )}
                                 <form id="captain-form" onSubmit={handleSubmit} className="space-y-8">
-                                    <div className="form-group-premium">
-                                        <label>Personnel Identifier Label *</label>
-                                        <div className="relative">
-                                            <UserCircle size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="input-premium !pl-12"
-                                                placeholder="e.g. RAHUL SHARMA"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
-                                            />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="form-group-premium">
+                                            <label>Personnel Identifier Label *</label>
+                                            <div className="relative">
+                                                <UserCircle size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="input-premium !pl-12"
+                                                    placeholder="e.g. RAHUL SHARMA"
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group-premium">
+                                            <label>Personnel Photo</label>
+                                            <div className="flex items-center gap-4">
+                                                <div className="relative group/img w-14 h-14 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all hover:border-indigo-300">
+                                                    {formData.image ? (
+                                                        <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${formData.image}`} alt="Preview" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Camera size={20} className="text-slate-300 group-hover/img:text-indigo-400" />
+                                                    )}
+                                                    <input
+                                                        type="file"
+                                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                                        onChange={handleImageUpload}
+                                                        accept="image/*"
+                                                    />
+                                                </div>
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">
+                                                    Recommended<br />1:1 Aspect Ratio
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="form-group-premium">
+                                            <label>Cell No (Primary) *</label>
+                                            <div className="relative">
+                                                <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="input-premium !pl-12"
+                                                    placeholder="10-digit primary contact"
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group-premium">
+                                            <label>Cell No 2 (Secondary)</label>
+                                            <div className="relative">
+                                                <Smartphone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                <input
+                                                    type="text"
+                                                    className="input-premium !pl-12"
+                                                    placeholder="Secondary contact"
+                                                    value={formData.cell_no_2}
+                                                    onChange={(e) => setFormData({ ...formData, cell_no_2: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="form-group-premium">
-                                        <label>Secure Communication Ref</label>
+                                        <label>Residential Address</label>
                                         <div className="relative">
-                                            <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                            <input
-                                                type="text"
-                                                className="input-premium !pl-12"
-                                                placeholder="10-digit primary contact"
-                                                value={formData.phone}
-                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            />
+                                            <MapPin size={20} className="absolute left-4 top-4 text-slate-300" />
+                                            <textarea
+                                                className="input-premium !pl-12 min-h-[100px] py-4"
+                                                placeholder="Enter full residential address..."
+                                                value={formData.address}
+                                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            ></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="form-group-premium">
+                                            <label>Joining Date</label>
+                                            <div className="relative">
+                                                <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                <input
+                                                    type="date"
+                                                    className="input-premium !pl-12"
+                                                    value={formData.joining_date}
+                                                    onChange={(e) => setFormData({ ...formData, joining_date: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group-premium">
+                                            <label>ID Proof Verification</label>
+                                            <div className="relative">
+                                                <CreditCard size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                <select
+                                                    className="input-premium !pl-12 !appearance-none"
+                                                    value={formData.id_proof_type}
+                                                    onChange={(e) => setFormData({ ...formData, id_proof_type: e.target.value })}
+                                                >
+                                                    <option value="NONE">SELECT ID PROOF</option>
+                                                    <option value="ADHAR CARD">ADHAR CARD</option>
+                                                    <option value="VOTER ID">VOTER ID</option>
+                                                    <option value="DRIVING LICENSE">DRIVING LICENSE</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </form>
