@@ -91,7 +91,7 @@ const BillingPage = () => {
     // -- NEW POS ENHANCEMENT STATES --
     const [showTimer, setShowTimer] = useState(true);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [loyaltyEnabled, setLoyaltyEnabled] = useState(false);
+    const [loyaltyEnabled, setLoyaltyEnabled] = useState(() => localStorage.getItem('pos_loyalty_enabled') === 'true');
     const [showRateColumn, setShowRateColumn] = useState(() => localStorage.getItem('pos_show_rate') !== 'false');
     const [showProductPrice, setShowProductPrice] = useState(() => localStorage.getItem('pos_show_prod_price') !== 'false');
 
@@ -137,8 +137,9 @@ const BillingPage = () => {
         setShowPersonsForm(formName === 'PERSONS' ? !showPersonsForm : false);
         setShowCustomerForm(formName === 'CUSTOMER' ? !showCustomerForm : false);
         setShowTableForm(formName === 'TABLE' ? !showTableForm : false);
-        setShowAlterForm(formName === 'ALTER' ? !showAlterForm : false);
+        // If whole bill transfer (no item selected), use same table form UI
         setShowTransferForm(formName === 'TRANSFER' ? !showTransferForm : false);
+        setShowAlterForm(formName === 'ALTER' ? !showAlterForm : false);
         setShowReturnForm(formName === 'RETURN' ? !showReturnForm : false);
         setShowSplitForm(formName === 'SPLIT' ? !showSplitForm : false);
         setShowLoyaltyForm(formName === 'LOYALTY' ? !showLoyaltyForm : false);
@@ -190,7 +191,6 @@ const BillingPage = () => {
 
     const { subTotal, taxAmount, discountAmount, roundOff, grandTotal } = billCalculations;
 
-    const [showLoyalty, setShowLoyalty] = useState(false);
     const [billingLayout, setBillingLayout] = useState(() => localStorage.getItem('cachedBillingLayout') || 'SIDEBAR');
 
     // Get base API URL for images
@@ -520,6 +520,8 @@ const BillingPage = () => {
                     loadBillForAlter(data.data[0]);
                     setBillSearchQuery("");
                     setKotSearchQuery("");
+                    // Automatically toggle Alter Mode to show what's happening
+                    setShowAlterForm(true);
                 } else {
                     alert("No matching bill found.");
                 }
@@ -718,15 +720,35 @@ const BillingPage = () => {
     };
 
     const loadBillForAlter = (bill) => {
+        if (!bill) return;
+
+        // Core identifiers
         setCurrentBillId(bill._id);
         setBillNumber(bill.bill_number);
         setBillItems(bill.items || []);
+
+        // Flags
         setOrderMode(bill.type || 'DINE_IN');
         setTableNo(bill.table_no || "");
+        setPersons(bill.persons || "");
+
+        // Customer
         setCustomerName(bill.customer_name || "");
         setCustomerPhone(bill.customer_phone || "");
+        setCustomerAddress(bill.customer_address || "");
+        setCustomerGst(bill.customer_gst || "");
+
+        // Financials (stored in backend)
+        setDiscount(bill.discount_amount || 0);
+        setDeliveryCharge(bill.delivery_charge || 0);
+        setContainerCharge(bill.container_charge || 0);
+
+        // Selection overlays clean
         setSelectionOverlay('NONE');
-        alert(`Bill ${bill.bill_number} loaded for alteration.`);
+        setActiveItemActions(null);
+        setSelectedItemForAction(null);
+
+        alert(`Bill ${bill.bill_number} fetched and loaded into sidebar.`);
     };
 
     const toggleFullBillComplimentary = () => {
@@ -839,6 +861,9 @@ const BillingPage = () => {
                         <button type="button" className="nav-action-btn" onClick={() => navigate('/dashboard/self-service/bills-sales')} title="Recent Orders">
                             ORDER
                         </button>
+                        <button type="button" className="nav-action-btn" onClick={() => navigate('/dashboard/self-service/table-select')} title="Select Table">
+                            TABLE
+                        </button>
                         <button type="button" className={`nav-action-btn ${heldBills.length > 0 ? 'has-items' : ''}`} onClick={() => navigate('/dashboard/self-service/hold')} title="Manage held transactions">
                             HOLD {heldBills.length > 0 && <span className="hold-badge">{heldBills.length}</span>}
                         </button>
@@ -879,7 +904,11 @@ const BillingPage = () => {
                                 <div className="settings-option">
                                     <span>Loyalty System</span>
                                     <label className="switch">
-                                        <input type="checkbox" checked={loyaltyEnabled} onChange={() => setLoyaltyEnabled(!loyaltyEnabled)} />
+                                        <input type="checkbox" checked={loyaltyEnabled} onChange={() => {
+                                            const next = !loyaltyEnabled;
+                                            setLoyaltyEnabled(next);
+                                            localStorage.setItem('pos_loyalty_enabled', String(next));
+                                        }} />
                                         <span className="slider round"></span>
                                     </label>
                                 </div>
@@ -1238,29 +1267,37 @@ const BillingPage = () => {
                         </div>
                     )}
 
-                    {/* Alter Form Section */}
-                    {showAlterForm && (
-                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
-                            <div style={{ padding: '0 15px 15px' }}>
-                                <div style={{ background: '#e0e7ff', padding: '10px', borderRadius: '8px', border: '1px solid #c7d2fe', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Edit size={16} color="#4338ca" />
-                                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#4338ca' }}>ALTERATION MODE ACTIVE</span>
-                                </div>
-                                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>You are currently modifying Bill #{billNumber}. Update items and click "SAVE" or "KOT" to confirm changes.</p>
-                            </div>
-                        </div>
-                    )}
+
 
                     {/* Transfer Form Section */}
                     {showTransferForm && (
                         <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
                             <div style={{ padding: '0 15px 15px' }}>
-                                <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px', fontWeight: 'bold' }}>Select destination table to transfer <strong>{selectedItemForAction !== null ? billItems[selectedItemForAction]?.name : 'an item'}</strong>.</p>
-                                <div className="selection-grid tables" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                                    {tables.map(t => (
-                                        <button key={t._id} onClick={() => { alert(`Transferred item to Table ${t.table_no}`); removeFromBill(selectedItemForAction); setShowTransferForm(false); }} style={{ padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc', color: '#1e293b', borderRadius: '8px', border: '1px solid #e2e8f0', transition: 'all 0.2s' }}>
-                                            <Table size={20} />
-                                            <span style={{ fontSize: '12px', fontWeight: '700', marginTop: '4px' }}>{t.table_no}</span>
+                                <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px', fontWeight: 'bold' }}>
+                                    {selectedItemForAction !== null
+                                        ? `Select table to transfer ${billItems[selectedItemForAction]?.name}`
+                                        : `Transfer WHOLE BILL (${billNumber}) to another table:`}
+                                </p>
+                                <div className="selection-grid tables" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', maxHeight: '200px', overflowY: 'auto', padding: '5px' }}>
+                                    {tables.filter(t => t.table_no !== tableNo).map(t => (
+                                        <button
+                                            key={t._id}
+                                            onClick={() => {
+                                                if (selectedItemForAction !== null) {
+                                                    alert(`Item ${billItems[selectedItemForAction]?.name} transferred to Table ${t.table_no}`);
+                                                    removeFromBill(selectedItemForAction);
+                                                } else {
+                                                    setTableNo(t.table_no);
+                                                    setSelectedTableId(t._id);
+                                                    alert(`Bill ${billNumber} source table updated to ${t.table_no}. Click SAVE to confirm transfer.`);
+                                                }
+                                                setShowTransferForm(false);
+                                                setSelectedItemForAction(null);
+                                            }}
+                                            style={{ padding: '10px 5px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc', color: '#1e293b', borderRadius: '8px', border: '1px solid #e2e8f0', transition: 'all 0.2s' }}
+                                        >
+                                            <TableLogo size={20} />
+                                            <span style={{ fontSize: '12px', fontWeight: '800', marginTop: '4px' }}>{t.table_no || t.table_number}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -1268,18 +1305,7 @@ const BillingPage = () => {
                         </div>
                     )}
 
-                    {/* Return Form Section */}
-                    {showReturnForm && (
-                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
-                            <div style={{ padding: '0 15px 15px' }}>
-                                <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '8px', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                                    <Undo2 size={16} color="#dc2626" />
-                                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc2626' }}>RETURN MODE ACTIVE</span>
-                                </div>
-                                <p style={{ fontSize: '11px', color: '#64748b' }}>Select items from the bill to return and specify quantities below.</p>
-                            </div>
-                        </div>
-                    )}
+
 
                     {/* Split Form Section */}
                     {showSplitForm && (
@@ -1408,7 +1434,7 @@ const BillingPage = () => {
                                     </div>
                                 )}
 
-                                {showLoyaltyForm && (
+                                {showLoyaltyForm && loyaltyEnabled && (
                                     <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
                                         <div className="loyalty-promo-compact" style={{ padding: '15px' }}>
                                             <div className="loyalty-input">
@@ -1450,9 +1476,11 @@ const BillingPage = () => {
                             {/* Top Control Buttons */}
                             <div className="billing-actions-panel">
                                 <div className="panel-controls">
-                                    <button className={`control-btn ${showLoyaltyForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('LOYALTY')}>
-                                        <Gift size={15} /> Loyalty
-                                    </button>
+                                    {loyaltyEnabled && (
+                                        <button className={`control-btn ${showLoyaltyForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('LOYALTY')}>
+                                            <Gift size={15} /> Loyalty
+                                        </button>
+                                    )}
                                     <button className={`control-btn ${showComplementaryForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COMPLEMENTARY')}>
                                         <Gift size={15} /> COMPLEMENTARY
                                     </button>

@@ -78,6 +78,18 @@ const billSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    delivery_charge: {
+        type: Number,
+        default: 0
+    },
+    container_charge: {
+        type: Number,
+        default: 0
+    },
+    round_off: {
+        type: Number,
+        default: 0
+    },
     grand_total: {
         type: Number,
         required: true,

@@ -316,7 +316,7 @@
     border: none;
     background: transparent;
     text-align: left;
-    font-size: 0.9rem;
+    font-size: 1.06rem;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.85);
     border-radius: 8px;
@@ -482,7 +482,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.04);
-    font-weight: 700;
+    font-weight: 800;
     overflow-x: hidden;
     /* Strictly prevent horizontal scroll */
 }
@@ -962,21 +962,13 @@
 .main-total {
     font-weight: 700;
     letter-spacing: 0.05em;
-<<<<<<< HEAD
-    font-size: 0.85rem;
-=======
     font-size: 0.75rem;
->>>>>>> fad2950 (Update landing page components, payment styling, and core features)
     opacity: 0.9;
     font-family: var(--font-family);
 }
 
 .items-count {
-<<<<<<< HEAD
-    font-size: 1.1rem;
-=======
     font-size: 0.85rem;
->>>>>>> fad2950 (Update landing page components, payment styling, and core features)
     font-weight: 700;
     opacity: 1;
     letter-spacing: 0.05em;
@@ -984,11 +976,7 @@
 }
 
 .total-value {
-<<<<<<< HEAD
-    font-size: 1.75rem;
-=======
     font-size: 1.25rem;
->>>>>>> fad2950 (Update landing page components, payment styling, and core features)
     font-weight: 600;
     font-family: var(--font-family);
     letter-spacing: -0.02em;
@@ -1878,13 +1866,8 @@ input:checked+.slider:before {
     padding: 0.5rem;
     border: 1px solid var(--border-light);
     background: #fff;
-<<<<<<< HEAD
-    border-radius: 10px;
-    font-size: 0.75rem;
-=======
     border-radius: 8px;
     font-size: 0.7rem;
->>>>>>> fad2950 (Update landing page components, payment styling, and core features)
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;

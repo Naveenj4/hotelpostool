@@ -295,6 +295,9 @@ exports.updateBill = async (req, res) => {
         if (tax_amount !== undefined) bill.tax_amount = tax_amount;
         if (discount_amount !== undefined) bill.discount_amount = discount_amount;
         if (grand_total !== undefined) bill.grand_total = grand_total;
+        if (delivery_charge !== undefined) bill.delivery_charge = delivery_charge;
+        if (container_charge !== undefined) bill.container_charge = container_charge;
+        if (round_off !== undefined) bill.round_off = round_off;
 
         bill.table_no = table_no !== undefined ? table_no : bill.table_no;
         bill.persons = persons !== undefined ? persons : bill.persons;
