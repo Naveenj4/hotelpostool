@@ -571,10 +571,23 @@ const BillingPage = () => {
             if (data.success) {
                 setLastBillId(currentBillId);
                 setLastPaymentModes(paymentModes);
-                setCheckoutActive(false);
                 setShowBillPreview(true);
+                // Reset everything for the next bill
+                setTableNo("");
+                setPersons("");
+                setSelectedTableId("");
+                setCustomerName("");
+                setCustomerPhone("");
+                setCustomerAddress("");
+                setCustomerGst("");
+                setDiscount(0);
+                setDeliveryCharge(0);
+                setContainerCharge(0);
                 setBillItems([]);
-                createNewBill(); // Start fresh
+                setStepProceeded(false);
+                setCheckoutActive(false);
+                setPromoCode('');
+                createNewBill(); 
             } else {
                 alert(data.message || "Payment failed");
             }
