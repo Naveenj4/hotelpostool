@@ -1,0 +1,409 @@
+/* ReceiptEntry.css
+   Implements matching styling for Receipt Entry UI
+*/
+
+.bg-receipt {
+    background-color: #f8f9fc;
+}
+
+.re-wrapper {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 2rem;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* TOP BAR */
+.re-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 1rem;
+}
+
+.re-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.re-top-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.re-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.re-icon-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+/* CONTROLS ROW */
+.re-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.re-search-box {
+    flex: 1;
+    max-width: 320px;
+    background: #e2e8f0;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+}
+
+.re-search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.re-search-box input::placeholder {
+    color: #64748b;
+}
+
+.re-date-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.re-date-filter span {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.re-date-filter input {
+    background: #e2e8f0;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    outline: none;
+}
+
+.re-create-btn {
+    background: #e2e8f0;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.re-create-btn:hover {
+    background: #cbd5e1;
+}
+
+/* SUMMARY CARDS */
+.re-stats {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin: 1rem 0 2rem;
+}
+
+.re-stat-card {
+    background: #cbd5e1; /* Grey background matching image */
+    border: 2px solid #94a3b8;
+    border-radius: 4px;
+    padding: 2rem;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.re-stat-card label {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+}
+
+.re-stat-card .val {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+/* TABLE AREA */
+.re-table-area {
+    background: #fff;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.re-table-area table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.re-table-area th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    border-bottom: 2px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.re-table-area td {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.re-empty {
+    text-align: center;
+    padding: 3rem !important;
+    color: #94a3b8 !important;
+}
+
+.re-del-btn {
+    color: #ef4444;
+    background: #fee2e2;
+    padding: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    transition: all 0.2s;
+}
+
+.re-del-btn:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* FOOTER */
+.re-footer {
+    display: flex;
+    background: #cbd5e1;
+    border: 2px solid #94a3b8;
+    border-radius: 4px;
+    padding: 1rem 1.5rem;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.re-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+
+/* ===========================
+   FORM VIEW
+=========================== */
+.re-wrapper.form-view {
+    gap: 2rem;
+}
+
+.re-form-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+}
+
+.re-f-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.re-f-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.re-f-group label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+}
+
+.re-f-group input, 
+.re-f-group select {
+    background: #e2e8f0;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px; /* Rounded corners globally */
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0f172a;
+    outline: none;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.re-f-group input:focus, 
+.re-f-group select:focus {
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+}
+
+.re-readonly {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    cursor: not-allowed;
+}
+
+.re-form-mid {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.re-form-mid .re-f-group {
+    min-width: 240px;
+}
+
+/* BILLS / INVOICES AREA */
+.re-form-bills {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.re-fb-controls {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.re-fb-btns {
+    display: flex;
+    gap: 1rem;
+}
+
+.re-toggle-btn {
+    background: #e2e8f0;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #0f172a;
+    cursor: pointer;
+}
+
+.re-toggle-btn.active {
+    background: #cbd5e1;
+    border-color: #94a3b8;
+}
+
+/* Setteled Amount Input inside table */
+.re-settle-input {
+    width: 140px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.4rem 0.5rem;
+    text-align: right;
+    font-weight: 800;
+    color: #10b981;
+    outline: none;
+}
+
+.re-settle-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16,185,129,0.2);
+}
+
+.re-settle-input::placeholder {
+    color: #94a3b8;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+/* Bottom footer */
+.re-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.re-btn {
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.re-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.re-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.spin {
+    animation: re-spin 1s linear infinite;
+}
+
+@keyframes re-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

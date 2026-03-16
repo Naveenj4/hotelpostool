@@ -189,10 +189,11 @@ const LedgerMaster = () => {
         setError('');
     };
 
-    const filteredLedgers = ledgers.filter(l =>
-        l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        l.group.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredLedgers = ledgers.filter(l => {
+        const nameMatch = l?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false;
+        const groupMatch = l?.group?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false;
+        return nameMatch || groupMatch;
+    });
 
     return (
         <div className="dashboard-layout">
@@ -264,27 +265,27 @@ const LedgerMaster = () => {
                                                     <Target size={24} />
                                                 </div>
                                                 <div>
-                                                    <div className="text-xl font-black text-slate-900 tracking-tight leading-none mb-2">{ledger.name}</div>
-                                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded w-fit">Ref: {ledger._id?.slice(-6).toUpperCase()}</div>
+                                                    <div className="text-xl font-black text-slate-900 tracking-tight leading-none mb-2">{ledger?.name || 'Unnamed Ledger'}</div>
+                                                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded w-fit">Ref: {ledger?._id ? String(ledger._id).slice(-6).toUpperCase() : 'N/A'}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-8">
                                             <div className="space-y-2">
                                                 <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-50/50 text-indigo-600 border border-indigo-100">
-                                                    {ledger.group.replace(/_/g, ' ')}
+                                                    {(ledger?.group || '').replace(/_/g, ' ')}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-8">
                                             <div className="flex items-center gap-4">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${ledger.balance_type === 'DR' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'}`}>
-                                                    {ledger.balance_type === 'DR' ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${ledger?.balance_type === 'DR' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                    {ledger?.balance_type === 'DR' ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
                                                 </div>
                                                 <div>
-                                                    <div className="text-xl font-black text-slate-900 tracking-tighter">₹{ledger.opening_balance.toLocaleString()}</div>
-                                                    <div className={`text-[9px] font-black uppercase tracking-[0.2em] mt-0.5 ${ledger.balance_type === 'DR' ? 'text-indigo-400' : 'text-rose-400'}`}>
-                                                        {ledger.balance_type === 'DR' ? 'DEBIT ORIGIN' : 'CREDIT ORIGIN'}
+                                                    <div className="text-xl font-black text-slate-900 tracking-tighter">₹{(ledger?.opening_balance || 0).toLocaleString()}</div>
+                                                    <div className={`text-[9px] font-black uppercase tracking-[0.2em] mt-0.5 ${ledger?.balance_type === 'DR' ? 'text-indigo-400' : 'text-rose-400'}`}>
+                                                        {ledger?.balance_type === 'DR' ? 'DEBIT ORIGIN' : 'CREDIT ORIGIN'}
                                                     </div>
                                                 </div>
                                             </div>

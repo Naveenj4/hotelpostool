@@ -342,12 +342,16 @@ exports.getTopProducts = async (req, res) => {
 // @route   GET /api/reports/supplier-outstanding
 exports.getSupplierOutstanding = async (req, res) => {
     try {
-        const suppliers = await Supplier.find({ company_id: req.user.restaurant_id });
-        const outstanding = suppliers.map(s => ({
-            name: s.name,
-            contact: s.contact_person,
-            balance: s.opening_balance // Using opening_balance as the living balance field
-        })).filter(s => s.balance > 0).sort((a, b) => b.balance - a.balance);
+        const ledgers = await Ledger.find({ 
+            company_id: req.user.restaurant_id, 
+            group: 'SUNDRY_CREDITORS' 
+        });
+        const outstanding = ledgers.map(l => ({
+            name: l.name,
+            contact: l.contact_person,
+            balance: l.opening_balance, // In a real system, compute current balance
+            ledger_id: l._id
+        })).filter(l => l.balance > 0).sort((a, b) => b.balance - a.balance);
 
         res.status(200).json({ success: true, data: outstanding });
     } catch (error) {
@@ -359,12 +363,16 @@ exports.getSupplierOutstanding = async (req, res) => {
 // @route   GET /api/reports/customer-outstanding
 exports.getCustomerOutstanding = async (req, res) => {
     try {
-        const customers = await Customer.find({ company_id: req.user.restaurant_id });
-        const outstanding = customers.map(c => ({
-            name: c.name,
-            phone: c.phone,
-            balance: c.opening_balance
-        })).filter(c => c.balance > 0).sort((a, b) => b.balance - a.balance);
+        const ledgers = await Ledger.find({ 
+            company_id: req.user.restaurant_id, 
+            group: 'SUNDRY_DEBTORS' 
+        });
+        const outstanding = ledgers.map(l => ({
+            name: l.name,
+            phone: l.phone,
+            balance: l.opening_balance,
+            ledger_id: l._id
+        })).filter(l => l.balance > 0).sort((a, b) => b.balance - a.balance);
 
         res.status(200).json({ success: true, data: outstanding });
     } catch (error) {
@@ -562,6 +570,19 @@ exports.getAgingReport = async (req, res) => {
 
         if (type === 'SUPPLIER') {
             const purchases = await Purchase.find({ company_id: req.user.restaurant_id, due_amount: { $gt: 0 } }).populate('supplier_id', 'name contact_person');
+            
+            // Map supplier names to ledger IDs
+            const ledgerMapping = await Ledger.find({ 
+                company_id: req.user.restaurant_id, 
+                group: 'SUNDRY_CREDITORS' 
+            }).select('name _id');
+            const ledgerMap = {};
+            ledgerMapping.forEach(l => {
+                // Try to match name normalized
+                const baseName = l.name.replace(' (Supplier)', '');
+                ledgerMap[baseName] = l._id;
+            });
+
             purchases.forEach(p => {
                 const diffDays = Math.ceil((now - new Date(p.purchase_date)) / (1000 * 60 * 60 * 24));
                 let agingCategory = '';
@@ -570,10 +591,13 @@ exports.getAgingReport = async (req, res) => {
                 else if (diffDays <= 60) { ranges['30-60'] += p.due_amount; agingCategory = '30-60'; }
                 else { ranges['60+'] += p.due_amount; agingCategory = '60+'; }
 
+                const entityName = p.supplier_id?.name || 'Unknown Supplier';
                 detailedList.push({
                     type: 'PURCHASE',
+                    id: p._id,
                     reference: p.invoice_number || `PUR-${p._id.toString().slice(-6)}`,
-                    entity: p.supplier_id?.name || 'Unknown Supplier',
+                    entity: entityName,
+                    ledger_id: ledgerMap[entityName] || null,
                     date: p.purchase_date,
                     amount: p.due_amount,
                     age: diffDays,
@@ -583,6 +607,18 @@ exports.getAgingReport = async (req, res) => {
         } else {
             // Customers
             const bills = await Bill.find({ company_id: req.user.restaurant_id, status: 'DUE' }).populate('customer_id', 'name phone');
+            
+            // Map customer names to ledger IDs
+            const ledgerMapping = await Ledger.find({ 
+                company_id: req.user.restaurant_id, 
+                group: 'SUNDRY_DEBTORS' 
+            }).select('name _id');
+            const ledgerMap = {};
+            ledgerMapping.forEach(l => {
+                const baseName = l.name.replace(' (Customer)', '');
+                ledgerMap[baseName] = l._id;
+            });
+
             bills.forEach(b => {
                 const diffDays = Math.ceil((now - new Date(b.createdAt)) / (1000 * 60 * 60 * 24));
                 let agingCategory = '';
@@ -591,10 +627,13 @@ exports.getAgingReport = async (req, res) => {
                 else if (diffDays <= 60) { ranges['30-60'] += b.grand_total; agingCategory = '30-60'; }
                 else { ranges['60+'] += b.grand_total; agingCategory = '60+'; }
 
+                const entityName = b.customer_id?.name || b.customer_name || 'Walk-in / Unknown';
                 detailedList.push({
                     type: 'SALE',
+                    id: b._id,
                     reference: b.bill_number,
-                    entity: b.customer_id?.name || b.customer_name || 'Walk-in / Unknown',
+                    entity: entityName,
+                    ledger_id: ledgerMap[entityName] || null,
                     date: b.createdAt,
                     amount: b.grand_total,
                     age: diffDays,

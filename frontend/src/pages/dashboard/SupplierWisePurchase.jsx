@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import {
@@ -18,6 +19,7 @@ import './Dashboard.css';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 const SupplierWisePurchase = () => {
+    const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -123,7 +125,14 @@ const SupplierWisePurchase = () => {
                 }
             }
         },
-        cutout: '65%'
+        cutout: '65%',
+        onClick: (event, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                const label = chartData.labels[index];
+                navigate('/dashboard/self-service/purchase-invoices', { state: { supplierName: label } });
+            }
+        }
     };
 
     const sortedTableData = [...data].sort((a, b) => b.amount - a.amount);
@@ -233,7 +242,11 @@ const SupplierWisePurchase = () => {
                                                 <tr><td colSpan="4" className="text-center py-10 text-slate-400 font-bold">No supplier entries mapped</td></tr>
                                             ) : (
                                                 sortedTableData.map((supp, ix) => (
-                                                    <tr key={ix}>
+                                                    <tr key={ix}
+                                                        onClick={() => navigate('/dashboard/self-service/purchase-invoices', { state: { supplierName: supp.name } })}
+                                                        style={{ cursor: 'pointer' }}
+                                                        className="hover:bg-slate-50 transition-colors"
+                                                    >
                                                         <td className="font-bold text-slate-700">
                                                             <div className="flex items-center gap-2">
                                                                 <div className="w-2 h-2 rounded-full" style={{ background: palette[ix % palette.length] || '#cbd5e1' }}></div>

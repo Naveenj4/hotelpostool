@@ -112,12 +112,15 @@ const BillingPage = () => {
     const [selectedTableId, setSelectedTableId] = useState("");
     const [isTablePreSelected, setIsTablePreSelected] = useState(false);
 
-    const [customerName, setCustomerName] = useState("");
-    const [customerPhone, setCustomerPhone] = useState("");
-    const [customerAddress, setCustomerAddress] = useState("");
     const [customerGst, setCustomerGst] = useState("");
+    const [captainName, setCaptainName] = useState("");
+    const [waiterName, setWaiterName] = useState("");
+    const [captains, setCaptains] = useState([]);
+    const [waiters, setWaiters] = useState([]);
     const [showPersonsForm, setShowPersonsForm] = useState(false);
     const [showCustomerForm, setShowCustomerForm] = useState(false);
+    const [showCaptainForm, setShowCaptainForm] = useState(false);
+    const [showWaiterForm, setShowWaiterForm] = useState(false);
     const [showTableForm, setShowTableForm] = useState(false);
     const [showAlterForm, setShowAlterForm] = useState(false);
     const [showTransferForm, setShowTransferForm] = useState(false);
@@ -143,6 +146,8 @@ const BillingPage = () => {
         setShowReturnForm(formName === 'RETURN' ? !showReturnForm : false);
         setShowSplitForm(formName === 'SPLIT' ? !showSplitForm : false);
         setShowLoyaltyForm(formName === 'LOYALTY' ? !showLoyaltyForm : false);
+        setShowCaptainForm(formName === 'CAPTAIN' ? !showCaptainForm : false);
+        setShowWaiterForm(formName === 'WAITER' ? !showWaiterForm : false);
         setShowMoreForm(formName === 'MORE' ? !showMoreForm : false);
         setShowComplementaryForm(formName === 'COMPLEMENTARY' ? !showComplementaryForm : false);
         setStepProceeded(formName === 'PAYMODE' ? !stepProceeded : false);
@@ -265,6 +270,17 @@ const BillingPage = () => {
 
                 if (tableData.success) setTables(tableData.data);
                 if (typeData.success) setTableTypes(typeData.data);
+
+                // 6. Fetch Captains & Waiters
+                const [capRes, waitRes] = await Promise.all([
+                    fetch(`${import.meta.env.VITE_API_URL}/captains`, { headers }),
+                    fetch(`${import.meta.env.VITE_API_URL}/waiters`, { headers })
+                ]);
+                const capData = await capRes.json();
+                const waitData = await waitRes.json();
+
+                if (capData.success) setCaptains(capData.data);
+                if (waitData.success) setWaiters(waitData.data);
 
 
             } catch (error) {
@@ -566,7 +582,9 @@ const BillingPage = () => {
                     customer_name: customerName,
                     customer_phone: customerPhone,
                     table_no: tableNo,
-                    persons: persons
+                    persons: persons,
+                    captain_name: captainName,
+                    waiter_name: waiterName
                 })
             });
             const data = await res.json();
@@ -628,7 +646,9 @@ const BillingPage = () => {
                     persons: persons,
                     order_mode: orderMode,
                     customer_name: customerName,
-                    customer_phone: customerPhone
+                    customer_phone: customerPhone,
+                    captain_name: captainName,
+                    waiter_name: waiterName
                 })
             });
             const data = await res.json();
@@ -665,6 +685,8 @@ const BillingPage = () => {
         setCustomerPhone("");
         setCustomerAddress("");
         setCustomerGst("");
+        setCaptainName("");
+        setWaiterName("");
         setDiscount(0);
         setDeliveryCharge(0);
         setContainerCharge(0);
@@ -737,6 +759,8 @@ const BillingPage = () => {
         setCustomerPhone(bill.customer_phone || "");
         setCustomerAddress(bill.customer_address || "");
         setCustomerGst(bill.customer_gst || "");
+        setCaptainName(bill.captain_name || "");
+        setWaiterName(bill.waiter_name || "");
 
         // Financials (stored in backend)
         setDiscount(bill.discount_amount || 0);
@@ -1151,6 +1175,14 @@ const BillingPage = () => {
                             <div className="icon-bg"><Undo2 size={18} /></div>
                             <span>RETURN</span>
                         </button>
+                        <button className={`meta-icon-btn ${showCaptainForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('CAPTAIN')}>
+                            <div className="icon-bg"><UserCheck size={18} /></div>
+                            <span>{captainName || 'CAPTAIN'}</span>
+                        </button>
+                        <button className={`meta-icon-btn ${showWaiterForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('WAITER')}>
+                            <div className="icon-bg"><Users2 size={18} /></div>
+                            <span>{waiterName || 'WAITER'}</span>
+                        </button>
                     </div>
 
                     {/* Table Form Section */}
@@ -1262,6 +1294,66 @@ const BillingPage = () => {
                                 <div className="form-group">
                                     <label>GST Number</label>
                                     <input type="text" placeholder="GSTIN" value={customerGst} onChange={(e) => setCustomerGst(e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Captain Form Section */}
+                    {showCaptainForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div style={{ padding: '10px 15px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Select Captain</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px' }}>
+                                    {captains.map(cap => (
+                                        <button
+                                            key={cap._id}
+                                            onClick={() => { setCaptainName(cap.name); setShowCaptainForm(false); }}
+                                            className={`selection-card ${captainName === cap.name ? 'active' : ''}`}
+                                            style={{
+                                                padding: '8px',
+                                                background: captainName === cap.name ? '#ea580c' : '#f8fafc',
+                                                color: captainName === cap.name ? '#fff' : '#1e293b',
+                                                borderRadius: '8px',
+                                                border: '1px solid #e2e8f0',
+                                                fontSize: '11px',
+                                                fontWeight: '700'
+                                            }}
+                                        >
+                                            {cap.name}
+                                        </button>
+                                    ))}
+                                    {captains.length === 0 && <p style={{ fontSize: '11px', fontStyle: 'italic', color: '#94a3b8' }}>No captains found.</p>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Waiter Form Section */}
+                    {showWaiterForm && (
+                        <div className="customer-expandable-form animate-in slide-in-from-top-2 duration-300">
+                            <div style={{ padding: '10px 15px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Select Waiter</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px' }}>
+                                    {waiters.map(wait => (
+                                        <button
+                                            key={wait._id}
+                                            onClick={() => { setWaiterName(wait.name); setShowWaiterForm(false); }}
+                                            className={`selection-card ${waiterName === wait.name ? 'active' : ''}`}
+                                            style={{
+                                                padding: '8px',
+                                                background: waiterName === wait.name ? '#ea580c' : '#f8fafc',
+                                                color: waiterName === wait.name ? '#fff' : '#1e293b',
+                                                borderRadius: '8px',
+                                                border: '1px solid #e2e8f0',
+                                                fontSize: '11px',
+                                                fontWeight: '700'
+                                            }}
+                                        >
+                                            {wait.name}
+                                        </button>
+                                    ))}
+                                    {waiters.length === 0 && <p style={{ fontSize: '11px', fontStyle: 'italic', color: '#94a3b8' }}>No waiters found.</p>}
                                 </div>
                             </div>
                         </div>

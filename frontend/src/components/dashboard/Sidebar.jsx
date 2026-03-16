@@ -6,7 +6,7 @@ import {
     Users, Pocket, UserCircle, User, Book, ShoppingCart, Wallet,
     History, BarChart, Grid, ChevronDown, ChevronRight, Calculator,
     PieChart, List, CreditCard, Landmark, Printer, ChefHat, Lock, Globe,
-    TrendingUp, TrendingDown
+    TrendingUp, TrendingDown, Package, Monitor
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../pages/dashboard/Dashboard.css';
@@ -43,7 +43,9 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             pageKey: "admin_dashboard",
             subItems: [
                 { label: "Sales Bill", route: "/dashboard/self-service/table-select", icon: <PlusCircle size={18} /> },
-                { label: "Purchase Bill", route: "/dashboard/self-service/purchase", icon: <ShoppingCart size={18} /> },
+                { label: "Purchase Entry", route: "/dashboard/self-service/purchase", icon: <ShoppingCart size={18} /> },
+                { label: "Purchase Invoices", route: "/dashboard/self-service/purchase-invoices", icon: <History size={18} /> },
+                { label: "Receipt Entry", route: "/dashboard/self-service/receipts", icon: <FileText size={18} /> },
                 { label: "Voucher", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
             ]
         },
@@ -58,7 +60,9 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 { label: "Table", route: "/dashboard/self-service/tables", icon: <Grid size={18} /> },
                 { label: "Table Type", route: "/dashboard/self-service/table-types", icon: <Layers size={18} /> },
                 { label: "Captain/Waiter", route: "/dashboard/self-service/staff", icon: <Users size={18} /> },
-                { label: "Ledger", route: "/dashboard/self-service/ledgers", icon: <Book size={18} /> }
+                { label: "Party/Ledger", route: "/dashboard/self-service/ledgers/create", icon: <User size={18} /> },
+                { label: "Ledger Master", route: "/dashboard/self-service/ledgers", icon: <Book size={18} /> },
+                { label: "Stock Master", route: "/dashboard/self-service/stock", icon: <Package size={18} /> }
             ]
         },
         {
@@ -117,7 +121,8 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 { label: "General", route: "/dashboard/self-service/settings", icon: <Settings size={18} /> },
                 { label: "Printer", route: "/dashboard/self-service/settings/printer", icon: <Printer size={18} /> },
                 { label: "Counter", route: "/dashboard/self-service/counters", icon: <Store size={18} /> },
-                { label: "Kitchen", route: "/dashboard/self-service/settings/kitchen", icon: <ChefHat size={18} /> },
+                { label: "Kitchen Management", route: "/dashboard/self-service/kitchen-management", icon: <ChefHat size={18} /> },
+                { label: "Kitchen Display", route: "/dashboard/self-service/kitchen-display", icon: <Monitor size={18} /> },
                 { label: "User Rights", route: "/dashboard/self-service/access-control", icon: <Lock size={18} /> },
                 { label: "Order Integration", route: "/dashboard/self-service/settings/integration", icon: <Globe size={18} /> }
             ]

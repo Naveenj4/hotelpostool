@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import { Download, Loader2, ArrowUpFromLine } from 'lucide-react';
@@ -9,6 +10,7 @@ import './Dashboard.css';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const AccountsPayable = () => {
+    const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -170,12 +172,22 @@ const AccountsPayable = () => {
                                                 <tr><td colSpan="4" className="text-center py-10 text-slate-400 font-bold bg-slate-50/50">No pending payables detected.</td></tr>
                                             ) : (
                                                 details.map((item, ix) => (
-                                                    <tr key={ix}>
+                                                    <tr key={ix} className="hover:bg-slate-50 transition-colors">
                                                         <td className="font-bold text-slate-700">
                                                             <div className="text-xs text-slate-400">{new Date(item.date).toLocaleDateString()}</div>
-                                                            {item.reference}
+                                                            <span 
+                                                                onClick={() => item.id && navigate('/dashboard/self-service/purchase-invoices', { state: { viewId: item.id } })}
+                                                                className="text-indigo-600 hover:underline cursor-pointer"
+                                                            >
+                                                                {item.reference}
+                                                            </span>
                                                         </td>
-                                                        <td className="font-bold text-slate-600">{item.entity}</td>
+                                                        <td 
+                                                            className="font-bold text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors"
+                                                            onClick={() => item.ledger_id && navigate('/dashboard/self-service/ledger-statement', { state: { ledgerId: item.ledger_id } })}
+                                                        >
+                                                            {item.entity}
+                                                        </td>
                                                         <td className="text-center">
                                                             <span className={`px-2 py-0.5 rounded text-xs font-black
                                                                 ${item.age > 60 ? 'bg-red-50 text-red-600 border border-red-100' :

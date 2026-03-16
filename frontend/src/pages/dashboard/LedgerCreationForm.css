@@ -1,0 +1,285 @@
+/* LedgerCreationForm.css */
+
+.ledg-layout {
+    background-color: #f8fafc;
+}
+
+.ledg-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 2.5rem;
+}
+
+.ledg-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.ledg-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.ledg-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ledg-btn.outline {
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    color: #64748b;
+}
+
+.ledg-btn.outline:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.ledg-btn.primary {
+    background: #4f46e5;
+    border: 1.5px solid #4f46e5;
+    color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+
+.ledg-btn.primary:hover:not(:disabled) {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+
+.ledg-btn.primary:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.ledg-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.ledg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.full-span {
+    grid-column: 1 / -1;
+}
+
+/* Base Sections */
+.ledg-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+}
+
+.ledg-sec-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #334155;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Fields & Groups */
+.ledg-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.ledg-fields.row-layout {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.ledg-f-row {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.ledg-f-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 0.5rem;
+}
+
+.ledg-f-group label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+.ledg-f-group .req {
+    color: #ef4444;
+}
+
+/* Unified Inputs */
+.ledg-input-wrap, .ledg-textarea-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ledg-ico {
+    position: absolute;
+    left: 1rem;
+    color: #94a3b8;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.ledg-f-group input, 
+.ledg-f-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.ledg-textarea-wrap textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    padding-left: 2.75rem;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+    outline: none;
+    resize: vertical;
+    transition: all 0.2s;
+}
+
+.ledg-textarea-wrap .ledg-ico {
+    top: 1rem;
+}
+
+.ledg-input-wrap input {
+    padding-left: 2.75rem;
+}
+
+.ledg-f-group input:focus, 
+.ledg-textarea-wrap textarea:focus {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.ledg-f-group input::placeholder {
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+/* Radio buttons grouping */
+.ledg-radio-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.ledg-radio {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.ledg-radio input[type="radio"] {
+    display: none;
+}
+
+.ledg-radio:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+}
+
+.ledg-radio.active {
+    background: #eef2ff;
+    border-color: #6366f1;
+    color: #4f46e5;
+}
+
+.dr-cr {
+    padding: 0.75rem 1.5rem;
+}
+
+.dr-cr.active-dr {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #059669;
+}
+
+.dr-cr.active-cr {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #dc2626;
+}
+
+/* Misc Fields Checkboxes etc. */
+.ledg-checkbox-row {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    margin-right: auto;
+}
+
+.ledg-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.ledg-checkbox {
+    cursor: pointer;
+}
+
+.ledg-checkbox span {
+    color: #4f46e5;
+}
+
+@media (max-width: 1024px) {
+    .ledg-grid {
+        grid-template-columns: 1fr;
+    }
+}

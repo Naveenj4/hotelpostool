@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import {
@@ -17,6 +18,7 @@ import './Dashboard.css';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const ItemWiseSales = () => {
+    const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -138,6 +140,13 @@ const ItemWiseSales = () => {
                 grid: { display: false, drawBorder: false },
                 ticks: { maxRotation: 45, minRotation: 45 }
             }
+        },
+        onClick: (event, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                const label = chartRenderData[index].name;
+                navigate('/dashboard/self-service/bills-sales', { state: { search: label } });
+            }
         }
     };
 
@@ -241,7 +250,11 @@ const ItemWiseSales = () => {
                                                 <tr><td colSpan="3" className="text-center py-10 text-slate-400 font-bold">No product sales found</td></tr>
                                             ) : (
                                                 sortedTableData.map((item, ix) => (
-                                                    <tr key={ix}>
+                                                    <tr key={ix}
+                                                        onClick={() => navigate('/dashboard/self-service/bills-sales', { state: { search: item.name } })}
+                                                        style={{ cursor: 'pointer' }}
+                                                        className="hover:bg-slate-50 transition-colors"
+                                                    >
                                                         <td className="font-bold text-slate-700">
                                                             <div className="truncate w-32 md:w-full" title={item.name}>{item.name}</div>
                                                         </td>

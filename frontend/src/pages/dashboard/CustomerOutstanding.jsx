@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import { Download, Loader2, Users } from 'lucide-react';
 import './Dashboard.css';
 
 const CustomerOutstanding = () => {
+    const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -124,7 +126,10 @@ const CustomerOutstanding = () => {
                                             <tr><td colSpan="3" className="text-center py-10 text-slate-400 font-bold bg-slate-50/50">All customer ledgers are cleared.</td></tr>
                                         ) : (
                                             data.map((item, ix) => (
-                                                <tr key={ix}>
+                                                <tr key={ix} 
+                                                    onClick={() => navigate('/dashboard/self-service/ledger-statement', { state: { ledgerId: item.ledger_id } })}
+                                                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                                >
                                                     <td className="font-bold text-slate-700">{item.name}</td>
                                                     <td className="text-slate-500 font-bold text-sm tracking-wide">
                                                         {item.phone || <span className="text-slate-300">Unregistered</span>}

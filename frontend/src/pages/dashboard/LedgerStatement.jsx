@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import {
@@ -19,6 +20,7 @@ import {
 import './Dashboard.css';
 
 const LedgerStatement = () => {
+    const location = useLocation();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -73,7 +75,17 @@ const LedgerStatement = () => {
 
     useEffect(() => {
         fetchLedgers();
-    }, []);
+        
+        if (location.state?.ledgerId) {
+            setSelectedLedger(location.state.ledgerId);
+        }
+    }, [location.state]);
+
+    useEffect(() => {
+        if (selectedLedger) {
+            fetchStatement();
+        }
+    }, [selectedLedger]);
 
     const exportToCSV = () => {
         if (!statementData || !statementData.data.length) return;

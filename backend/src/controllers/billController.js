@@ -165,7 +165,7 @@ exports.removeItemFromBill = async (req, res) => {
 };
 exports.processPayment = async (req, res) => {
     try {
-        const { payment_modes, sub_total, tax_amount, discount_amount, grand_total, table_no, persons, customer_name, customer_phone } = req.body;
+        const { payment_modes, sub_total, tax_amount, discount_amount, grand_total, table_no, persons, customer_name, customer_phone, captain_name, waiter_name } = req.body;
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
@@ -210,6 +210,8 @@ exports.processPayment = async (req, res) => {
         bill.persons = persons !== undefined ? persons : bill.persons;
         bill.customer_name = customer_name !== undefined ? customer_name : bill.customer_name;
         bill.customer_phone = customer_phone !== undefined ? customer_phone : bill.customer_phone;
+        bill.captain_name = captain_name !== undefined ? captain_name : bill.captain_name;
+        bill.waiter_name = waiter_name !== undefined ? waiter_name : bill.waiter_name;
 
         if (payment_modes.length === 1) {
             bill.payment_mode = payment_modes[0].type;
@@ -284,7 +286,7 @@ exports.processPayment = async (req, res) => {
 
 exports.updateBill = async (req, res) => {
     try {
-        const { items, sub_total, tax_amount, discount_amount, delivery_charge, container_charge, round_off, grand_total, table_no, persons, order_mode, customer_name, customer_phone } = req.body;
+        const { items, sub_total, tax_amount, discount_amount, delivery_charge, container_charge, round_off, grand_total, table_no, persons, order_mode, customer_name, customer_phone, captain_name, waiter_name } = req.body;
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
@@ -304,6 +306,8 @@ exports.updateBill = async (req, res) => {
         bill.type = order_mode || bill.type;
         bill.customer_name = customer_name !== undefined ? customer_name : bill.customer_name;
         bill.customer_phone = customer_phone !== undefined ? customer_phone : bill.customer_phone;
+        bill.captain_name = captain_name !== undefined ? captain_name : bill.captain_name;
+        bill.waiter_name = waiter_name !== undefined ? waiter_name : bill.waiter_name;
 
         await bill.save();
         res.status(200).json({ success: true, data: bill });

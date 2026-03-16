@@ -42,6 +42,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/captains', require('./routes/captainRoutes'));
 app.use('/api/waiters', require('./routes/waiterRoutes'));
 app.use('/api/ledgers', require('./routes/ledgerRoutes'));
+app.use('/api/kitchens', require('./routes/kitchenRoutes'));
 app.use('/api/purchases', require('./routes/purchaseRoutes'));
 app.use('/api/vouchers', require('./routes/voucherRoutes'));
 app.use('/api/counters', require('./routes/counterRoutes'));
@@ -50,6 +51,7 @@ app.use('/api/stock', require('./routes/stockRoutes'));
 app.use('/api/reports', require('./routes/reportsRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/roles', require('./routes/roleRoutes'));
+app.use('/api/receipts', require('./routes/receiptRoutes'));
 
 // Basic health check
 app.get('/', (req, res) => {

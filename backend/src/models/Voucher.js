@@ -41,6 +41,17 @@ const voucherSchema = new mongoose.Schema({
     reference_id: {
         type: mongoose.Schema.Types.ObjectId // Can link to Purchase, Bill, etc if needed
     },
+    party_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Customer'
+    },
+    settled_bills: [{
+        bill_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Bill'
+        },
+        amount_settled: Number
+    }],
     is_deleted: {
         type: Boolean,
         default: false

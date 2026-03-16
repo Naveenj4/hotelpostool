@@ -21,9 +21,13 @@ import CustomerMaster from './pages/dashboard/CustomerMaster.jsx';
 import LedgerMaster from './pages/dashboard/LedgerMaster.jsx';
 import PurchaseEntry from './pages/dashboard/PurchaseEntry.jsx';
 import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement.jsx';
+import PurchaseInvoices from './pages/dashboard/PurchaseInvoices.jsx';
+import PurchaseEntryForm from './pages/dashboard/PurchaseEntryForm.jsx';
 import AdvancedReports from './pages/dashboard/AdvancedReports.jsx';
 import LedgerStatement from './pages/dashboard/LedgerStatement.jsx';
 import VoucherManagement from './pages/dashboard/VoucherManagement.jsx';
+import ReceiptEntry from './pages/dashboard/ReceiptEntry.jsx';
+import LedgerCreationForm from './pages/dashboard/LedgerCreationForm.jsx';
 import CounterMaster from './pages/dashboard/CounterMaster.jsx';
 import BillingPage from './pages/dashboard/BillingPage.jsx';
 import TableSelectionPage from './pages/dashboard/TableSelectionPage.jsx';
@@ -48,7 +52,8 @@ import Daybook from './pages/dashboard/Daybook.jsx';
 import CashBalance from './pages/dashboard/CashBalance.jsx';
 import BankBalance from './pages/dashboard/BankBalance.jsx';
 import PrinterSettings from './pages/dashboard/PrinterSettings.jsx';
-import KitchenSettings from './pages/dashboard/KitchenSettings.jsx';
+import KitchenManagement from './pages/dashboard/KitchenManagement.jsx';
+import KitchenDisplay, { KitchenDisplayList } from './pages/dashboard/KitchenDisplay.jsx';
 import OrderIntegrationSettings from './pages/dashboard/OrderIntegrationSettings.jsx';
 
 const ProtectedRoute = ({ children, adminOnly }) => {
@@ -137,11 +142,17 @@ function AppRoutes() {
                             <Route path="ledgers" element={
                                 <PermissionRoute pageKey="ledgers"><LedgerMaster /></PermissionRoute>
                             } />
+                            <Route path="ledgers/create" element={
+                                <PermissionRoute pageKey="ledgers"><LedgerCreationForm /></PermissionRoute>
+                            } />
                             <Route path="purchase" element={
-                                <PermissionRoute pageKey="purchase"><PurchaseEntry /></PermissionRoute>
+                                <PermissionRoute pageKey="purchase"><PurchaseEntryForm /></PermissionRoute>
                             } />
                             <Route path="purchase-history" element={
                                 <PermissionRoute pageKey="purchase_history"><PurchaseBillManagement /></PermissionRoute>
+                            } />
+                            <Route path="purchase-invoices" element={
+                                <PermissionRoute pageKey="purchase_history"><PurchaseInvoices /></PermissionRoute>
                             } />
                             <Route path="advanced-reports" element={
                                 <PermissionRoute pageKey="advanced_reports"><AdvancedReports /></PermissionRoute>
@@ -151,6 +162,9 @@ function AppRoutes() {
                             } />
                             <Route path="vouchers" element={
                                 <PermissionRoute pageKey="vouchers"><VoucherManagement /></PermissionRoute>
+                            } />
+                            <Route path="receipts" element={
+                                <PermissionRoute pageKey="vouchers"><ReceiptEntry /></PermissionRoute>
                             } />
                             <Route path="counters" element={
                                 <PermissionRoute pageKey="counters"><CounterMaster /></PermissionRoute>
@@ -204,8 +218,12 @@ function AppRoutes() {
 
                             {/* Settings Extensions */}
                             <Route path="settings/printer" element={<PermissionRoute pageKey="settings"><PrinterSettings /></PermissionRoute>} />
-                            <Route path="settings/kitchen" element={<PermissionRoute pageKey="settings"><KitchenSettings /></PermissionRoute>} />
                             <Route path="settings/integration" element={<PermissionRoute pageKey="settings"><OrderIntegrationSettings /></PermissionRoute>} />
+
+                            {/* Kitchen Management & Display (KDS) */}
+                            <Route path="kitchen-management" element={<PermissionRoute pageKey="settings"><KitchenManagement /></PermissionRoute>} />
+                            <Route path="kitchen-display" element={<PermissionRoute pageKey="settings"><KitchenDisplayList /></PermissionRoute>} />
+                            <Route path="kitchen-display/:kitchenId" element={<PermissionRoute pageKey="settings"><KitchenDisplay /></PermissionRoute>} />
 
                             <Route path="*" element={<Navigate to={getLandingPage()} replace />} />
                         </Routes>
