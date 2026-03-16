@@ -29,7 +29,7 @@ const tableSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['AVAILABLE', 'OCCUPIED', 'RESERVED', 'MAINTENANCE'],
+        enum: ['AVAILABLE', 'OCCUPIED', 'PRINTED', 'RESERVED', 'MAINTENANCE'],
         default: 'AVAILABLE'
     },
     is_active: {
@@ -40,7 +40,14 @@ const tableSchema = new mongoose.Schema({
     reservation_name: { type: String, trim: true },
     reservation_phone: { type: String, trim: true },
     reservation_time: { type: String, trim: true },
-    reservation_note: { type: String, trim: true }
+    reservation_note: { type: String, trim: true },
+
+    // Live session tracking
+    occupied_since: { type: Date, default: null },  // When captain started the order
+    printed_at: { type: Date, default: null },       // When Save & Print was done
+    running_amount: { type: Number, default: 0 },   // Live bill total
+    bill_id: { type: String, default: null },        // Linked active bill _id
+    kot_status: { type: String, enum: ['NONE', 'KOT_SENT', 'READY'], default: 'NONE' }, // kitchen order status
 }, {
     timestamps: true
 });

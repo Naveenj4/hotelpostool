@@ -286,13 +286,15 @@ exports.processPayment = async (req, res) => {
 
 exports.updateBill = async (req, res) => {
     try {
-        const { items, sub_total, tax_amount, discount_amount, delivery_charge, container_charge, round_off, grand_total, table_no, persons, order_mode, customer_name, customer_phone, captain_name, waiter_name } = req.body;
+        const { items, status, kitchen_status, sub_total, tax_amount, discount_amount, delivery_charge, container_charge, round_off, grand_total, table_no, persons, order_mode, customer_name, customer_phone, captain_name, waiter_name } = req.body;
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
         if (bill.status === 'PAID') return res.status(400).json({ success: false, error: 'Bill already paid' });
 
         if (items) bill.items = items;
+        if (status) bill.status = status;
+        if (kitchen_status) bill.kitchen_status = kitchen_status;
         if (sub_total !== undefined) bill.sub_total = sub_total;
         if (tax_amount !== undefined) bill.tax_amount = tax_amount;
         if (discount_amount !== undefined) bill.discount_amount = discount_amount;

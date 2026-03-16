@@ -47,8 +47,13 @@ const billSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['DRAFT', 'OPEN', 'PAID', 'CANCELLED', 'DUE', 'CREDIT'],
+        enum: ['DRAFT', 'OPEN', 'PAID', 'CANCELLED', 'DUE', 'CREDIT', 'KITCHEN_READY', 'KITCHEN_DONE'],
         default: 'OPEN'
+    },
+    kitchen_status: {
+        type: String,
+        enum: ['PENDING', 'READY', 'SERVED'],
+        default: 'PENDING'
     },
     type: {
         type: String,

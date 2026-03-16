@@ -24,8 +24,8 @@ function TimeBadge({ createdAt }) {
     }, [createdAt]);
 
     const diff = Math.floor((Date.now() - new Date(createdAt)) / 1000);
-    const urgent = diff > 600; // > 10 min = urgent
-    const warn = diff > 300;  // > 5 min = warning
+    const urgent = diff > 600;
+    const warn = diff > 300;
 
     return (
         <span style={{
@@ -40,13 +40,91 @@ function TimeBadge({ createdAt }) {
 }
 
 /* ─── Order Card ─── */
-function OrderCard({ order, color }) {
+function OrderCard({ order, color, onReady, onDelete }) {
+    const [loading, setLoading] = useState(''); // 'ready' | 'delete' | ''
     const modeBadge = {
         DINE_IN: { label: 'Dine In', bg: '#ede9fe', color: '#7c3aed' },
         TAKEAWAY: { label: 'Takeaway', bg: '#fef9c3', color: '#ca8a04' },
         SELF_SERVICE: { label: 'Counter', bg: '#dcfce7', color: '#16a34a' }
     };
     const mode = modeBadge[order.order_mode] || modeBadge.SELF_SERVICE;
+
+    const handleReady = async () => {
+        setLoading('ready');
+        try {
+            // 1. Mark the bill as READY in kitchen
+            await fetch(`${API}/bills/${order._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                body: JSON.stringify({ kitchen_status: 'READY' })
+            });
+
+            // 2. If this order is linked to a table, mark it as READY on the floor plan
+            if (order.table_no) {
+                const res = await fetch(`${API}/tables`, { headers: { Authorization: `Bearer ${getToken()}` } });
+                const data = await res.json();
+                if (data.success) {
+                    const matched = data.data.find(t => String(t.table_number) === String(order.table_no));
+                    if (matched) {
+                        await fetch(`${API}/tables/${matched._id}/kot-status`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                            body: JSON.stringify({ kot_status: 'READY' })
+                        });
+                    }
+                }
+            }
+
+            // 3. Signal other pages via BroadcastChannel
+            try {
+                const ch = new BroadcastChannel('restoboard_kot');
+                ch.postMessage({ type: 'ORDER_READY', billId: order._id, tableNo: order.table_no });
+                ch.close();
+            } catch(e) {}
+
+            onReady(order._id);
+        } catch(e) { console.error('Order ready error', e); }
+        setLoading('');
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm('Remove this order from the kitchen display?')) return;
+        setLoading('delete');
+        try {
+            // 1. Move bill back to DRAFT and reset kitchen_status so it disappears from KDS
+            await fetch(`${API}/bills/${order._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                body: JSON.stringify({ status: 'DRAFT', kitchen_status: 'PENDING' })
+            });
+
+            // 2. Clear KOT status on the table so the badge disappears
+            if (order.table_no) {
+                const res = await fetch(`${API}/tables`, { headers: { Authorization: `Bearer ${getToken()}` } });
+                const data = await res.json();
+                if (data.success) {
+                    const matched = data.data.find(t => String(t.table_number) === String(order.table_no));
+                    if (matched) {
+                        await fetch(`${API}/tables/${matched._id}/kot-status`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                            body: JSON.stringify({ kot_status: 'NONE' })
+                        });
+                    }
+                }
+            }
+
+            // 3. Signal other pages via BroadcastChannel
+            try {
+                const ch = new BroadcastChannel('restoboard_kot');
+                ch.postMessage({ type: 'KOT_DELETED', billId: order._id, tableNo: order.table_no });
+                ch.close();
+            } catch(e) {}
+
+            onDelete(order._id);
+        } catch(e) { console.error('Delete order error', e); }
+        setLoading('');
+    };
 
     return (
         <div style={{
@@ -74,7 +152,7 @@ function OrderCard({ order, color }) {
                 </div>
             </div>
 
-            {/* Staff Header Extension */}
+            {/* Staff Row */}
             {(order.captain_name || order.waiter_name) && (
                 <div style={{ background: '#f8fafc', padding: '0.4rem 1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0' }}>
                     {order.captain_name && (
@@ -111,6 +189,40 @@ function OrderCard({ order, color }) {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem', borderTop: '1px solid #f0f0f0' }}>
+                <button
+                    onClick={handleReady}
+                    disabled={!!loading}
+                    style={{
+                        flex: 1, padding: '0.65rem 0.5rem', borderRadius: 10, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                        background: loading === 'ready' ? '#86efac' : 'linear-gradient(135deg,#16a34a,#22c55e)',
+                        color: '#fff', fontWeight: 900, fontSize: '0.75rem', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: 5, transition: 'all 0.2s',
+                        boxShadow: '0 3px 10px rgba(22,163,74,0.3)'
+                    }}
+                    onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'scale(1.03)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                    <CheckCircle2 size={14} />
+                    {loading === 'ready' ? 'UPDATING...' : '✅ ORDER READY'}
+                </button>
+                <button
+                    onClick={handleDelete}
+                    disabled={!!loading}
+                    style={{
+                        padding: '0.65rem 0.75rem', borderRadius: 10, border: '1.5px solid #fee2e2', cursor: loading ? 'not-allowed' : 'pointer',
+                        background: '#fff', color: '#ef4444', fontWeight: 800, fontSize: '0.75rem',
+                        display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#fef2f2'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
+                    title="Remove from kitchen display"
+                >
+                    🗑 {loading === 'delete' ? '...' : 'DEL'}
+                </button>
             </div>
         </div>
     );
@@ -198,6 +310,15 @@ export default function KitchenDisplay() {
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [error, setError] = useState('');
+    const [newOrderFlash, setNewOrderFlash] = useState(false); // flash banner when KOT arrives
+
+    // Optimistic removal handlers
+    const handleOrderReady = (billId) => {
+        setOrders(prev => prev.filter(o => o._id !== billId));
+    };
+    const handleOrderDelete = (billId) => {
+        setOrders(prev => prev.filter(o => o._id !== billId));
+    };
 
     const fetchOrders = useCallback(async (isManual = false) => {
         if (isManual) setRefreshing(true);
@@ -224,9 +345,39 @@ export default function KitchenDisplay() {
 
     useEffect(() => {
         fetchOrders();
-        // Auto-refresh every 10 seconds
-        const interval = setInterval(() => fetchOrders(), 10000);
-        return () => clearInterval(interval);
+        // Auto-refresh every 5 seconds
+        const interval = setInterval(() => fetchOrders(), 5000);
+
+        // === PRIMARY: BroadcastChannel (same-tab + cross-tab, same browser) ===
+        let kotChannel = null;
+        try {
+            kotChannel = new BroadcastChannel('restoboard_kot');
+            kotChannel.onmessage = (e) => {
+                if (e.data?.type === 'KOT_FIRED') {
+                    fetchOrders(false); // instant silent refresh
+                    setNewOrderFlash(true);
+                    setTimeout(() => setNewOrderFlash(false), 3000);
+                }
+            };
+        } catch(e) {
+            console.warn('BroadcastChannel not supported, using localStorage fallback');
+        }
+
+        // === FALLBACK: localStorage storage event (cross-tab only) ===
+        const handleStorageEvent = (e) => {
+            if (e.key === 'kot_fired') {
+                fetchOrders(false);
+                setNewOrderFlash(true);
+                setTimeout(() => setNewOrderFlash(false), 3000);
+            }
+        };
+        window.addEventListener('storage', handleStorageEvent);
+
+        return () => {
+            clearInterval(interval);
+            if (kotChannel) kotChannel.close();
+            window.removeEventListener('storage', handleStorageEvent);
+        };
     }, [fetchOrders]);
 
     const kColor = kitchen?.color || '#6c5fc7';
@@ -240,8 +391,21 @@ export default function KitchenDisplay() {
 
     return (
         <div style={{ minHeight: '100vh', background: '#0f0f1a', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', flexDirection: 'column' }}>
+            {/* ─── NEW ORDER Flash Banner ─── */}
+            {newOrderFlash && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+                    background: '#22c55e', color: '#fff',
+                    padding: '0.75rem', textAlign: 'center',
+                    fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.1em',
+                    animation: 'pulse 0.5s ease-in-out infinite alternate',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10
+                }}>
+                    <ChefHat size={20} /> 🔔 NEW KOT RECEIVED — ORDER ADDED!
+                </div>
+            )}
             {/* ─── Top Bar ─── */}
-            <div style={{ background: '#1a1a2e', borderBottom: `3px solid ${kColor}`, padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ background: '#1a1a2e', borderBottom: `3px solid ${kColor}`, padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginTop: newOrderFlash ? '48px' : 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button onClick={() => navigate('/dashboard/self-service/kitchen-display')}
                         style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, padding: '0.5rem 0.9rem', color: '#aaa', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -309,7 +473,13 @@ export default function KitchenDisplay() {
                         alignItems: 'start'
                     }}>
                         {orders.map(order => (
-                            <OrderCard key={order._id} order={order} color={kColor} />
+                            <OrderCard
+                                key={order._id}
+                                order={order}
+                                color={kColor}
+                                onReady={handleOrderReady}
+                                onDelete={handleOrderDelete}
+                            />
                         ))}
                     </div>
                 )}
@@ -321,11 +491,14 @@ export default function KitchenDisplay() {
                     <Utensils size={11} /> RESTOBOARD KITCHEN DISPLAY SYSTEM
                 </div>
                 <div style={{ color: '#333', fontSize: '0.65rem', fontWeight: 700 }}>
-                    Auto-refresh: 10s · {new Date().toLocaleDateString()}
+                    Auto-refresh: 5s · Instant KOT sync · {new Date().toLocaleDateString()}
                 </div>
             </div>
 
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+            <style>{`
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes pulse { from { opacity: 1; } to { opacity: 0.7; } }
+            `}</style>
         </div>
     );
 }

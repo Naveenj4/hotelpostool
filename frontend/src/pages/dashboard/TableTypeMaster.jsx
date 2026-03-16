@@ -164,11 +164,11 @@ const TableTypeMaster = () => {
                                 <Layers className="text-indigo-600" size={18} />
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Spatial Zones</span>
                             </div>
-                            <h2>Table Type Master</h2>
+                            <h2>Table Type Creation</h2>
                             <p>Categorize your dining areas into zones like Garden, AC Hall, or Rooftop.</p>
                         </div>
                         <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Create New Zone
+                            <PlusCircle size={20} /> Create New TableType
                         </button>
                     </div>
 

@@ -31,7 +31,7 @@ const StaffMaster = () => {
     const [showDrawer, setShowDrawer] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [staffType, setStaffType] = useState('CAPTAIN'); // 'CAPTAIN' or 'WAITER'
-    
+
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
@@ -244,15 +244,15 @@ const StaffMaster = () => {
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Human Resource Core</span>
                             </div>
                             <div className="flex items-center gap-6">
-                                <h2 className="m-0">{staffType === 'CAPTAIN' ? 'Captain Master' : 'Waiter Master'}</h2>
+                                <h2 className="m-0">{staffType === 'CAPTAIN' ? 'Captain Creation' : 'Waiter Creation'}</h2>
                                 <div className="flex bg-slate-100 p-1 rounded-xl">
-                                    <button 
+                                    <button
                                         className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${staffType === 'CAPTAIN' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                         onClick={() => setStaffType('CAPTAIN')}
                                     >
                                         CAPTAINS
                                     </button>
-                                    <button 
+                                    <button
                                         className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${staffType === 'WAITER' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                         onClick={() => setStaffType('WAITER')}
                                     >

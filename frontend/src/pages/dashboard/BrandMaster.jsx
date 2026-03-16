@@ -179,7 +179,7 @@ const BrandMaster = () => {
                                 <Award className="text-indigo-600" size={18} />
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Brand Ecosystem</span>
                             </div>
-                            <h2>Brand Master</h2>
+                            <h2>Brand Creation</h2>
                             <p>Manage product brands and manufacturing identities.</p>
                         </div>
                         <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>

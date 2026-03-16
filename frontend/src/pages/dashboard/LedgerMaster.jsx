@@ -215,7 +215,7 @@ const LedgerMaster = () => {
                                 </div>
                                 <span className="metric-pill-modern">Accounting Infrastructure</span>
                             </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Ledger Master</h2>
+                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Ledger </h2>Creation
                             <p className="text-slate-500 font-bold mt-2 text-lg">Architectural accounting heads and strategic financial classifications.</p>
                         </div>
                         <button className="btn-glow bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.1em] hover:bg-indigo-600 transition-all shadow-2xl flex items-center gap-4 group" onClick={() => { resetForm(); setShowDrawer(true); }}>

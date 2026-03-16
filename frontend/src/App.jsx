@@ -51,9 +51,10 @@ import AccountsPayable from './pages/dashboard/AccountsPayable.jsx';
 import Daybook from './pages/dashboard/Daybook.jsx';
 import CashBalance from './pages/dashboard/CashBalance.jsx';
 import BankBalance from './pages/dashboard/BankBalance.jsx';
-import PrinterSettings from './pages/dashboard/PrinterSettings.jsx';
+import PrinterManagement from './pages/dashboard/PrinterManagement.jsx';
 import KitchenManagement from './pages/dashboard/KitchenManagement.jsx';
 import KitchenDisplay, { KitchenDisplayList } from './pages/dashboard/KitchenDisplay.jsx';
+import PrinterDisplay, { PrinterDisplayList } from './pages/dashboard/PrinterDisplay.jsx';
 import OrderIntegrationSettings from './pages/dashboard/OrderIntegrationSettings.jsx';
 
 const ProtectedRoute = ({ children, adminOnly }) => {
@@ -217,13 +218,17 @@ function AppRoutes() {
                             <Route path="accounts/bank" element={<PermissionRoute pageKey="accounts"><BankBalance /></PermissionRoute>} />
 
                             {/* Settings Extensions */}
-                            <Route path="settings/printer" element={<PermissionRoute pageKey="settings"><PrinterSettings /></PermissionRoute>} />
                             <Route path="settings/integration" element={<PermissionRoute pageKey="settings"><OrderIntegrationSettings /></PermissionRoute>} />
 
                             {/* Kitchen Management & Display (KDS) */}
                             <Route path="kitchen-management" element={<PermissionRoute pageKey="settings"><KitchenManagement /></PermissionRoute>} />
                             <Route path="kitchen-display" element={<PermissionRoute pageKey="settings"><KitchenDisplayList /></PermissionRoute>} />
                             <Route path="kitchen-display/:kitchenId" element={<PermissionRoute pageKey="settings"><KitchenDisplay /></PermissionRoute>} />
+
+                            {/* Printer Management & Display */}
+                            <Route path="printer-management" element={<PermissionRoute pageKey="settings"><PrinterManagement /></PermissionRoute>} />
+                            <Route path="printer-display" element={<PermissionRoute pageKey="settings"><PrinterDisplayList /></PermissionRoute>} />
+                            <Route path="printer-display/:id" element={<PermissionRoute pageKey="settings"><PrinterDisplay /></PermissionRoute>} />
 
                             <Route path="*" element={<Navigate to={getLandingPage()} replace />} />
                         </Routes>

@@ -182,7 +182,7 @@ const CategoryMaster = () => {
                                 <Activity className="text-indigo-600" size={18} />
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Hierarchy Management</span>
                             </div>
-                            <h2>Category Master</h2>
+                            <h2>Category Creation</h2>
                             <p>Organize your menu into logical groups for better reporting.</p>
                         </div>
                         <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>

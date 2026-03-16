@@ -325,7 +325,7 @@ const ProductMaster = () => {
                                 <Activity className="text-indigo-600" size={18} />
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Global Item Registry</span>
                             </div>
-                            <h2>Inventory Master</h2>
+                            <h2>Item Creation</h2>
                             <p>Configure SKU details, pricing matrix, and replenishment rules.</p>
                         </div>
                         <div className="flex gap-3">
@@ -339,7 +339,7 @@ const ProductMaster = () => {
                                 <span className="text-xs uppercase font-black">Archive Export</span>
                             </button>
                             <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                                <PlusCircle size={20} /> Add Master Item
+                                <PlusCircle size={20} /> Add New Item
                             </button>
                         </div>
                     </div>
@@ -491,7 +491,7 @@ const ProductMaster = () => {
                                                     ) : (
                                                         <div className="text-center p-4">
                                                             <ImageIcon size={40} className="text-slate-300 mx-auto mb-2" />
-                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tap to Upload<br/>Product Photo</p>
+                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tap to Upload<br />Product Photo</p>
                                                         </div>
                                                     )}
                                                     <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
@@ -625,7 +625,7 @@ const ProductMaster = () => {
                                                 <ShoppingCart className="text-indigo-600" size={20} />
                                                 <h4 className="text-lg font-bold text-slate-800">Stock Details & Level</h4>
                                             </div>
-                                            
+
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6 pb-6 border-b border-slate-100">
                                                 <div className="form-group-premium">
                                                     <label>Opening Stock</label>

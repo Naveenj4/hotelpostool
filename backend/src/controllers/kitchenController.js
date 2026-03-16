@@ -76,10 +76,11 @@ exports.getKitchenOrders = async (req, res) => {
         const kitchen = await Kitchen.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
         if (!kitchen) return res.status(404).json({ success: false, error: 'Kitchen not found' });
 
-        // Find all OPEN/DRAFT bills for this company
+        // Show only OPEN bills that haven't been marked READY/SERVED in the kitchen yet
         const bills = await Bill.find({
             company_id: req.user.restaurant_id,
-            status: { $in: ['OPEN', 'DRAFT'] },
+            status: 'OPEN',
+            kitchen_status: 'PENDING',
             'items.0': { $exists: true } // at least 1 item
         }).sort({ createdAt: 1 });
 

@@ -218,11 +218,11 @@ const TableMaster = () => {
                                 <Layers className="text-indigo-600" size={18} />
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Floor Logic Architect</span>
                             </div>
-                            <h2>Table Master</h2>
+                            <h2>Table Creation</h2>
                             <p>Spatial configuration and seating capacity management.</p>
                         </div>
                         <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Deploy New Table
+                            <PlusCircle size={20} /> Add New Table
                         </button>
                     </div>
 

@@ -119,7 +119,8 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             pageKey: "settings",
             subItems: [
                 { label: "General", route: "/dashboard/self-service/settings", icon: <Settings size={18} /> },
-                { label: "Printer", route: "/dashboard/self-service/settings/printer", icon: <Printer size={18} /> },
+                { label: "Printer Management", route: "/dashboard/self-service/printer-management", icon: <Printer size={18} /> },
+                { label: "Printer Display", route: "/dashboard/self-service/printer-display", icon: <Monitor size={18} /> },
                 { label: "Counter", route: "/dashboard/self-service/counters", icon: <Store size={18} /> },
                 { label: "Kitchen Management", route: "/dashboard/self-service/kitchen-management", icon: <ChefHat size={18} /> },
                 { label: "Kitchen Display", route: "/dashboard/self-service/kitchen-display", icon: <Monitor size={18} /> },

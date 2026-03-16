@@ -100,3 +100,100 @@ exports.cancelReservation = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+// Occupy a table — captain starts taking order (marks OCCUPIED + records start time)
+exports.occupyTable = async (req, res) => {
+    try {
+        const { bill_id, running_amount } = req.body;
+        const table = await Table.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+
+        table.status = 'OCCUPIED';
+        table.occupied_since = table.occupied_since || new Date(); // only set on first occupy
+        table.printed_at = null;
+        table.running_amount = running_amount || 0;
+        table.bill_id = bill_id || null;
+        await table.save();
+
+        res.status(200).json({ success: true, data: table });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Mark table as PRINTED — Save & Print was clicked
+exports.markTablePrinted = async (req, res) => {
+    try {
+        const { running_amount } = req.body;
+        const table = await Table.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+
+        table.status = 'PRINTED';
+        table.printed_at = new Date();
+        if (running_amount !== undefined) table.running_amount = running_amount;
+        await table.save();
+
+        res.status(200).json({ success: true, data: table });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Free a table — payment done, table resets to AVAILABLE
+exports.freeTable = async (req, res) => {
+    try {
+        const table = await Table.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+
+        table.status = 'AVAILABLE';
+        table.occupied_since = null;
+        table.printed_at = null;
+        table.running_amount = 0;
+        table.bill_id = null;
+        table.kot_status = 'NONE';
+        table.reservation_name = '';
+        table.reservation_phone = '';
+        table.reservation_time = '';
+        table.reservation_note = '';
+        await table.save();
+
+        res.status(200).json({ success: true, data: table });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// PATCH /tables/:id/update-amount — live running amount update
+exports.updateTableAmount = async (req, res) => {
+    try {
+        const { running_amount } = req.body;
+        const table = await Table.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+
+        if (running_amount !== undefined) table.running_amount = running_amount;
+        await table.save();
+
+        res.status(200).json({ success: true, data: table });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// PATCH /tables/:id/kot-status — update kitchen order status (KOT_SENT / READY / NONE)
+exports.updateKotStatus = async (req, res) => {
+    try {
+        const { kot_status } = req.body;
+        if (!['NONE', 'KOT_SENT', 'READY'].includes(kot_status)) {
+            return res.status(400).json({ success: false, error: 'Invalid kot_status. Use NONE, KOT_SENT, or READY' });
+        }
+        const table = await Table.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+
+        table.kot_status = kot_status;
+        await table.save();
+
+        res.status(200).json({ success: true, data: table });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
