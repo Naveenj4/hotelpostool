@@ -57,7 +57,7 @@ const billSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['DINE_IN', 'TAKEAWAY', 'SELF_SERVICE'],
+        enum: ['DINE_IN', 'TAKEAWAY', 'SELF_SERVICE', 'PARCEL', 'DELIVERY', 'PARTY'],
         default: 'SELF_SERVICE'
     },
     items: [{
@@ -80,7 +80,12 @@ const billSchema = new mongoose.Schema({
             type: Number,
             required: true
         },
-        category: String // To help with splitting if needed
+        category: String, // To help with splitting if needed
+        status: {
+            type: String,
+            enum: ['PENDING', 'READY'],
+            default: 'PENDING'
+        }
     }],
     sub_total: {
         type: Number,

@@ -1095,7 +1095,7 @@ const BillingPage = () => {
 <body>
     <div class="center">
         <div class="big">KOT</div>
-        <div class="table-label">${tableNo ? '🪑 TABLE ' + tableNo : (orderMode === 'TAKEAWAY' ? '🛍 TAKEAWAY' : '🏪 COUNTER')}</div>
+        <div class="table-label">${tableNo ? '🪑 TABLE ' + tableNo : (orderMode === 'TAKEAWAY' ? '🛍 TAKEAWAY' : (orderMode === 'PARCEL' ? '📦 PARCEL' : (orderMode === 'DELIVERY' ? '🚚 DELIVERY' : (orderMode === 'PARTY' ? '🎉 PARTY' : '🏪 COUNTER'))))}</div>
     </div>
     <hr class="sep-solid">
     <div class="info-row"><span>Bill#</span><span>${billNumber}</span></div>

@@ -66,227 +66,133 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
     const isOccupied = table.status === 'OCCUPIED';
     const isPrinted  = table.status === 'PRINTED';
     const isReserved = table.status === 'RESERVED';
-    const isActive   = isOccupied || isPrinted; // table has an open session
+    const isActive   = isOccupied || isPrinted; 
 
+    // Minimal elegant colors
     const colorScheme = isOccupied
-        ? { border: '#fb923c', bg: '#fffaf5', text: '#c2410c', icon: '#fb923c', glow: '#fb923c33' }
+        ? { border: '#fdba74', bg: '#fffaf5', text: '#ea580c', glow: '#fb923c22' }
         : isPrinted
-            ? { border: '#22c55e', bg: '#f0fdf4', text: '#15803d', icon: '#22c55e', glow: '#22c55e33' }
+            ? { border: '#86efac', bg: '#f0fdf4', text: '#16a34a', glow: '#22c55e22' }
             : isReserved
-                ? { border: '#a78bfa', bg: '#fbfaff', text: '#7c3aed', icon: '#a78bfa', glow: '#a78bfa33' }
-                : { border: '#e2e8f0', bg: '#ffffff', text: '#1e293b', icon: '#94a3b8', glow: 'transparent' };
+                ? { border: '#c4b5fd', bg: '#fbfaff', text: '#7c3aed', glow: '#a78bfa22' }
+                : { border: '#e2e8f0', bg: '#ffffff', text: '#334155', glow: 'transparent' };
 
-    const { border, bg, text: numCol, icon: iconCol, glow } = colorScheme;
-
-    // Live timer from occupied_since
+    const { border, bg, text, glow } = colorScheme;
     const liveTimer = useLiveTimer(isActive ? table.occupied_since : null);
-
     const handleClick = () => onSelect(table);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            {/* Card */}
-            <button
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, width: '130px' }}>
+            {/* Main Interactive Card */}
+            <div
                 onClick={handleClick}
                 style={{
-                    width: '108px', minHeight: '108px', border: `1.5px solid ${border}`,
-                    borderRadius: '16px', background: bg, cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    justifyContent: 'center', gap: '6px', padding: '12px 6px',
-                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                    outline: 'none', position: 'relative',
-                    boxShadow: isActive || isReserved ? `0 4px 14px ${glow}` : '0 2px 6px rgba(0,0,0,0.03)'
+                    width: '100%',
+                    height: '130px',
+                    border: `1px solid ${border}`,
+                    borderRadius: '16px',
+                    background: bg,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '14px',
+                    position: 'relative',
+                    boxShadow: isActive || isReserved ? `0 4px 16px ${glow}` : '0 2px 4px rgba(0,0,0,0.02)',
+                    transition: 'all 0.2s ease',
+                    userSelect: 'none',
+                    justifyContent: 'space-between'
                 }}
                 onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-5px) scale(1.02)';
-                    e.currentTarget.style.boxShadow = `0 14px 28px ${border}44`;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = `0 8px 20px ${glow === 'transparent' ? 'rgba(0,0,0,0.04)' : glow}`;
                 }}
                 onMouseLeave={e => {
                     e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.boxShadow = isActive || isReserved ? `0 4px 14px ${glow}` : '0 2px 6px rgba(0,0,0,0.03)';
+                    e.currentTarget.style.boxShadow = isActive || isReserved ? `0 4px 16px ${glow}` : '0 2px 4px rgba(0,0,0,0.02)';
                 }}
             >
-                {/* PRINTED badge — top of card */}
-                {isPrinted && (
-                    <div style={{
-                        position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)',
-                        background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff',
-                        fontSize: '9px', fontWeight: 900, padding: '2px 8px', borderRadius: '20px',
-                        display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap',
-                        boxShadow: '0 2px 6px rgba(34,197,94,0.4)', letterSpacing: '0.05em'
-                    }}>
-                        <Printer size={8} /> PRINTED
-                    </div>
-                )}
-
-                {/* KOT SENT badge — bottom: shown after captain prints KOT */}
-                {isActive && table.kot_status === 'KOT_SENT' && (
-                    <div style={{
-                        position: 'absolute', bottom: '-9px', left: '50%', transform: 'translateX(-50%)',
-                        background: 'linear-gradient(135deg,#2563eb,#3b82f6)', color: '#fff',
-                        fontSize: '8px', fontWeight: 900, padding: '2px 7px', borderRadius: '20px',
-                        display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap',
-                        boxShadow: '0 2px 6px rgba(59,130,246,0.5)', letterSpacing: '0.05em', zIndex: 2
-                    }}>
-                        🍳 KOT SENT
-                    </div>
-                )}
-
-                {/* READY badge — bottom: pulsing green when kitchen marks ready */}
-                {isActive && table.kot_status === 'READY' && (
-                    <div style={{
-                        position: 'absolute', bottom: '-9px', left: '50%', transform: 'translateX(-50%)',
-                        background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff',
-                        fontSize: '8px', fontWeight: 900, padding: '2px 7px', borderRadius: '20px',
-                        display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap',
-                        boxShadow: '0 2px 8px rgba(34,197,94,0.7)', letterSpacing: '0.05em', zIndex: 2,
-                        animation: 'readyPulse 0.8s ease-in-out infinite alternate'
-                    }}>
-                        ✅ READY!
-                    </div>
-                )}
-
-                {/* Top info: timer + amount for occupied / printed */}
-                {isActive && (
-                    <div style={{
-                        position: 'absolute', top: isPrinted ? '10px' : '8px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px'
-                    }}>
-                        {liveTimer && (
-                            <span style={{
-                                display: 'flex', alignItems: 'center', gap: '3px',
-                                fontSize: '10px', fontWeight: 800,
-                                color: isPrinted ? '#15803d' : '#d97706',
-                                background: isPrinted ? 'rgba(220,252,231,0.9)' : 'rgba(254,249,195,0.9)',
-                                padding: '1px 6px', borderRadius: '20px'
-                            }}>
-                                <Clock size={9} />{liveTimer}
-                            </span>
-                        )}
-                        {table.running_amount > 0 && (
-                            <span style={{
-                                display: 'flex', alignItems: 'center', gap: '2px',
-                                fontSize: '10px', fontWeight: 900,
-                                color: isPrinted ? '#15803d' : '#16a34a'
-                            }}>
-                                <IndianRupee size={9} />{Math.round(table.running_amount)}
-                            </span>
-                        )}
-                    </div>
-                )}
-
-                {/* Reserved customer name */}
-                {isReserved && table.reservation_name && (
-                    <div style={{
-                        fontSize: '10px', fontWeight: 800, color: '#7c3aed',
-                        textAlign: 'center', maxWidth: '90px',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        position: 'absolute', top: '10px',
-                        background: 'rgba(245,243,255,0.9)', padding: '1px 6px', borderRadius: '10px'
-                    }}>
-                        {table.reservation_name}
-                    </div>
-                )}
-
-                <TableSVG color={iconCol} size={42} />
-
-                {/* Status bar */}
-                <div style={{
-                    marginTop: '4px', width: '28px', height: '4px', borderRadius: '2px',
-                    background: isOccupied ? '#fb923c' : isPrinted ? '#22c55e' : isReserved ? '#a78bfa' : '#e2e8f0',
-                    boxShadow: isActive || isReserved ? `0 0 8px ${border}` : 'none'
-                }} />
-            </button>
-
-            {/* Table name label */}
-            <div style={{ fontSize: '13px', fontWeight: 900, color: numCol, textTransform: 'uppercase', letterSpacing: '0.03em', textAlign: 'center' }}>
-                {table.table_number}
-            </div>
-
-            {/* Seats */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#94a3b8' }}>
-                <Users size={10} />{table.seating_capacity || '-'}
-            </div>
-
-            {/* Action buttons for RESERVED table */}
-            {isReserved && (
-                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                    <button
-                        onClick={() => onSelect(table)}
-                        title="Proceed to billing"
-                        style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 900, background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', boxShadow: '0 4px 10px rgba(124,58,237,0.3)', transition: 'all 0.2s' }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                    >
-                        BILL
-                    </button>
-                    <button
-                        onClick={() => onCancelReserve(table)}
-                        title="Cancel reservation"
-                        style={{ padding: '6px 10px', fontSize: '11px', fontWeight: 800, background: '#fff', color: '#ef4444', border: '1.5px solid #fee2e2', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
-                    >
-                        <XCircle size={14} />
-                    </button>
+                {/* Header: Table No & Seats */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 800, color: text }}>{table.table_number}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#94a3b8' }}>
+                        <Users size={12} /> {table.seating_capacity || '-'}
+                    </span>
                 </div>
-            )}
 
-            {/* PRINTED / OCCUPIED — Reset button to manually clear table */}
-            {isActive && (
-                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                    {isPrinted && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onSelect(table); }}
-                            title="Open bill and process payment"
-                            style={{
-                                padding: '6px 14px', fontSize: '11px', fontWeight: 900,
-                                background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff',
-                                border: 'none', borderRadius: '10px', cursor: 'pointer',
-                                boxShadow: '0 4px 12px rgba(34,197,94,0.3)', transition: 'all 0.2s',
-                                display: 'flex', alignItems: 'center', gap: '5px'
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(34,197,94,0.45)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(34,197,94,0.3)'; }}
-                        >
-                            <CheckCircle2 size={13} /> PAY
-                        </button>
+                {/* Center Content: Amount or State Text */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                    {isAvail ? (
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#cbd5e1' }}>Available</span>
+                    ) : isReserved ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>Reserved</span>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#7c3aed', textAlign: 'center', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {table.reservation_name || 'Guest'}
+                            </span>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '20px', fontWeight: 900, color: text }}>
+                                ₹{Math.round(table.running_amount || 0)}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
+                                <Clock size={12} /> {liveTimer || '00:00'}
+                            </div>
+                        </div>
                     )}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onReset(table); }}
-                        title="Manual reset: mark table as AVAILABLE"
-                        style={{
-                            padding: '6px 10px', fontSize: '11px', fontWeight: 800,
-                            background: '#fff', color: '#64748b', border: '1.5px solid #e2e8f0',
-                            borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
-                            display: 'flex', alignItems: 'center', gap: '4px'
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-                    >
-                        <RefreshCw size={13} /> RESET
-                    </button>
                 </div>
-            )}
 
-            {/* Reserve button for AVAILABLE table */}
-            {isAvail && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); onReserve(table); }}
-                    title="Reserve this table"
-                    style={{
-                        padding: '6px 14px', fontSize: '11px', fontWeight: 900,
-                        background: '#ffffff', color: '#7c3aed',
-                        border: '1.5px solid #e9d5ff', borderRadius: '10px',
-                        cursor: 'pointer', marginTop: '6px',
-                        boxShadow: '0 2px 5px rgba(124,58,237,0.05)', transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#f5f3ff'; e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e9d5ff'; e.currentTarget.style.transform = 'scale(1)'; }}
-                >
-                    RESERVE
-                </button>
-            )}
+                {/* Footer Badges */}
+                <div style={{ height: '16px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', width: '100%' }}>
+                    {isPrinted && (
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Printer size={11} /> PRINTED
+                        </span>
+                    )}
+                    {isActive && !isPrinted && table.kot_status === 'KOT_SENT' && (
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#3b82f6', letterSpacing: '0.02em' }}>KOT SENT</span>
+                    )}
+                    {isActive && !isPrinted && table.kot_status === 'READY' && (
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#ea580c', animation: 'readyPulse 1s infinite alternate', letterSpacing: '0.02em' }}>✅ READY</span>
+                    )}
+                </div>
+            </div>
+
+            {/* Actions Row */}
+            <div style={{ display: 'flex', gap: '6px', height: '28px' }}>
+                {isAvail && (
+                    <button onClick={() => onReserve(table)} style={{ flex: 1, fontSize: '11px', fontWeight: 700, background: 'none', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#334155'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; }}
+                    >
+                        RESERVE
+                    </button>
+                )}
+                {isReserved && (
+                    <>
+                        <button onClick={() => onSelect(table)} style={{ flex: 1, fontSize: '11px', fontWeight: 800, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}>BILL</button>
+                        <button onClick={() => onCancelReserve(table)} style={{ padding: '0 8px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}><X size={14} /></button>
+                    </>
+                )}
+                {isPrinted && (
+                    <button onClick={() => onSelect(table)} style={{ flex: 1, fontSize: '11px', fontWeight: 800, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}>
+                        <CheckCircle2 size={12} /> PAY
+                    </button>
+                )}
+                {isActive && (
+                    <button onClick={() => onReset(table)} style={{ width: isPrinted ? '36px' : '100%', fontSize: '11px', fontWeight: 700, background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isPrinted ? '0' : '4px', transition: 'all 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
+                        <RefreshCw size={12} /> {isPrinted ? '' : 'RESET'}
+                    </button>
+                )}
+            </div>
         </div>
     );
 };

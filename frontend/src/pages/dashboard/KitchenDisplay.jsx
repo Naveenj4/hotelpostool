@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ChefHat, Clock, Loader2, RefreshCw, ArrowLeft, Monitor,
@@ -40,12 +40,15 @@ function TimeBadge({ createdAt }) {
 }
 
 /* ─── Order Card ─── */
-function OrderCard({ order, color, onReady, onDelete }) {
+function OrderCard({ order, color, onReady, onDelete, filterCategory, onItemUpdate }) {
     const [loading, setLoading] = useState(''); // 'ready' | 'delete' | ''
     const modeBadge = {
         DINE_IN: { label: 'Dine In', bg: '#ede9fe', color: '#7c3aed' },
         TAKEAWAY: { label: 'Takeaway', bg: '#fef9c3', color: '#ca8a04' },
-        SELF_SERVICE: { label: 'Counter', bg: '#dcfce7', color: '#16a34a' }
+        SELF_SERVICE: { label: 'Counter', bg: '#dcfce7', color: '#16a34a' },
+        PARCEL: { label: 'Parcel', bg: '#ffedd5', color: '#ea580c' },
+        DELIVERY: { label: 'Delivery', bg: '#e0f2fe', color: '#0284c7' },
+        PARTY: { label: 'Party', bg: '#fce7f3', color: '#db2777' }
     };
     const mode = modeBadge[order.order_mode] || modeBadge.SELF_SERVICE;
 
@@ -87,42 +90,32 @@ function OrderCard({ order, color, onReady, onDelete }) {
         setLoading('');
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm('Remove this order from the kitchen display?')) return;
-        setLoading('delete');
+    const handleItemToggle = async (item) => {
+        if(loading) return;
+        setLoading('item_' + item._id);
         try {
-            // 1. Move bill back to DRAFT and reset kitchen_status so it disappears from KDS
-            await fetch(`${API}/bills/${order._id}`, {
+            const newStatus = item.status === 'READY' ? 'PENDING' : 'READY';
+            const updatedItems = order.items.map(it => 
+                it._id === item._id ? { ...it, status: newStatus } : it
+            );
+
+            const res = await fetch(`${API}/bills/${order._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-                body: JSON.stringify({ status: 'DRAFT', kitchen_status: 'PENDING' })
+                body: JSON.stringify({ items: updatedItems })
             });
-
-            // 2. Clear KOT status on the table so the badge disappears
-            if (order.table_no) {
-                const res = await fetch(`${API}/tables`, { headers: { Authorization: `Bearer ${getToken()}` } });
-                const data = await res.json();
-                if (data.success) {
-                    const matched = data.data.find(t => String(t.table_number) === String(order.table_no));
-                    if (matched) {
-                        await fetch(`${API}/tables/${matched._id}/kot-status`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-                            body: JSON.stringify({ kot_status: 'NONE' })
-                        });
-                    }
+            const data = await res.json();
+            
+            if (data.success) {
+                // If every item in the order is now ready, automatically mark the whole order as ready
+                const allReady = updatedItems.every(it => it.status === 'READY');
+                if (allReady) {
+                    await handleReady();
+                } else {
+                    onItemUpdate && onItemUpdate(order._id, updatedItems);
                 }
             }
-
-            // 3. Signal other pages via BroadcastChannel
-            try {
-                const ch = new BroadcastChannel('restoboard_kot');
-                ch.postMessage({ type: 'KOT_DELETED', billId: order._id, tableNo: order.table_no });
-                ch.close();
-            } catch(e) {}
-
-            onDelete(order._id);
-        } catch(e) { console.error('Delete order error', e); }
+        } catch (e) { console.error('Item toggle error', e); }
         setLoading('');
     };
 
@@ -133,53 +126,65 @@ function OrderCard({ order, color, onReady, onDelete }) {
             display: 'flex', flexDirection: 'column'
         }}>
             {/* Card Header */}
-            <div style={{ background: color, padding: '0.8rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <div style={{ color: '#fff', fontWeight: 900, fontSize: '1.05rem', letterSpacing: '0.05em' }}>
-                        {order.table_no ? `TABLE ${order.table_no}` : order.order_mode === 'TAKEAWAY' ? 'TAKEAWAY' : 'COUNTER'}
+            <div style={{ background: color, padding: '0.8rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ color: '#fff', fontWeight: 900, fontSize: '1.2rem', letterSpacing: '0.05em' }}>
+                        {order.table_no ? `TABLE ${order.table_no}` : `BILL #${order.bill_number}`}
                     </div>
-                    <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.68rem', fontWeight: 700 }}>
-                        Bill #{order.bill_number}
-                        {order.customer_name && ` · ${order.customer_name}`}
-                        {order.persons && ` · ${order.persons} pax`}
-                    </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     <TimeBadge createdAt={order.createdAt} />
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, background: mode.bg, color: mode.color, padding: '0.2rem 0.6rem', borderRadius: 12 }}>
-                        {mode.label}
-                    </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 800, background: mode.bg, color: mode.color, padding: '0.2rem 0.6rem', borderRadius: 12 }}>
+                            {mode.label.toUpperCase()}
+                        </span>
+                    </div>
+                    {(order.captain_name || order.persons) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem', color: 'rgba(255,255,255,0.95)', fontSize: '0.7rem', fontWeight: 700 }}>
+                            {order.captain_name && <div style={{display:'flex', alignItems:'center', gap:4}}><UserCheck size={11} /> {order.captain_name.toUpperCase()}</div>}
+                            {order.persons && <div style={{display:'flex', alignItems:'center', gap:4}}><Users2 size={11} /> {order.persons} PAX</div>}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Staff Row */}
-            {(order.captain_name || order.waiter_name) && (
-                <div style={{ background: '#f8fafc', padding: '0.4rem 1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                    {order.captain_name && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#475569', fontSize: '0.65rem', fontWeight: 700 }}>
-                            <UserCheck size={11} /> <span style={{ color: '#0f172a' }}>{order.captain_name.toUpperCase()}</span>
-                        </div>
-                    )}
-                    {order.waiter_name && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#475569', fontSize: '0.65rem', fontWeight: 700 }}>
-                            <Users2 size={11} /> <span style={{ color: '#0f172a' }}>{order.waiter_name.toUpperCase()}</span>
-                        </div>
-                    )}
-                </div>
-            )}
-
             {/* Items */}
             <div style={{ padding: '0.75rem', flex: 1 }}>
-                {order.items.map((item, i) => (
-                    <div key={i} style={{
+                {order.items
+                    .filter(item => filterCategory === 'ALL' || (item.category || 'Uncategorized') === filterCategory)
+                    .map((item, i, arr) => (
+                    <div key={item._id || i} style={{
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '0.55rem 0.5rem', borderBottom: i < order.items.length - 1 ? '1px solid #f0ecff' : 'none'
+                        padding: '0.55rem 0.5rem', borderBottom: i < arr.length - 1 ? '1px solid #f0ecff' : 'none',
+                        opacity: item.status === 'READY' ? 0.6 : 1
                     }}>
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 800, color: '#1a1333', fontSize: '0.9rem' }}>{item.name}</div>
-                            {item.category && (
-                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9b86aa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.category}</div>
-                            )}
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <button 
+                                onClick={() => handleItemToggle(item)}
+                                disabled={!!loading}
+                                style={{
+                                    width: 36, height: 20, borderRadius: 10, border: 'none',
+                                    background: item.status === 'READY' ? '#16a34a' : '#cbd5e1',
+                                    position: 'relative', transition: 'all 0.3s',
+                                    display: 'flex', alignItems: 'center', padding: 2,
+                                    cursor: loading ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                <div style={{
+                                    width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'all 0.3s',
+                                    transform: item.status === 'READY' ? 'translateX(16px)' : 'translateX(0)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    {loading === 'item_' + item._id ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite', color: '#64748b' }} /> : ''}
+                                </div>
+                            </button>
+                            <div>
+                                <div style={{ fontWeight: 800, color: '#1a1333', fontSize: '0.9rem', textDecoration: item.status === 'READY' ? 'line-through' : 'none' }}>{item.name}</div>
+                                {item.category && (
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9b86aa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.category}</div>
+                                )}
+                            </div>
                         </div>
                         <div style={{
                             background: color, color: '#fff', fontWeight: 900, fontSize: '1.1rem',
@@ -208,20 +213,6 @@ function OrderCard({ order, color, onReady, onDelete }) {
                 >
                     <CheckCircle2 size={14} />
                     {loading === 'ready' ? 'UPDATING...' : '✅ ORDER READY'}
-                </button>
-                <button
-                    onClick={handleDelete}
-                    disabled={!!loading}
-                    style={{
-                        padding: '0.65rem 0.75rem', borderRadius: 10, border: '1.5px solid #fee2e2', cursor: loading ? 'not-allowed' : 'pointer',
-                        background: '#fff', color: '#ef4444', fontWeight: 800, fontSize: '0.75rem',
-                        display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#fef2f2'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
-                    title="Remove from kitchen display"
-                >
-                    🗑 {loading === 'delete' ? '...' : 'DEL'}
                 </button>
             </div>
         </div>
@@ -311,6 +302,7 @@ export default function KitchenDisplay() {
     const [lastUpdated, setLastUpdated] = useState(null);
     const [error, setError] = useState('');
     const [newOrderFlash, setNewOrderFlash] = useState(false); // flash banner when KOT arrives
+    const [selectedCategory, setSelectedCategory] = useState('ALL');
 
     // Optimistic removal handlers
     const handleOrderReady = (billId) => {
@@ -318,6 +310,9 @@ export default function KitchenDisplay() {
     };
     const handleOrderDelete = (billId) => {
         setOrders(prev => prev.filter(o => o._id !== billId));
+    };
+    const handleItemUpdate = (billId, newItems) => {
+        setOrders(prev => prev.map(o => o._id === billId ? { ...o, items: newItems } : o));
     };
 
     const fetchOrders = useCallback(async (isManual = false) => {
@@ -381,6 +376,31 @@ export default function KitchenDisplay() {
     }, [fetchOrders]);
 
     const kColor = kitchen?.color || '#6c5fc7';
+
+    // Calculate category-wise counts
+    const categorySummary = useMemo(() => {
+        const summary = {};
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                // Determine item status, if READY we might want to exclude or include?
+                // The current visual shows all items, but items that are READY might still count.
+                // Let's just track all items.
+                const cat = item.category || 'Uncategorized';
+                if (!summary[cat]) summary[cat] = { total: 0, items: {} };
+                summary[cat].total += Number(item.quantity) || 0;
+
+                const itemName = item.name;
+                if (!summary[cat].items[itemName]) summary[cat].items[itemName] = 0;
+                summary[cat].items[itemName] += Number(item.quantity) || 0;
+            });
+        });
+        return summary;
+    }, [orders]);
+
+    const filteredOrders = useMemo(() => {
+        if (selectedCategory === 'ALL') return orders;
+        return orders.filter(order => order.items.some(item => (item.category || 'Uncategorized') === selectedCategory));
+    }, [orders, selectedCategory]);
 
     if (loading) return (
         <div style={{ minHeight: '100vh', background: '#0f0f1a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -456,33 +476,94 @@ export default function KitchenDisplay() {
                 </div>
             )}
 
-            {/* ─── Orders Grid ─── */}
-            <div style={{ flex: 1, padding: '1.25rem', overflowY: 'auto' }}>
-                {orders.length === 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: '#444', textAlign: 'center' }}>
-                        <CheckCircle2 size={80} style={{ color: '#22c55e22', marginBottom: 20 }} />
-                        <div style={{ color: '#22c55e', fontWeight: 900, fontSize: '1.5rem', marginBottom: 8 }}>All Clear!</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#555' }}>No pending orders at this kitchen</div>
-                        <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#333', fontWeight: 700 }}>Auto-refreshing every 10 seconds...</div>
-                    </div>
-                ) : (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(auto-fill, minmax(${orders.length <= 2 ? '360px' : orders.length <= 4 ? '280px' : '240px'}, 1fr))`,
-                        gap: '1rem',
-                        alignItems: 'start'
-                    }}>
-                        {orders.map(order => (
-                            <OrderCard
-                                key={order._id}
-                                order={order}
-                                color={kColor}
-                                onReady={handleOrderReady}
-                                onDelete={handleOrderDelete}
-                            />
-                        ))}
-                    </div>
-                )}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                {/* ─── Category Filter Sidebar ─── */}
+                <div style={{ 
+                    width: '240px', 
+                    background: '#111', 
+                    borderRight: '1px solid #1a1a2e', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '0.4rem', 
+                    padding: '1.25rem 1rem',
+                    overflowY: 'auto'
+                }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#555', letterSpacing: '0.12em', padding: '0 0.5rem 0.5rem 0.5rem' }}>FILTER BY CATEGORY</div>
+                    <button
+                        onClick={() => setSelectedCategory('ALL')}
+                        style={{
+                            background: selectedCategory === 'ALL' ? kColor : 'transparent',
+                            color: selectedCategory === 'ALL' ? '#fff' : '#aaa',
+                            border: 'none', borderRadius: 10, padding: '0.75rem 1rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}
+                    >
+                        ALL ORDERS
+                    </button>
+                    {Object.entries(categorySummary).map(([cat, data]) => (
+                        <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginBottom: '0.2rem' }}>
+                            <button
+                                onClick={() => setSelectedCategory(cat)}
+                                style={{
+                                    background: selectedCategory === cat ? kColor : 'transparent',
+                                    color: selectedCategory === cat ? '#fff' : '#aaa',
+                                    border: 'none', borderRadius: 10, padding: '0.75rem 1rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6
+                                }}
+                            >
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.toUpperCase()}</span> 
+                                <span style={{ 
+                                    background: selectedCategory === cat ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)', 
+                                    padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem' 
+                                }}>
+                                    {data.total}
+                                </span>
+                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '0 0.5rem' }}>
+                                {Object.entries(data.items).map(([itemName, itemCount]) => (
+                                    <div key={itemName} style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        color: selectedCategory === cat ? 'rgba(255,255,255,0.9)' : '#777',
+                                        fontSize: '0.7rem', padding: '0.3rem 0.5rem', background: selectedCategory === cat ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)', borderRadius: 6
+                                    }}>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', fontWeight: 600 }}>{itemName}</span>
+                                        <span style={{ fontWeight: 800, background: 'rgba(0,0,0,0.2)', padding: '1px 5px', borderRadius: 6 }}>{itemCount}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* ─── Orders Grid ─── */}
+                <div style={{ flex: 1, padding: '1.25rem', overflowY: 'auto', background: '#0a0a0f' }}>
+                    {filteredOrders.length === 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: '#444', textAlign: 'center' }}>
+                            <CheckCircle2 size={80} style={{ color: '#22c55e22', marginBottom: 20 }} />
+                            <div style={{ color: '#22c55e', fontWeight: 900, fontSize: '1.5rem', marginBottom: 8 }}>All Clear!</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#555' }}>No pending orders at this kitchen</div>
+                            <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#333', fontWeight: 700 }}>Auto-refreshing every 10 seconds...</div>
+                        </div>
+                    ) : (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(auto-fill, minmax(${filteredOrders.length <= 2 ? '360px' : filteredOrders.length <= 4 ? '280px' : '240px'}, 1fr))`,
+                            gap: '1rem',
+                            alignItems: 'start'
+                        }}>
+                            {filteredOrders.map(order => (
+                                <OrderCard
+                                    key={order._id}
+                                    order={order}
+                                    color={kColor}
+                                    onReady={handleOrderReady}
+                                    onDelete={handleOrderDelete}
+                                    filterCategory={selectedCategory}
+                                    onItemUpdate={handleItemUpdate}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* ─── Bottom ticker ─── */}

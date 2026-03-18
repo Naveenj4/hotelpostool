@@ -200,6 +200,19 @@ const TableMaster = () => {
         }
     };
 
+    const buildGroups = () => {
+        const map = {};
+        tableTypes.forEach(tt => { map[tt.name] = []; });
+        filteredTables.forEach(t => {
+            const key = (t.table_type || '').trim() || 'Other';
+            if (!map[key]) map[key] = [];
+            map[key].push(t);
+        });
+        return Object.entries(map).filter(([, rows]) => rows.length > 0);
+    };
+
+    const groups = buildGroups();
+
     return (
         <div className="dashboard-layout">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
@@ -244,56 +257,69 @@ const TableMaster = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+                    <div>
                         {loading ? (
-                            Array(10).fill(0).map((_, i) => (
-                                <div key={i} className="h-48 bg-slate-50 animate-pulse rounded-[2rem]"></div>
-                            ))
-                        ) : filteredTables.length === 0 ? (
-                            <div className="col-span-full py-20 text-center">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+                                {Array(10).fill(0).map((_, i) => (
+                                    <div key={i} className="h-48 bg-slate-50 animate-pulse rounded-[2rem]"></div>
+                                ))}
+                            </div>
+                        ) : groups.length === 0 ? (
+                            <div className="py-20 text-center">
                                 <Grid size={80} className="text-slate-100 mx-auto mb-6" />
                                 <p className="text-xl font-black text-slate-300 uppercase tracking-[0.2em]">Floor Void Detected</p>
                             </div>
-                        ) : filteredTables.map(table => (
-                            <div key={table._id} className={`group relative bg-white rounded-[2.5rem] border-2 transition-all p-2 ${table.is_active ? 'border-slate-50 hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-100/50 hover:-translate-y-2' : 'border-slate-100 opacity-50 grayscale'}`}>
-                                <div className="p-6">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20 group-hover:bg-indigo-600 transition-colors">
-                                            <span className="text-xl font-black">{table.table_number.charAt(0)}</span>
-                                        </div>
-                                        <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">{table.table_type || 'G Floor'}</span>
-                                    </div>
-
-                                    <div className="mb-6">
-                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase group-hover:text-indigo-600 transition-colors">{table.table_number}</h3>
-                                        <div className="flex items-center gap-2 text-slate-400 mt-1">
-                                            <Users size={14} />
-                                            <span className="text-xs font-bold uppercase tracking-widest">{table.seating_capacity} Persons</span>
-                                        </div>
-                                    </div>
-
-                                    {(table.captain || table.waiter) && (
-                                        <div className="mb-4 flex flex-col gap-1">
-                                            {table.captain && <div className="text-xs font-bold text-slate-500 uppercase">C: <span className="text-slate-700">{table.captain}</span></div>}
-                                            {table.waiter && <div className="text-xs font-bold text-slate-500 uppercase">W: <span className="text-slate-700">{table.waiter}</span></div>}
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between mt-auto">
-                                        <div className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em]" style={{
-                                            backgroundColor: getStatusStyle(table.status).bg,
-                                            color: getStatusStyle(table.status).text
-                                        }}>
-                                            {getStatusStyle(table.status).label}
-                                        </div>
-                                    </div>
+                        ) : groups.map(([groupName, groupTables]) => (
+                            <div key={groupName} className="mb-12">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest">{groupName}</h3>
+                                    <div className="h-px flex-1 bg-slate-200"></div>
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{groupTables.length} Tables</span>
                                 </div>
-                                <div className="bg-slate-50/50 rounded-[2rem] p-2 mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleEdit(table)} className="action-icon-btn edit flex-1 !h-12"><Edit size={18} /></button>
-                                    <button onClick={() => handleToggleStatus(table)} className="action-icon-btn flex-1 !h-12" style={{ background: '#fff', border: '1px solid #f1f5f9', color: table.is_active ? '#9a3412' : '#15803d' }}>
-                                        {table.is_active ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
-                                    </button>
-                                    <button onClick={() => handleDelete(table)} className="action-icon-btn delete flex-1 !h-12"><Trash2 size={18} /></button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+                                    {groupTables.map(table => (
+                                        <div key={table._id} className={`group relative bg-white rounded-[2.5rem] border-2 transition-all p-2 ${table.is_active ? 'border-slate-50 hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-100/50 hover:-translate-y-2' : 'border-slate-100 opacity-50 grayscale'}`}>
+                                            <div className="p-6">
+                                                <div className="flex justify-between items-start mb-6">
+                                                    <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20 group-hover:bg-indigo-600 transition-colors">
+                                                        <span className="text-xl font-black">{table.table_number.charAt(0)}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">{table.table_type || 'G Floor'}</span>
+                                                </div>
+
+                                                <div className="mb-6">
+                                                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase group-hover:text-indigo-600 transition-colors">{table.table_number}</h3>
+                                                    <div className="flex items-center gap-2 text-slate-400 mt-1">
+                                                        <Users size={14} />
+                                                        <span className="text-xs font-bold uppercase tracking-widest">{table.seating_capacity} Persons</span>
+                                                    </div>
+                                                </div>
+
+                                                {(table.captain || table.waiter) && (
+                                                    <div className="mb-4 flex flex-col gap-1">
+                                                        {table.captain && <div className="text-xs font-bold text-slate-500 uppercase">C: <span className="text-slate-700">{table.captain}</span></div>}
+                                                        {table.waiter && <div className="text-xs font-bold text-slate-500 uppercase">W: <span className="text-slate-700">{table.waiter}</span></div>}
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center justify-between mt-auto">
+                                                    <div className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em]" style={{
+                                                        backgroundColor: getStatusStyle(table.status).bg,
+                                                        color: getStatusStyle(table.status).text
+                                                    }}>
+                                                        {getStatusStyle(table.status).label}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-50/50 rounded-[2rem] p-2 mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleEdit(table)} className="action-icon-btn edit flex-1 !h-12"><Edit size={18} /></button>
+                                                <button onClick={() => handleToggleStatus(table)} className="action-icon-btn flex-1 !h-12" style={{ background: '#fff', border: '1px solid #f1f5f9', color: table.is_active ? '#9a3412' : '#15803d' }}>
+                                                    {table.is_active ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
+                                                </button>
+                                                <button onClick={() => handleDelete(table)} className="action-icon-btn delete flex-1 !h-12"><Trash2 size={18} /></button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         ))}
