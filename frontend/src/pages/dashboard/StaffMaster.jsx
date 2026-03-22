@@ -234,38 +234,35 @@ const StaffMaster = () => {
             )}
 
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <ShieldCheck className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Human Resource Core</span>
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title={staffType === 'CAPTAIN' ? 'Captain Creation' : 'Waiter Creation'}
+                    actions={
+                        <div className="flex items-center gap-4">
+                            <div className="flex bg-slate-100 p-1 rounded-xl mr-2">
+                                <button
+                                    className={`px-6 py-1.5 rounded-lg text-[10px] font-black transition-all ${staffType === 'CAPTAIN' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    onClick={() => setStaffType('CAPTAIN')}
+                                >
+                                    CAPTAINS
+                                </button>
+                                <button
+                                    className={`px-6 py-1.5 rounded-lg text-[10px] font-black transition-all ${staffType === 'WAITER' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    onClick={() => setStaffType('WAITER')}
+                                >
+                                    WAITERS
+                                </button>
                             </div>
-                            <div className="flex items-center gap-6">
-                                <h2 className="m-0">{staffType === 'CAPTAIN' ? 'Captain Creation' : 'Waiter Creation'}</h2>
-                                <div className="flex bg-slate-100 p-1 rounded-xl">
-                                    <button
-                                        className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${staffType === 'CAPTAIN' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                                        onClick={() => setStaffType('CAPTAIN')}
-                                    >
-                                        CAPTAINS
-                                    </button>
-                                    <button
-                                        className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${staffType === 'WAITER' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                                        onClick={() => setStaffType('WAITER')}
-                                    >
-                                        WAITERS
-                                    </button>
-                                </div>
-                            </div>
-                            <p className="mt-2 text-slate-500 font-medium">Manage your {staffType.toLowerCase()} personnel, contact details, and verification status.</p>
+                            <button className="btn-premium-primary !py-2 !px-6" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                                <PlusCircle size={18} /> 
+                                <span className="text-[10px] uppercase font-black">Register New {staffType === 'CAPTAIN' ? 'Captain' : 'Waiter'}</span>
+                            </button>
                         </div>
-                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Register New {staffType === 'CAPTAIN' ? 'Captain' : 'Waiter'}
-                        </button>
-                    </div>
+                    }
+                />
+                <div className="master-content-layout fade-in">
+                    {/* Header relocated */}
+
 
                     <div className="toolbar-premium">
                         <div className="search-premium">

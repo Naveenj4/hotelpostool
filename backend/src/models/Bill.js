@@ -8,7 +8,7 @@ const billSchema = new mongoose.Schema({
     },
     bill_number: {
         type: String,
-        required: true
+        required: false
     },
     counter_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -47,7 +47,7 @@ const billSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['DRAFT', 'OPEN', 'PAID', 'CANCELLED', 'DUE', 'CREDIT', 'KITCHEN_READY', 'KITCHEN_DONE'],
+        enum: ['DRAFT', 'OPEN', 'PAID', 'CANCELLED', 'DUE', 'CREDIT', 'KITCHEN_READY', 'KITCHEN_DONE', 'ADVANCE'],
         default: 'OPEN'
     },
     kitchen_status: {
@@ -57,9 +57,13 @@ const billSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['DINE_IN', 'TAKEAWAY', 'SELF_SERVICE', 'PARCEL', 'DELIVERY', 'PARTY'],
+        enum: ['DINE_IN', 'TAKEAWAY', 'SELF_SERVICE', 'PARCEL', 'DELIVERY', 'PARTY', 'PARTY_ORDER'],
         default: 'SELF_SERVICE'
     },
+    delivery_date: Date,
+    delivery_time: String,
+    delivery_address: String,
+    customer_address: String,
     items: [{
         product_id: {
             type: mongoose.Schema.Types.ObjectId,
@@ -71,6 +75,10 @@ const billSchema = new mongoose.Schema({
             type: Number,
             required: true,
             min: 1
+        },
+        sent_kot_qty: {
+            type: Number,
+            default: 0
         },
         unit_price: {
             type: Number,
@@ -156,7 +164,12 @@ const billSchema = new mongoose.Schema({
     is_deleted: {
         type: Boolean,
         default: false
-    }
+    },
+    kots: [{
+        kot_number: String,
+        created_at: { type: Date, default: Date.now },
+        items: [mongoose.Schema.Types.Mixed]
+    }]
 }, {
     timestamps: true
 });

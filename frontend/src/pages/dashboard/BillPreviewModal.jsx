@@ -116,6 +116,14 @@ const BillPreviewModal = ({ isOpen, onClose, billId, paymentModes }) => {
                                             <span className="bpm-meta-label">Payment:</span>
                                             <span className="bpm-meta-val bpm-pay-badge">{formatPaymentMethod(paymentModes)}</span>
                                         </div>
+                                        {billData?.kots && billData.kots.length > 0 && (
+                                            <div className="bpm-meta-row">
+                                                <span className="bpm-meta-label">KOT(s):</span>
+                                                <span className="bpm-meta-val" style={{ textAlign: 'right', wordBreak: 'break-word', fontSize: '10px' }}>
+                                                    {billData.kots.map(k => k.kot_number || 'KOT').join(', ')}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="bpm-divider-dashed" />
 

@@ -14,6 +14,12 @@ const PurchaseBillManagement = () => {
     const [purchases, setPurchases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [fromDate, setFromDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 30);
+        return d.toISOString().split('T')[0];
+    });
+    const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedPurchase, setSelectedPurchase] = useState(null);
     const [showDetail, setShowDetail] = useState(false);
 
@@ -49,10 +55,15 @@ const PurchaseBillManagement = () => {
         } catch (err) { alert("Delete failed"); }
     };
 
-    const filteredPurchases = purchases.filter(p =>
-        p.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.supplier_id?.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredPurchases = purchases.filter(p => {
+        const matchesSearch = p.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.supplier_id?.name.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const pDate = new Date(p.purchase_date).toISOString().split('T')[0];
+        const matchesDate = (!fromDate || pDate >= fromDate) && (!toDate || pDate <= toDate);
+        
+        return matchesSearch && matchesDate;
+    });
 
     const getStatusConfig = (status) => {
         const s = (status || '').toLowerCase();
@@ -81,14 +92,27 @@ const PurchaseBillManagement = () => {
                         </div>
                     </div>
 
-                    <div className="toolbar-premium">
-                        <div className="search-premium">
-                            <Search size={20} />
-                            <input type="text" placeholder="Search invoice or vendor name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <div className="toolbar-premium !flex-wrap gap-y-4">
+                        <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+                            <div className="search-premium !flex-1">
+                                <Search size={20} />
+                                <input type="text" placeholder="Search invoice or vendor name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            </div>
                         </div>
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 italic">
-                            {filteredPurchases.length} Bills
-                        </span>
+
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm">
+                                <Calendar size={14} className="text-slate-400" />
+                                <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="border-none text-xs font-bold text-slate-600 focus:ring-0 p-0" />
+                                <span className="text-slate-300">to</span>
+                                <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="border-none text-xs font-bold text-slate-600 focus:ring-0 p-0" />
+                            </div>
+
+                            <button onClick={() => window.location.href = '/dashboard/self-service/purchase'} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 flex items-center gap-2 transition-all">
+                                <PlusCircle size={18} />
+                                Create Purchase Bill
+                            </button>
+                        </div>
                     </div>
 
                     <div className="table-container-premium">

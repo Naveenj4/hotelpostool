@@ -5,8 +5,9 @@ import Header from '../../components/dashboard/Header';
 import './Dashboard.css';
 import {
     Loader2, Truck, Package, Users2, RefreshCw,
-    Clock, Users, IndianRupee, Plus, X,
-    Phone, StickyNote, CalendarClock, XCircle, CheckCircle2, Printer
+    Clock, Users, IndianRupee, Plus, X, Search,
+    Phone, StickyNote, CalendarClock, XCircle, CheckCircle2, Printer,
+    ArrowRight, Save
 } from 'lucide-react';
 
 /* ─── helpers ─── */
@@ -178,19 +179,30 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                                 onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}><X size={14} /></button>
                     </>
                 )}
-                {isPrinted && (
-                    <button onClick={() => onSelect(table)} style={{ flex: 1, fontSize: '11px', fontWeight: 800, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}>
-                        <CheckCircle2 size={12} /> PAY
-                    </button>
+                {isActive && !isPrinted && !isReserved && (
+                    <>
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1, fontSize: '10px', fontWeight: 800, background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#4f46e5'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#6366f1'}>VIEW</button>
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table, true); }} style={{ flex: 1, fontSize: '10px', fontWeight: 800, background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#059669'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#10b981'}>PRINT</button>
+                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ padding: '0 8px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
+                    </>
                 )}
-                {isActive && (
-                    <button onClick={() => onReset(table)} style={{ width: isPrinted ? '36px' : '100%', fontSize: '11px', fontWeight: 700, background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isPrinted ? '0' : '4px', transition: 'all 0.2s' }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
-                        <RefreshCw size={12} /> {isPrinted ? '' : 'RESET'}
-                    </button>
+                {isPrinted && !isReserved && (
+                    <>
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 2, fontSize: '11px', fontWeight: 800, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}>
+                            <CheckCircle2 size={12} /> PAY
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ padding: '0 8px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
+                    </>
                 )}
             </div>
         </div>
@@ -336,6 +348,7 @@ const TableSelectionPage = () => {
     const [loading, setLoading] = useState(true);
     const [reserveTarget, setReserveTarget] = useState(null);   // table to reserve
     const [reserveLoading, setReserveLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const toggleSidebar = () => {
         if (window.innerWidth <= 768) setIsMobileSidebarOpen(p => !p);
@@ -459,17 +472,75 @@ const TableSelectionPage = () => {
 
 
     /* ── Special order (no table) ── */
+    const [partyStep, setPartyStep] = useState(0); // 0 = closed, 1 = logistics, 2 = customer
+    const [partyForm, setPartyForm] = useState({
+        delivery_date: '',
+        delivery_time: '',
+        customer_name: '',
+        customer_phone: '',
+        customer_address: '',
+        orderMode: 'PARTY_ORDER'
+    });
+
     const handleSpecialOrder = (mode) => {
-        navigate('/dashboard/self-service/billing', {
-            state: { fromTable: false, orderMode: mode }
-        });
+        if (mode === 'PARTY_ORDER') {
+            setPartyStep(1);
+        } else {
+            navigate('/dashboard/self-service/billing', {
+                state: { fromTable: false, orderMode: mode }
+            });
+        }
+    };
+
+    const handlePartySubmit = async () => {
+        setReserveLoading(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            
+            // 1. Create Ledger for Customer (Party)
+            const ledgerRes = await fetch(`${import.meta.env.VITE_API_URL}/ledgers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    name: partyForm.customer_name,
+                    phone: partyForm.customer_phone,
+                    billing_address: partyForm.customer_address,
+                    group: 'SUNDRY_DEBTORS',
+                    party_type: 'CUSTOMER'
+                })
+            });
+            const ledgerData = await ledgerRes.json();
+            // Note: If already exists, we ignore or update, but here we just continue
+
+            // 2. Navigate to billing with state
+            navigate('/dashboard/self-service/billing', {
+                state: { 
+                    fromTable: false, 
+                    orderMode: 'PARTY_ORDER',
+                    partyDetails: partyForm
+                }
+            });
+        } catch (e) {
+            console.error(e);
+            alert('Failed to initiate party order');
+        } finally {
+            setReserveLoading(false);
+            setPartyStep(0);
+        }
     };
 
     /* ── Group tables by type, preserving tableTypes order ── */
     const buildGroups = () => {
+        const query = searchQuery.toLowerCase().trim();
+        const filtered = tables.filter(t => 
+            (t.table_number || '').toString().toLowerCase().includes(query) || 
+            (t.table_type || '').toLowerCase().includes(query)
+        );
+
         const map = {};
         tableTypes.forEach(tt => { map[tt.name] = []; });
-        tables.forEach(t => {
+        filtered.forEach(t => {
             const key = (t.table_type || '').trim() || 'Other';
             if (!map[key]) map[key] = [];
             map[key].push(t);
@@ -527,6 +598,20 @@ const TableSelectionPage = () => {
                             </button>
                         ))}
 
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '0 30px', borderRight: '1.5px solid #f1f5f9' }}>
+                            {[
+                                { color: '#e2e8f0', label: 'BLANK' },
+                                { color: '#fb923c', label: 'RUNNING' },
+                                { color: '#22c55e', label: 'PRINTED' },
+                                { color: '#a78bfa', label: 'RESERVED' },
+                            ].map(l => (
+                                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: l.color, boxShadow: `0 2px 4px ${l.color}44` }} />
+                                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l.label}</span>
+                                </div>
+                            ))}
+                        </div>
+
                         <div style={{ flex: 1 }} />
 
                         {[
@@ -553,20 +638,7 @@ const TableSelectionPage = () => {
                         ))}
                     </div>
 
-                    {/* ── Legend ── */}
-                    <div style={{ background: '#fff', borderBottom: '1.5px solid #f1f5f9', padding: '10px 28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '24px', flexShrink: 0 }}>
-                        {[
-                            { color: '#e2e8f0', label: 'BLANK' },
-                            { color: '#fb923c', label: 'RUNNING' },
-                            { color: '#22c55e', label: 'PRINTED' },
-                            { color: '#a78bfa', label: 'RESERVED' },
-                        ].map(l => (
-                            <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: l.color, boxShadow: `0 2px 4px ${l.color}44` }} />
-                                <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{l.label}</span>
-                            </div>
-                        ))}
-                    </div>
+
 
                     {/* ── Stats strip ── */}
                     <div style={{ background: '#fff', borderBottom: '2.5px solid #edf2f7', padding: '16px 28px', display: 'flex', gap: '40px', alignItems: 'center', flexShrink: 0 }}>
@@ -583,16 +655,31 @@ const TableSelectionPage = () => {
                             </div>
                         ))}
 
-                        {/* Refresh indicator */}
-                        <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
-                            <button
-                                onClick={fetchData}
-                                style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '8px 16px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, transition: 'all 0.2s' }}
-                                onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-                            >
-                                <RefreshCw size={14} /> Refresh Plan
-                            </button>
+                        {/* Search & Refresh Section */}
+                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ position: 'relative', width: '280px' }}>
+                                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search Table No / Type..." 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    style={{ 
+                                        width: '100%', padding: '10px 14px 10px 40px', 
+                                        border: '1.5px solid #e2e8f0', borderRadius: '14px', 
+                                        fontSize: '13px', fontWeight: 600, color: '#334155',
+                                        outline: 'none', transition: 'all 0.2s',
+                                        background: '#f8fafc'
+                                    }}
+                                    onFocus={e => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.background = '#fff'; }}
+                                    onBlur={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#f8fafc'; }}
+                                />
+                                {searchQuery && (
+                                    <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -673,6 +760,104 @@ const TableSelectionPage = () => {
                     </div>
                 </div>
             </main>
+
+            {/* ── Party Order Wizard ── */}
+            {partyStep > 0 && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#fff', borderRadius: '24px', padding: '32px', width: '500px', maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ padding: '8px', background: '#e0e7ff', color: '#4f46e5', borderRadius: '10px' }}><Users2 size={20} /></div>
+                                    Party Order Setup
+                                </h3>
+                                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8', fontWeight: 600 }}>Step {partyStep} / 2: {partyStep === 1 ? 'Logistics & Timing' : 'Customer Credentials'}</p>
+                            </div>
+                            <button onClick={() => setPartyStep(0)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={24} /></button>
+                        </div>
+
+                        {partyStep === 1 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div>
+                                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Delivery Date *</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <CalendarClock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                        <input 
+                                            type="date" 
+                                            value={partyForm.delivery_date}
+                                            onChange={e => setPartyForm(f => ({ ...f, delivery_date: e.target.value }))}
+                                            style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1.5px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Delivery Time *</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <Clock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                        <input 
+                                            type="time" 
+                                            value={partyForm.delivery_time}
+                                            onChange={e => setPartyForm(f => ({ ...f, delivery_time: e.target.value }))}
+                                            style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1.5px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => partyForm.delivery_date && partyForm.delivery_time ? setPartyStep(2) : alert('Both date and time are mandatory')}
+                                    style={{ padding: '16px', background: 'linear-gradient(135deg,#6366f1,#818cf8)', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: 900, fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)' }}
+                                >
+                                    Proceed to Customer <ArrowRight size={18} />
+                                </button>
+                            </div>
+                        )}
+
+                        {partyStep === 2 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div>
+                                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Customer Name *</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Full Name"
+                                        value={partyForm.customer_name}
+                                        onChange={e => setPartyForm(f => ({ ...f, customer_name: e.target.value }))}
+                                        style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Phone Number *</label>
+                                    <input 
+                                        type="tel" 
+                                        placeholder="10-digit mobile number"
+                                        value={partyForm.customer_phone}
+                                        onChange={e => setPartyForm(f => ({ ...f, customer_phone: e.target.value }))}
+                                        style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Delivery Address</label>
+                                    <textarea 
+                                        placeholder="Full address for delivery"
+                                        value={partyForm.customer_address}
+                                        onChange={e => setPartyForm(f => ({ ...f, customer_address: e.target.value }))}
+                                        style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, outline: 'none', minHeight: '80px', boxSizing: 'border-box', resize: 'none' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <button onClick={() => setPartyStep(1)} style={{ flex: 1, padding: '16px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '14px', fontWeight: 800, cursor: 'pointer' }}>Back</button>
+                                    <button
+                                        onClick={handlePartySubmit}
+                                        disabled={reserveLoading || !partyForm.customer_name || !partyForm.customer_phone}
+                                        style={{ flex: 2, padding: '16px', background: 'linear-gradient(135deg,#059669,#10b981)', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: 900, fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)' }}
+                                    >
+                                        {reserveLoading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
+                                        Finalize & Configure Items
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ── Reservation Modal ── */}
             {reserveTarget && (

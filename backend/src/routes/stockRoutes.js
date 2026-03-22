@@ -5,13 +5,17 @@ const {
     getLowStockItems,
     updateStock,
     bulkUpdateStock,
-    getStockHistory
+    getStockHistory,
+    getStockReport
 } = require('../controllers/stockController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes require authentication and admin/owner access
 router.use(protect);
 router.use(authorize('ADMIN', 'OWNER'));
+
+// Get stock report with summary and dates
+router.get('/report', getStockReport);
 
 // Get all stock items
 router.get('/', getStockItems);

@@ -19,6 +19,14 @@ const categorySchema = new mongoose.Schema({
     is_active: {
         type: Boolean,
         default: true
+    },
+    hsn_code: {
+        type: String,
+        trim: true
+    },
+    hsn_description: {
+        type: String,
+        trim: true
     }
 }, {
     timestamps: true

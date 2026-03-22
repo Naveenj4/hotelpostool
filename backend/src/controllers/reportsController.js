@@ -865,3 +865,824 @@ exports.getDayWisePurchaseReport = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+// @desc    Get sales profit report
+// @route   GET /api/reports/sales-profit?startDate=...&endDate=...&groupBy=...
+exports.getSalesProfitReport = async (req, res) => {
+    try {
+        const { startDate, endDate, groupBy = 'BILL' } = req.query;
+        const hotelId = req.user.restaurant_id;
+
+        let start = new Date(startDate || new Date().toISOString().split('T')[0]);
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date().toISOString().split('T')[0]);
+        end.setHours(23, 59, 59, 999);
+
+        // 1. Fetch Summary Data (Total Sales and Returns)
+        const summaryMatch = {
+            company_id: new mongoose.Types.ObjectId(hotelId),
+            createdAt: { $gte: start, $lte: end }
+        };
+
+        const summaryData = await Bill.aggregate([
+            { $match: summaryMatch },
+            { $group: {
+                _id: null,
+                totalSales: { $sum: { $cond: [{ $eq: ["$status", "PAID"] }, "$grand_total", 0] } },
+                totalReturns: { $sum: { $cond: [{ $eq: ["$status", "CANCELLED"] }, "$grand_total", 0] } }
+            }}
+        ]);
+
+        const summary = summaryData[0] || { totalSales: 0, totalReturns: 0 };
+
+        // 2. Fetch Detailed Data Joined with Products
+        const pipeline = [
+            { $match: { 
+                company_id: new mongoose.Types.ObjectId(hotelId),
+                status: 'PAID',
+                createdAt: { $gte: start, $lte: end }
+            }},
+            { $unwind: "$items" },
+            { $lookup: {
+                from: 'products',
+                localField: 'items.product_id',
+                foreignField: '_id',
+                as: 'product'
+            }},
+            { $unwind: "$product" },
+            { $project: {
+                bill_number: "$bill_number",
+                date: "$createdAt",
+                party_name: { $ifNull: ["$customer_name", "Walk-in"] },
+                item_name: "$items.name",
+                category: "$product.category",
+                brand: { $ifNull: ["$product.brand", "No Brand"] },
+                bill_amount: "$items.total_price",
+                qty: "$items.quantity",
+                pur_rate: "$product.purchase_price",
+                cost_rate: "$product.cost_price",
+                sales_rate: "$items.unit_price",
+                mrp: "$product.mrp",
+                cost_amount: { $multiply: ["$product.cost_price", "$items.quantity"] }
+            }}
+        ];
+
+        let results = await Bill.aggregate(pipeline);
+
+        // 3. Process Grouping
+        let groupedResults = [];
+        if (groupBy === 'BILL') {
+            const billMap = new Map();
+            results.forEach(r => {
+                if (!billMap.has(r.bill_number)) {
+                    billMap.set(r.bill_number, {
+                        transaction_no: r.bill_number,
+                        date: r.date,
+                        party_name: r.party_name,
+                        item_name: "Multi-Items",
+                        category: "---",
+                        brand: "---",
+                        bill_amount: 0,
+                        pur_rate: 0,
+                        cost_rate: 0,
+                        sales_rate: 0,
+                        mrp: 0,
+                        profit_amt: 0
+                    });
+                }
+                const b = billMap.get(r.bill_number);
+                b.bill_amount += r.bill_amount;
+                b.profit_amt += (r.bill_amount - r.cost_amount);
+            });
+            groupedResults = Array.from(billMap.values());
+        } else if (groupBy === 'ITEM') {
+            const itemMap = new Map();
+            results.forEach(r => {
+                if (!itemMap.has(r.item_name)) {
+                    itemMap.set(r.item_name, {
+                        transaction_no: "---",
+                        date: "---",
+                        party_name: "---",
+                        item_name: r.item_name,
+                        category: r.category,
+                        brand: r.brand,
+                        bill_amount: 0,
+                        pur_rate: r.pur_rate,
+                        cost_rate: r.cost_rate,
+                        sales_rate: r.sales_rate,
+                        mrp: r.mrp,
+                        profit_amt: 0
+                    });
+                }
+                const i = itemMap.get(r.item_name);
+                i.bill_amount += r.bill_amount;
+                i.profit_amt += (r.bill_amount - r.cost_amount);
+            });
+            groupedResults = Array.from(itemMap.values());
+        } else if (groupBy === 'CATEGORY') {
+            const catMap = new Map();
+            results.forEach(r => {
+                const key = r.category || 'Uncategorized';
+                if (!catMap.has(key)) {
+                    catMap.set(key, {
+                        transaction_no: "---",
+                        date: "---",
+                        party_name: "---",
+                        item_name: "Category Summary",
+                        category: key,
+                        brand: "---",
+                        bill_amount: 0,
+                        pur_rate: 0,
+                        cost_rate: 0,
+                        sales_rate: 0,
+                        mrp: 0,
+                        profit_amt: 0
+                    });
+                }
+                const c = catMap.get(key);
+                c.bill_amount += r.bill_amount;
+                c.profit_amt += (r.bill_amount - r.cost_amount);
+            });
+            groupedResults = Array.from(catMap.values());
+        } else if (groupBy === 'BRAND') {
+            const brandMap = new Map();
+            results.forEach(r => {
+                const key = r.brand || 'No Brand';
+                if (!brandMap.has(key)) {
+                    brandMap.set(key, {
+                        transaction_no: "---",
+                        date: "---",
+                        party_name: "---",
+                        item_name: "Brand Summary",
+                        category: "---",
+                        brand: key,
+                        bill_amount: 0,
+                        pur_rate: 0,
+                        cost_rate: 0,
+                        sales_rate: 0,
+                        mrp: 0,
+                        profit_amt: 0
+                    });
+                }
+                const b = brandMap.get(key);
+                b.bill_amount += r.bill_amount;
+                b.profit_amt += (r.bill_amount - r.cost_amount);
+            });
+            groupedResults = Array.from(brandMap.values());
+        }
+
+        // Add percentages
+        groupedResults.forEach(g => {
+            g.profit_pct = g.bill_amount === 0 ? 0 : ((g.profit_amt / g.bill_amount) * 100).toFixed(2);
+        });
+
+        // Calculate Net Profit for summary (Sales - Returns? or just Sales Profit)
+        // Usually Net Sales Profit = Sum(Profits of Paid Bills)
+        const netSalesProfit = groupedResults.reduce((sum, g) => sum + g.profit_amt, 0);
+
+        res.status(200).json({
+            success: true,
+            summary: {
+                totalSales: summary.totalSales,
+                return: summary.totalReturns,
+                salesProfit: netSalesProfit
+            },
+            data: groupedResults
+        });
+
+    } catch (error) {
+        console.error('Sales Profit Report Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get comprehensive sales register
+// @route   GET /api/reports/sales-register?startDate=...&endDate=...&search=...&status=...&paymentMode=...
+exports.getSalesRegister = async (req, res) => {
+    try {
+        const { startDate, endDate, search, status, paymentMode, orderType } = req.query;
+        const hotelId = req.user.restaurant_id;
+
+        let start = new Date(startDate || new Date().toISOString().split('T')[0]);
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date().toISOString().split('T')[0]);
+        end.setHours(23, 59, 59, 999);
+
+        const match = {
+            company_id: new mongoose.Types.ObjectId(hotelId),
+            createdAt: { $gte: start, $lte: end }
+        };
+
+        if (status) match.status = status;
+        if (paymentMode) match.payment_mode = paymentMode;
+        if (orderType) match.type = orderType;
+        if (search) {
+            match.$or = [
+                { bill_number: { $regex: search, $options: 'i' } },
+                { customer_name: { $regex: search, $options: 'i' } },
+                { table_no: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const bills = await Bill.find(match).sort({ createdAt: -1 }).lean();
+
+        // Calculate Analytics
+        let summary = {
+            totalGross: 0,
+            totalTax: 0,
+            totalDiscount: 0,
+            totalRoundOff: 0,
+            totalNet: 0,
+            billCount: 0,
+            itemCount: 0,
+            cancelledCount: 0,
+            cancelledAmount: 0,
+            paymentSummary: { CASH: 0, UPI: 0, CARD: 0, ONLINE: 0, DUE: 0 }
+        };
+
+        bills.forEach(b => {
+            if (b.status === 'CANCELLED') {
+                summary.cancelledCount++;
+                summary.cancelledAmount += b.grand_total;
+                return;
+            }
+
+            summary.billCount++;
+            summary.totalGross += (b.sub_total || 0);
+            summary.totalTax += (b.tax_amount || 0);
+            summary.totalDiscount += (b.discount_amount || 0);
+            summary.totalRoundOff += (b.round_off || 0);
+            summary.totalNet += (b.grand_total || 0);
+            summary.itemCount += (b.items?.reduce((s, i) => s + i.quantity, 0) || 0);
+
+            // Payment tracking
+            if (b.payment_modes && b.payment_modes.length > 0) {
+                b.payment_modes.forEach(pm => {
+                    if (summary.paymentSummary[pm.type] !== undefined) {
+                        summary.paymentSummary[pm.type] += pm.amount;
+                    } else {
+                        summary.paymentSummary[pm.type] = pm.amount;
+                    }
+                });
+            } else if (b.payment_mode) {
+                if (summary.paymentSummary[b.payment_mode] !== undefined) {
+                    summary.paymentSummary[b.payment_mode] += b.grand_total;
+                }
+            } else if (b.status === 'DUE' || b.status === 'CREDIT') {
+                if (!summary.paymentSummary.DUE) summary.paymentSummary.DUE = 0;
+                summary.paymentSummary.DUE += b.grand_total;
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            summary,
+            data: bills.map(b => ({
+                ...b,
+                item_names: b.items?.map(i => i.name).join(', '),
+                item_qty: b.items?.reduce((s, i) => s + i.quantity, 0) || 0
+            }))
+        });
+
+    } catch (error) {
+        console.error('Sales Register Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get Detailed Item-wise Sales Summary (Stock Wise)
+// @route   GET /api/reports/sales/item-detailed?startDate=...&endDate=...&search=...
+exports.getItemWiseSalesDetailed = async (req, res) => {
+    try {
+        const { startDate, endDate, search, category, brand } = req.query;
+        const hotelId = req.user.restaurant_id;
+
+        let start = new Date(startDate || new Date().toISOString().split('T')[0]);
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date().toISOString().split('T')[0]);
+        end.setHours(23, 59, 59, 999);
+
+        const match = {
+            company_id: new mongoose.Types.ObjectId(hotelId),
+            createdAt: { $gte: start, $lte: end }
+        };
+
+        const bills = await Bill.find(match).lean();
+
+        let itemMap = new Map();
+
+        bills.forEach(bill => {
+            const isReturn = bill.status === 'CANCELLED';
+            
+            bill.items.forEach(item => {
+                const productId = item.product_id.toString();
+                if (!itemMap.has(productId)) {
+                    itemMap.set(productId, {
+                        productId: item.product_id,
+                        name: item.name,
+                        category: item.category || 'N/A',
+                        brand: item.brand || 'N/A',
+                        salesQty: 0,
+                        salesValue: 0,
+                        returnQty: 0,
+                        returnValue: 0
+                    });
+                }
+                
+                const stats = itemMap.get(productId);
+                if (isReturn) {
+                    stats.returnQty += item.quantity;
+                    stats.returnValue += item.total_price;
+                } else {
+                    stats.salesQty += (item.quantity || 0);
+                    stats.salesValue += (item.total_price || 0);
+                }
+            });
+        });
+
+        const productIds = Array.from(itemMap.keys()).map(id => new mongoose.Types.ObjectId(id));
+        const products = await Product.find({ _id: { $in: productIds } }).select('code barcode category brand').lean();
+        const productMeta = new Map(products.map(p => [p._id.toString(), p]));
+
+        let finalData = Array.from(itemMap.values()).map(item => {
+            const meta = productMeta.get(item.productId.toString()) || {};
+            return {
+                ...item,
+                code: meta.code || '---',
+                barcode: meta.barcode || '---',
+                category: meta.category || item.category,
+                brand: meta.brand || item.brand,
+                netQty: (item.salesQty || 0) - (item.returnQty || 0),
+                netValue: (item.salesValue || 0) - (item.returnValue || 0)
+            };
+        });
+
+        if (search) {
+            const s = search.toLowerCase();
+            finalData = finalData.filter(d => 
+                d.name.toLowerCase().includes(s) || 
+                d.code.toLowerCase().includes(s) || 
+                d.barcode.toLowerCase().includes(s)
+            );
+        }
+        if (category) finalData = finalData.filter(d => d.category === category);
+        if (brand) finalData = finalData.filter(d => d.brand === brand);
+
+        const summary = finalData.reduce((acc, d) => {
+            acc.totalItems++;
+            acc.totalSalesQty += d.salesQty;
+            acc.totalReturnQty += d.returnQty;
+            acc.totalNetQty += d.netQty;
+            acc.totalSalesValue += d.salesValue;
+            return acc;
+        }, { totalItems: 0, totalSalesQty: 0, totalReturnQty: 0, totalNetQty: 0, totalSalesValue: 0 });
+
+        res.status(200).json({
+            success: true,
+            summary: {
+                totalItems: summary.totalItems,
+                salesQty: summary.totalSalesQty,
+                returnQty: summary.totalReturnQty,
+                totalSalesQty: summary.totalNetQty,
+                salesValue: summary.totalSalesValue
+            },
+            data: finalData
+        });
+
+    } catch (error) {
+        console.error('Item Wise Sales Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get Detailed Sales Transaction Summary (Day/Month/Party)
+// @route   GET /api/reports/sales/transaction-summary?startDate=...&endDate=...&search=...&payMode=...&partyId=...&area=...
+exports.getSalesTransactionSummary = async (req, res) => {
+    try {
+        const { startDate, endDate, search, payMode, partyId, area } = req.query;
+        const hotelId = req.user.restaurant_id;
+
+        let start = new Date(startDate || new Date().toISOString().split('T')[0]);
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date().toISOString().split('T')[0]);
+        end.setHours(23, 59, 59, 999);
+
+        const match = {
+            company_id: new mongoose.Types.ObjectId(hotelId),
+            createdAt: { $gte: start, $lte: end }
+        };
+
+        if (search) {
+            match.$or = [
+                { bill_number: { $regex: search, $options: 'i' } },
+                { customer_name: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const bills = await Bill.find(match).sort({ createdAt: -1 }).lean();
+
+        // Calculate Flattened Transaction Data
+        let totalStats = {
+            totalBills: 0,
+            cash: 0,
+            card: 0,
+            upi: 0,
+            credit: 0
+        };
+
+        let data = bills.map(b => {
+            let row = {
+                _id: b._id,
+                date: b.createdAt,
+                transaction_no: b.bill_number,
+                party_name: b.customer_name || 'Walk-in Guest',
+                area: b.customer_address || 'Counter', // Area field from address
+                cash: 0,
+                card: 0,
+                upi: 0,
+                credit_amt: 0,
+                total: b.grand_total,
+                status: b.status
+            };
+
+            // Spread payment modes
+            if (b.payment_modes && b.payment_modes.length > 0) {
+                b.payment_modes.forEach(pm => {
+                    if (pm.type === 'CASH') row.cash += pm.amount;
+                    else if (pm.type === 'CARD') row.card += pm.amount;
+                    else if (pm.type === 'UPI' || pm.type === 'ONLINE') row.upi += pm.amount;
+                });
+                
+                // If bill total is more than paid amount, remainder is Credit (DUE)
+                const totalPaid = b.payment_modes.reduce((s, pm) => s + pm.amount, 0);
+                if (b.status !== 'CANCELLED' && b.grand_total > totalPaid + 0.1) {
+                    row.credit_amt = b.grand_total - totalPaid;
+                }
+            } else {
+                // Legacy or single mode
+                if (b.payment_mode === 'CASH') row.cash = b.grand_total;
+                else if (b.payment_mode === 'CARD') row.card = b.grand_total;
+                else if (b.payment_mode === 'UPI' || b.payment_mode === 'ONLINE') row.upi = b.grand_total;
+                else if (b.status === 'DUE' || b.status === 'CREDIT' || b.status === 'PARTIAL') {
+                    row.credit_amt = b.grand_total;
+                }
+            }
+
+            if (b.status !== 'CANCELLED') {
+                totalStats.totalBills++;
+                totalStats.cash += row.cash;
+                totalStats.card += row.card;
+                totalStats.upi += row.upi;
+                totalStats.credit += row.credit_amt;
+            }
+
+            return row;
+        });
+
+        // Apply filters
+        if (payMode) {
+            data = data.filter(d => {
+                if (payMode === 'CASH') return d.cash > 0;
+                if (payMode === 'CARD') return d.card > 0;
+                if (payMode === 'UPI') return d.upi > 0;
+                if (payMode === 'CREDIT') return d.credit_amt > 0;
+                return true;
+            });
+        }
+        if (partyId) {
+            const p = partyId.toLowerCase();
+            data = data.filter(d => d.party_name.toLowerCase().includes(p));
+        }
+        if (area) {
+            const a = area.toLowerCase();
+            data = data.filter(d => d.area.toLowerCase().includes(a));
+        }
+
+        res.status(200).json({
+            success: true,
+            summary: totalStats,
+            data
+        });
+
+    } catch (error) {
+        console.error('Sales Transaction Summary Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get Accounts Daybook Report
+// @route   GET /api/reports/accounts/daybook?startDate=...&endDate=...&search=...
+exports.getDaybookReport = async (req, res) => {
+    try {
+        const { startDate, endDate, search } = req.query;
+        const hotelId = req.user.restaurant_id;
+
+        const AccountTransaction = require('../models/AccountTransaction');
+        const Ledger = require('../models/Ledger');
+
+        let start = new Date(startDate || new Date().toISOString().split('T')[0]);
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date().toISOString().split('T')[0]);
+        end.setHours(23, 59, 59, 999);
+
+        // Fetch transactions
+        const txs = await AccountTransaction.find({
+            company_id: hotelId,
+            date: { $gte: start, $lte: end },
+            is_deleted: { $ne: true }
+        }).populate('ledger_id', 'name group').sort({ date: 1, createdAt: 1 }).lean();
+
+        // Group by Voucher Number to get "Journal" lines
+        const grouped = {};
+        txs.forEach(t => {
+            const key = `${t.voucher_type}-${t.voucher_number}`;
+            if (!grouped[key]) {
+                grouped[key] = {
+                    date: t.date,
+                    voucher_no: t.voucher_number,
+                    type: t.voucher_type,
+                    party: '',
+                    payment_in: 0,
+                    payment_out: 0,
+                    credit_amt: 0,
+                    narration: t.narration || '',
+                    ledgers: []
+                };
+            }
+            grouped[key].ledgers.push(t);
+        });
+
+        const daybookData = Object.values(grouped).map(g => {
+            let partySet = false;
+            
+            g.ledgers.forEach(l => {
+                const group = l.ledger_id?.group || '';
+                const name = l.ledger_id?.name || '';
+
+                // Logic: 
+                // PAYMENT IN: Debit to Cash/Bank
+                if (l.type === 'DEBIT' && (group.includes('Cash') || group.includes('Bank'))) {
+                    g.payment_in += l.amount;
+                }
+                // PAYMENT OUT: Credit to Cash/Bank
+                else if (l.type === 'CREDIT' && (group.includes('Cash') || group.includes('Bank'))) {
+                    g.payment_out += l.amount;
+                }
+                // CREDIT AMT: If it's a SALES/PURCHASE and involves a Customer/Supplier ledger
+                else if ((g.type === 'SALES' || g.type === 'PURCHASE') && (group.includes('Sundry') || group.includes('Customer') || group.includes('Supplier'))) {
+                    g.credit_amt += l.amount;
+                    if (!partySet) { g.party = name; partySet = true; }
+                }
+
+                // If party not set yet, pick a non-cash/bank ledger as party
+                if (!partySet && !(group.includes('Cash') || group.includes('Bank'))) {
+                    g.party = name;
+                    partySet = true;
+                }
+            });
+
+            if (!g.party) g.party = 'Cash Transaction';
+            return g;
+        });
+
+        // Summary Calculations
+        const summary = {
+            totalTransactions: daybookData.length,
+            paymentIn: daybookData.reduce((s, d) => s + d.payment_in, 0),
+            paymentOut: daybookData.reduce((s, d) => s + d.payment_out, 0),
+            totalCash: 0, // Current cash balance
+            totalCredit: daybookData.reduce((s, d) => s + d.credit_amt, 0)
+        };
+
+        // Get current Cash in Hand balance
+        const cashLedger = await Ledger.findOne({ company_id: hotelId, name: 'Cash in Hand' });
+        if (cashLedger) summary.totalCash = cashLedger.opening_balance;
+
+        res.status(200).json({
+            success: true,
+            summary,
+            data: daybookData
+        });
+
+    } catch (error) {
+        console.error('Daybook Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get Detailed Ledger Statement
+// @route   GET /api/reports/accounts/ledger-statement?ledgerId=...&startDate=...&endDate=...
+exports.getLedgerStatement = async (req, res) => {
+    try {
+        const { ledgerId, startDate, endDate } = req.query;
+        if (!ledgerId) return res.status(200).json({ success: true, data: [], summary: { openingBalance: 0, totalSales: 0, totalReceived: 0, currentReceivable: 0 } });
+
+        const hotelId = req.user.restaurant_id;
+        const AccountTransaction = require('../models/AccountTransaction');
+        const Ledger = require('../models/Ledger');
+
+        const ledger = await Ledger.findOne({ _id: ledgerId, company_id: hotelId });
+        if (!ledger) return res.status(404).json({ success: false, message: 'Ledger not found' });
+
+        let start = new Date(startDate || new Date().toISOString().split('T')[0]);
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date().toISOString().split('T')[0]);
+        end.setHours(23, 59, 59, 999);
+
+        // 1. Calculate Opening Balance before Start Date
+        let openingBalance = ledger.initial_opening_balance || 0; 
+        
+        const prevTxs = await AccountTransaction.aggregate([
+            { $match: { 
+                company_id: new mongoose.Types.ObjectId(hotelId), 
+                ledger_id: new mongoose.Types.ObjectId(ledgerId),
+                date: { $lt: start },
+                is_deleted: { $ne: true }
+            }},
+            { $group: {
+                _id: null,
+                netAmount: { $sum: { $cond: [{ $eq: ['$type', 'DEBIT'] }, '$amount', { $subtract: [0, '$amount'] }] } }
+            }}
+        ]);
+
+        if (prevTxs.length > 0) openingBalance += prevTxs[0].netAmount;
+
+        // 2. Fetch Transactions within range
+        const txs = await AccountTransaction.find({
+            company_id: hotelId,
+            ledger_id: ledgerId,
+            date: { $gte: start, $lte: end },
+            is_deleted: { $ne: true }
+        }).sort({ date: 1, createdAt: 1 }).lean();
+
+        let runningBalance = openingBalance;
+        let totalSales = 0;
+        let totalReceived = 0;
+
+        const statementData = txs.map(t => {
+            const row = {
+                _id: t._id,
+                date: t.date,
+                voucher_no: t.voucher_number,
+                type: t.voucher_type,
+                debit: t.type === 'DEBIT' ? t.amount : 0,
+                credit: t.type === 'CREDIT' ? t.amount : 0,
+                narration: t.narration
+            };
+
+            if (t.type === 'DEBIT') {
+                runningBalance += t.amount;
+                if (t.voucher_type === 'SALES') totalSales += t.amount;
+            } else {
+                runningBalance -= t.amount;
+                if (t.voucher_type === 'RECEIPT') totalReceived += t.amount;
+            }
+
+            row.balance = runningBalance;
+            return row;
+        });
+
+        res.status(200).json({
+            success: true,
+            ledger: {
+                name: ledger.name,
+                group: ledger.group
+            },
+            summary: {
+                openingBalance,
+                totalSales,
+                totalReceived,
+                currentReceivable: runningBalance
+            },
+            data: statementData
+        });
+
+    } catch (error) {
+        console.error('Ledger Statement Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get Cash & Bank Audit Report
+// @route   GET /api/reports/accounts/cash-bank?startDate=...&endDate=...
+exports.getCashBankReport = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const hotelId = req.user.restaurant_id;
+
+        const AccountTransaction = require('../models/AccountTransaction');
+        const Ledger = require('../models/Ledger');
+        const mongoose = require('mongoose');
+
+        let start = new Date(startDate || new Date().toISOString().split('T')[0]);
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(endDate || new Date().toISOString().split('T')[0]);
+        end.setHours(23, 59, 59, 999);
+
+        // 1. Identify all Cash and Bank Ledgers
+        const cbLedgers = await Ledger.find({
+            company_id: hotelId,
+            $or: [
+                { group: { $regex: /Cash/i } },
+                { group: { $regex: /Bank/i } },
+                { name: { $regex: /Cash/i } },
+                { name: { $regex: /Bank/i } }
+            ]
+        }).lean();
+
+        const cbIds = cbLedgers.map(l => l._id);
+        const cashIds = cbLedgers.filter(l => l.group?.toLowerCase().includes('cash') || l.name?.toLowerCase().includes('cash')).map(l => l._id.toString());
+        const bankIds = cbLedgers.filter(l => l.group?.toLowerCase().includes('bank') || l.name?.toLowerCase().includes('bank')).map(l => l._id.toString());
+
+        // 2. Calculate Opening Balance before Start Date
+        let openingCash = cbLedgers.filter(l => cashIds.includes(l._id.toString())).reduce((s, l) => s + (l.initial_opening_balance || 0), 0);
+        let openingBank = cbLedgers.filter(l => bankIds.includes(l._id.toString())).reduce((s, l) => s + (l.initial_opening_balance || 0), 0);
+        
+        const prevTxs = await AccountTransaction.aggregate([
+            { $match: { 
+                company_id: new mongoose.Types.ObjectId(hotelId), 
+                ledger_id: { $in: cbIds },
+                date: { $lt: start },
+                is_deleted: { $ne: true }
+            }},
+            { $group: {
+                _id: '$ledger_id',
+                netAmount: { $sum: { $cond: [{ $eq: ['$type', 'DEBIT'] }, '$amount', { $subtract: [0, '$amount'] }] } }
+            }}
+        ]);
+
+        prevTxs.forEach(pt => {
+            const pid = pt._id.toString();
+            if (cashIds.includes(pid)) openingCash += pt.netAmount;
+            else if (bankIds.includes(pid)) openingBank += pt.netAmount;
+        });
+
+        // 3. Fetch Transactions within range
+        const txs = await AccountTransaction.find({
+            company_id: hotelId,
+            ledger_id: { $in: cbIds },
+            date: { $gte: start, $lte: end },
+            is_deleted: { $ne: true }
+        }).populate('ledger_id', 'name group').sort({ date: 1, createdAt: 1 }).lean();
+
+        // Group by Voucher
+        const grouped = {};
+        txs.forEach(t => {
+            const key = `${t.voucher_type}-${t.voucher_number}`;
+            if (!grouped[key]) {
+                grouped[key] = {
+                    date: t.date,
+                    voucher_no: t.voucher_number,
+                    type: t.voucher_type,
+                    party: '',
+                    received: 0,
+                    paid: 0,
+                    cash_impact: 0,
+                    bank_impact: 0,
+                    narration: t.narration,
+                    ledgers: []
+                };
+            }
+            grouped[key].ledgers.push(t);
+        });
+
+        let runningTotal = openingCash + openingBank;
+
+        const statementData = Object.values(grouped).map(g => {
+            g.ledgers.forEach(l => {
+                const lid = l.ledger_id?._id?.toString() || l.ledger_id?.toString();
+                const isCash = cashIds.includes(lid);
+                
+                if (l.type === 'DEBIT') {
+                    g.received += l.amount;
+                    if (isCash) g.cash_impact += l.amount;
+                    else g.bank_impact += l.amount;
+                    runningTotal += l.amount;
+                } else {
+                    g.paid += l.amount;
+                    if (isCash) g.cash_impact -= l.amount;
+                    else g.bank_impact -= l.amount;
+                    runningTotal -= l.amount;
+                }
+            });
+
+            g.balance = runningTotal;
+            return g;
+        });
+
+        res.status(200).json({
+            success: true,
+            summary: {
+                openingCash,
+                openingBank,
+                totalOpening: openingCash + openingBank,
+                closingBalance: runningTotal,
+                snapshots: cbLedgers.map(l => ({ name: l.name, balance: l.opening_balance }))
+            },
+            data: statementData
+        });
+
+    } catch (error) {
+        console.error('Cash Bank Error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

@@ -146,21 +146,19 @@ const SupplierMaster = () => {
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Truck className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Vendor Intelligence</span>
-                            </div>
-                            <h2>Supplier Master</h2>
-                            <p>Manage vendor relationships and procurement partnerships.</p>
-                        </div>
-                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Register Vendor
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Supplier Master"
+                    actions={
+                        <button className="btn-premium-primary !py-2 !px-6" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={18} /> 
+                            <span className="text-[10px] uppercase font-black">Register Vendor</span>
                         </button>
-                    </div>
+                    }
+                />
+                <div className="master-content-layout fade-in">
+                    {/* Header relocated */}
+
 
                     <div className="toolbar-premium">
                         <div className="search-premium">

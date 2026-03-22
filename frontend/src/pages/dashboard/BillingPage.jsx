@@ -41,7 +41,10 @@ import {
     MoveHorizontal,
     ArrowLeftRight,
     Undo2,
-    Edit
+    Edit,
+    Layers,
+    X,
+    CalendarClock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -132,6 +135,7 @@ const BillingPage = () => {
     const [showLoyaltyForm, setShowLoyaltyForm] = useState(false);
     const [showMoreForm, setShowMoreForm] = useState(false);
     const [showComplementaryForm, setShowComplementaryForm] = useState(false);
+    const [partyData, setPartyData] = useState(null);
 
     // Prevent auto-create from firing while we are fetching an existing bill for a table
     const isRestoringTableBill = useRef(false);
@@ -163,6 +167,7 @@ const BillingPage = () => {
         // No longer fetching KOTs here as we use the header search
     };
     const [isOrderListCollapsed, setIsOrderListCollapsed] = useState(false);
+    const [variationModalProduct, setVariationModalProduct] = useState(null);
 
     // -- SELECTION OVERLAYS --
     const [activeItemActions, setActiveItemActions] = useState(null);
@@ -373,6 +378,10 @@ const BillingPage = () => {
                                 setDiscount(bill.discount_amount || 0);
                                 setDeliveryCharge(bill.delivery_charge || 0);
                                 setContainerCharge(bill.container_charge || 0);
+
+                                if (location.state && location.state.printKots) {
+                                    setTimeout(() => handleAllKotsPrint(bill), 500);
+                                }
                             } else {
                                 console.warn('Could not load bill for table, starting fresh');
                             }
@@ -403,6 +412,12 @@ const BillingPage = () => {
             window.history.replaceState({}, document.title);
         } else if (location.state && location.state.orderMode) {
             setOrderMode(location.state.orderMode);
+            if (location.state.partyDetails) {
+                setPartyData(location.state.partyDetails);
+                setCustomerName(location.state.partyDetails.customer_name);
+                setCustomerPhone(location.state.partyDetails.customer_phone);
+                setCustomerAddress(location.state.partyDetails.customer_address);
+            }
             setIsTablePreSelected(false);
             window.history.replaceState({}, document.title);
         }
@@ -560,7 +575,13 @@ const BillingPage = () => {
         }
     };
 
-    const addToBill = async (product) => {
+    const addToBill = async (product, selectedVariation = null) => {
+        // If product has variations and none selected yet, show selection modal
+        if (product.variations?.length > 0 && !selectedVariation) {
+            setVariationModalProduct(product);
+            return;
+        }
+
         // Fix: Automatically try to create a bill if one is missing (e.g. initial load failed)
         let activeId = currentBillId;
         if (!activeId) {
@@ -575,24 +596,45 @@ const BillingPage = () => {
             }
         }
 
-        const existingItem = billItems.find(item => item.product_id === product._id);
+        const itemName = selectedVariation ? `${product.name} - ${selectedVariation.name}` : product.name;
+        const itemUnitPrice = selectedVariation ? (product.selling_price + selectedVariation.amount) : product.selling_price;
+
+        const existingItem = billItems.find(item => item.product_id === product._id && item.name === itemName);
         if (existingItem) {
-            updateItemQuantity(product._id, 1);
+            // Find its index
+            const idx = billItems.indexOf(existingItem);
+            const newItems = [...billItems];
+            newItems[idx].quantity += 1;
+            newItems[idx].total_price = newItems[idx].quantity * newItems[idx].unit_price;
+            setBillItems(newItems);
+            
             // Update live amount on table
             if (selectedTableId) {
-                const newSub = billItems.reduce((acc, i) => acc + (i.product_id === product._id ? (i.quantity + 1) * i.unit_price : i.total_price), 0);
+                const newSub = newItems.reduce((acc, i) => acc + (i.is_complementary ? 0 : i.total_price), 0);
                 updateTableLiveAmount(selectedTableId, newSub);
             }
+
+            try {
+                const savedUser = localStorage.getItem('user');
+                const { token } = JSON.parse(savedUser);
+                await fetch(`${import.meta.env.VITE_API_URL}/bills/${activeId}/items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ product_id: product._id, quantity: 1, variation: selectedVariation })
+                });
+            } catch (e) { console.error(e); }
+
+            setVariationModalProduct(null);
             return;
         }
 
         const newItems = [...billItems, {
             product_id: product._id,
-            name: product.name,
-            category: product.category || '',  // IMPORTANT: needed for kitchen category filtering
+            name: itemName,
+            category: product.category || '',  
             quantity: 1,
-            unit_price: product.selling_price,
-            total_price: product.selling_price
+            unit_price: itemUnitPrice,
+            total_price: itemUnitPrice
         }];
         setBillItems(newItems);
 
@@ -611,11 +653,12 @@ const BillingPage = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ product_id: product._id, quantity: 1 })
+                body: JSON.stringify({ product_id: product._id, quantity: 1, variation: selectedVariation })
             });
         } catch (error) {
             console.error("Add item failed", error);
         }
+        setVariationModalProduct(null);
     };
 
     const removeFromBill = async (index) => {
@@ -654,7 +697,20 @@ const BillingPage = () => {
         const searchLower = searchQuery.toLowerCase();
         const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
             (p.code && p.code.toLowerCase().includes(searchLower));
-        return matchesCategory && matchesSearch;
+        
+        // Check availability based on order mode
+        const modeMap = {
+            'DINE_IN': 'dine_in',
+            'TAKEAWAY': 'pickup',
+            'SELF_SERVICE': 'pickup',
+            'PARCEL': 'pickup',
+            'DELIVERY': 'delivery',
+            'PARTY': 'party_order'
+        };
+        const serveKey = modeMap[orderMode];
+        const isAvailable = !serveKey || !p.serve_types || p.serve_types[serveKey] !== false;
+
+        return matchesCategory && matchesSearch && isAvailable;
     });
 
     // ── Bill / KOT Search ──────────────────────────────────────────────────
@@ -902,7 +958,7 @@ const BillingPage = () => {
         setCheckoutActive(true);
     };
 
-    const handlePaymentSubmit = async (paymentModes, tipAmount = 0) => {
+    const handlePaymentSubmit = async (paymentModes, tipAmount = 0, isPartial = false) => {
         setPaymentLoading(true);
         try {
             const savedUser = localStorage.getItem('user');
@@ -925,10 +981,16 @@ const BillingPage = () => {
                     grand_total: grandTotal + tipAmount,
                     customer_name: customerName,
                     customer_phone: customerPhone,
+                    customer_address: customerAddress || partyData?.customer_address,
+                    delivery_date: partyData?.delivery_date,
+                    delivery_time: partyData?.delivery_time,
+                    delivery_address: partyData?.customer_address,
                     table_no: tableNo,
                     persons: persons,
                     captain_name: captainName,
-                    waiter_name: waiterName
+                    waiter_name: waiterName,
+                    type: orderMode,
+                    is_partial: isPartial
                 })
             });
             const data = await res.json();
@@ -983,6 +1045,7 @@ const BillingPage = () => {
                 },
                 body: JSON.stringify({
                     items: billItems,
+                    action_type: type === 'KOT' ? 'GENERATE_KOT' : (type === 'SAVE' || type === 'PRINT' ? 'GENERATE_BILL_NO' : undefined),
                     status: type === 'KOT' ? 'OPEN' : undefined,
                     kitchen_status: type === 'KOT' ? 'PENDING' : undefined,
                     sub_total: subTotal,
@@ -1026,7 +1089,14 @@ const BillingPage = () => {
                         localStorage.setItem('kot_fired', JSON.stringify({ ts: Date.now() }));
                     }
                     // 3. Print KOT on physical printer
-                    handleKOTPrint();
+                    if (data.new_kot) {
+                        handleKOTPrint(data.new_kot);
+                        if (data.data && data.data.items) {
+                            setBillItems(data.data.items);
+                        }
+                    } else {
+                        alert("No new items to send to Kitchen.");
+                    }
                 }
                 else if (type === 'SAVE' || type === 'PRINT') {
                     // Mark table as PRINTED when Save & Print is clicked
@@ -1053,9 +1123,10 @@ const BillingPage = () => {
         }
     };
 
-    const handleKOTPrint = () => {
+    const handleKOTPrint = (kotData) => {
+        if (!kotData || !kotData.items || kotData.items.length === 0) return;
         // Build items HTML
-        const rowsHtml = billItems.map(item => `
+        const rowsHtml = kotData.items.map(item => `
             <tr>
                 <td class="item-name">${item.name}</td>
                 <td class="item-qty">x${item.quantity}</td>
@@ -1066,7 +1137,7 @@ const BillingPage = () => {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>KOT - ${billNumber}</title>
+    <title>${kotData.kot_number}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @page { size: 80mm auto; margin: 4mm; }
@@ -1085,7 +1156,6 @@ const BillingPage = () => {
         .info-row { display: flex; justify-content: space-between; font-size: 11px; margin: 2px 0; }
         table { width: 100%; border-collapse: collapse; margin: 6px 0; }
         .item-name { font-weight: 700; font-size: 14px; padding: 5px 2px; vertical-align: middle; }
-        .item-qty  { font-weight: 900; font-size: 18px; text-align: right; padding: 5px 2px; vertical-align: middle; }
         .footer { text-align: center; font-size: 11px; margin-top: 8px; }
         @media print {
             body { width: 72mm; }
@@ -1094,12 +1164,12 @@ const BillingPage = () => {
 </head>
 <body>
     <div class="center">
-        <div class="big">KOT</div>
+        <div class="big">${kotData.kot_number}</div>
         <div class="table-label">${tableNo ? '🪑 TABLE ' + tableNo : (orderMode === 'TAKEAWAY' ? '🛍 TAKEAWAY' : (orderMode === 'PARCEL' ? '📦 PARCEL' : (orderMode === 'DELIVERY' ? '🚚 DELIVERY' : (orderMode === 'PARTY' ? '🎉 PARTY' : '🏪 COUNTER'))))}</div>
     </div>
     <hr class="sep-solid">
     <div class="info-row"><span>Bill#</span><span>${billNumber}</span></div>
-    <div class="info-row"><span>Date</span><span>${new Date().toLocaleString('en-IN', { hour12: true })}</span></div>
+    <div class="info-row"><span>Date</span><span>${new Date(kotData.created_at).toLocaleString('en-IN', { hour12: true })}</span></div>
     ${captainName ? `<div class="info-row"><span>Captain</span><span>${captainName}</span></div>` : ''}
     ${persons ? `<div class="info-row"><span>Pax</span><span>${persons}</span></div>` : ''}
     <hr class="sep-solid">
@@ -1127,13 +1197,59 @@ const BillingPage = () => {
         printWindow.document.write(kotHtml);
         printWindow.document.close();
 
-        // Wait for resources to load, then print
+    // Wait for resources to load, then print
         printWindow.onload = () => {
             printWindow.focus();
             printWindow.print();
             // Close the window automatically after print dialog closes
             printWindow.onafterprint = () => printWindow.close();
         };
+    };
+
+    const handleAllKotsPrint = (billData) => {
+        if (!billData || !billData.kots || billData.kots.length === 0) return alert("No KOT items to print.");
+        
+        const allKotsHtml = billData.kots.map(kot => {
+            const rowsHtml = kot.items.map(item => `
+                <tr>
+                    <td class="item-name">${item.name}</td>
+                    <td class="item-qty">x${item.quantity}</td>
+                </tr>
+            `).join('');
+            return `
+            <div class="center bold" style="margin-top: 10px; font-size: 14px;">${kot.kot_number || 'KOT'}</div>
+            <hr class="sep-solid">
+            <table>
+                <thead>
+                    <tr><th style="text-align:left; font-size:11px;">ITEM</th><th style="text-align:right; font-size:11px;">QTY</th></tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+            `;
+        }).join('');
+
+        const kotHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"><title>All KOTs - ${(billData.bill_number && !billData.bill_number.startsWith('TEMP-')) ? billData.bill_number : 'Reprint'}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; } @page { size: 80mm auto; margin: 4mm; } body { font-family: monospace; font-size: 13px; width: 72mm; padding: 4px; }
+        .sep-solid { border: none; border-top: 2px solid #000; margin: 6px 0; } .center { text-align: center; } .bold { font-weight: 900; } .big { font-size: 20px; font-weight: 900; letter-spacing: 2px; }
+        table { width: 100%; border-collapse: collapse; margin: 6px 0; } .item-name { font-weight: 700; font-size: 14px; padding: 5px 2px; } .item-qty  { font-weight: 900; font-size: 16px; text-align: right; padding: 5px 2px; }
+        @media print { body { width: 72mm; } }
+    </style>
+</head>
+<body>
+    <div class="center"><div class="big">ALL KOTs</div><div class="bold">TABLE: ${billData.table_no || tableNo || 'N/A'}</div></div>
+    ${allKotsHtml}
+    <hr class="sep-solid"><div class="center" style="font-size: 11px; margin-top: 10px;">Reprinted at ${new Date().toLocaleTimeString()}</div>
+</body>
+</html>`;
+        
+        const printWindow = window.open('', '_blank', 'width=400,height=600');
+        printWindow.document.write(kotHtml);
+        printWindow.document.close();
+        printWindow.onload = () => { printWindow.focus(); printWindow.print(); printWindow.onafterprint = () => printWindow.close(); };
     };
 
     const resetForm = () => {
@@ -1163,6 +1279,22 @@ const BillingPage = () => {
         setStepProceeded(false);
         setPromoCode('');
         createNewBill();
+    };
+
+    const updateItemRate = (idx, newRate) => {
+        const newItems = [...billItems];
+        newItems[idx].unit_price = parseFloat(newRate) || 0;
+        newItems[idx].total_price = newItems[idx].quantity * newItems[idx].unit_price;
+        setBillItems(newItems);
+        if (selectedTableId) updateTableLiveAmount(selectedTableId, newItems.reduce((acc, i) => acc + (i.is_complementary ? 0 : i.total_price), 0));
+    };
+    
+    const updateItemQtyDirect = (idx, newQty) => {
+        const newItems = [...billItems];
+        newItems[idx].quantity = parseFloat(newQty) || 0;
+        newItems[idx].total_price = newItems[idx].quantity * newItems[idx].unit_price;
+        setBillItems(newItems);
+        if (selectedTableId) updateTableLiveAmount(selectedTableId, newItems.reduce((acc, i) => acc + (i.is_complementary ? 0 : i.total_price), 0));
     };
 
     const handleTransferItem = (idx) => {
@@ -1277,6 +1409,25 @@ const BillingPage = () => {
 
     return (
         <div className={`pos-layout ${showSidebar ? 'sidebar-open' : 'sidebar-closed'} layout-${billingLayout.toLowerCase().replace('_', '-')}`}>
+            {/* Party Order Status Bubble */}
+            {orderMode === 'PARTY_ORDER' && partyData && (
+                <div style={{ position: 'fixed', top: '70px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', padding: '10px 24px', borderRadius: '40px', boxShadow: '0 10px 30px rgba(79, 70, 229, 0.15)', border: '1.5px solid #e0e7ff', display: 'flex', alignItems: 'center', gap: '20px', animation: 'slide-in-from-top-4 0.4s ease-out' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4f46e5' }}>
+                        <Users2 size={18} />
+                        <span style={{ fontWeight: 900, fontSize: '12px', textTransform: 'uppercase' }}>Party Order</span>
+                    </div>
+                    <div style={{ width: '1px', height: '16px', background: '#e2e8f0' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ea580c' }}>
+                        <CalendarClock size={16} />
+                        <span style={{ fontWeight: 800, fontSize: '13px' }}>{new Date(partyData.delivery_date).toLocaleDateString()} at {partyData.delivery_time}</span>
+                    </div>
+                    <div style={{ width: '1px', height: '16px', background: '#e2e8f0' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b' }}>
+                        <User size={16} />
+                        <span style={{ fontWeight: 800, fontSize: '13px' }}>{partyData.customer_name}</span>
+                    </div>
+                </div>
+            )}
             {/* Top Navigation Bar */}
             <div className="pos-nav">
                 <div className="nav-left">
@@ -1591,6 +1742,11 @@ const BillingPage = () => {
                                     onClick={() => addToBill(product)}
                                 >
                                     <div className="p-image-container">
+                                        {product.variations?.length > 0 && (
+                                            <div className="absolute top-2 right-2 z-10 bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg border border-white/20 uppercase tracking-tighter">
+                                                <Layers size={10} className="inline mr-1" /> Multi-Size
+                                            </div>
+                                        )}
                                         {product.image ? (
                                             <img src={`${getBaseUrl()}${product.image}`} alt={product.name} className="p-card-img" />
                                         ) : (
@@ -1899,11 +2055,35 @@ const BillingPage = () => {
                                         </div>
                                     </div>
                                     <div className="item-qty-cell">
-                                        <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
-                                        <span>{item.quantity}</span>
-                                        <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
+                                        {orderMode === 'PARTY_ORDER' ? (
+                                            <input 
+                                                type="number" 
+                                                value={item.quantity} 
+                                                onChange={e => updateItemQtyDirect(idx, e.target.value)}
+                                                style={{ width: '45px', textAlign: 'center', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '2px', fontSize: '12px', fontWeight: 800 }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <button onClick={() => updateItemQuantity(item.product_id, -1)}><Minus size={12} /></button>
+                                                <span>{item.quantity}</span>
+                                                <button onClick={() => updateItemQuantity(item.product_id, 1)}><Plus size={12} /></button>
+                                            </>
+                                        )}
                                     </div>
-                                    {showRateColumn && <div className="item-rate">{item.is_complementary ? 0 : item.unit_price}</div>}
+                                    {showRateColumn && (
+                                        <div className="item-rate">
+                                            {orderMode === 'PARTY_ORDER' ? (
+                                                <input 
+                                                    type="number" 
+                                                    value={item.unit_price} 
+                                                    onChange={e => updateItemRate(idx, e.target.value)}
+                                                    style={{ width: '55px', textAlign: 'center', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '2px', fontSize: '12px', fontWeight: 800 }}
+                                                />
+                                            ) : (
+                                                item.is_complementary ? 0 : item.unit_price
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="item-amt">{item.is_complementary ? 0 : item.total_price}</div>
                                     <div className="item-actions-cell">
                                         {activeItemActions === idx && (
@@ -2047,6 +2227,7 @@ const BillingPage = () => {
                                     onPaymentSubmit={handlePaymentSubmit}
                                     onCancel={() => setStepProceeded(false)}
                                     loading={paymentLoading}
+                                    partialAllowed={orderMode === 'PARTY_ORDER'}
                                 />
                             )}
 
@@ -2069,6 +2250,52 @@ const BillingPage = () => {
                 </div>
 
                 {/* Modals */}
+                {variationModalProduct && (
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 animate-in zoom-in duration-200">
+                            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select Size / Type</h3>
+                                    <p className="text-xs text-indigo-600 font-black uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                                        {variationModalProduct.name}
+                                    </p>
+                                </div>
+                                <button onClick={() => setVariationModalProduct(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                                    <X size={24} className="text-slate-400" />
+                                </button>
+                            </div>
+                            
+                            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                                {(variationModalProduct.variations || []).map((v, i) => (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => addToBill(variationModalProduct, v)}
+                                        className="w-full flex items-center justify-between p-5 border-2 border-slate-100 rounded-2xl hover:border-indigo-600 hover:bg-indigo-50/50 transition-all group hover:shadow-lg hover:shadow-indigo-500/10"
+                                    >
+                                        <div className="text-left">
+                                            <div className="font-black text-lg text-slate-800 group-hover:text-indigo-700 tracking-tight">{v.name}</div>
+                                            <div className="text-[10px] text-slate-400 font-black uppercase tracking-wider mt-1.5">Variation Price</div>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <div className="text-2xl font-black text-indigo-600 tracking-tighter">
+                                                ₹{(variationModalProduct.selling_price || 0) + (v.amount || 0)}
+                                            </div>
+                                            {(v.amount > 0) && <div className="text-[10px] text-slate-400 font-bold">+₹{v.amount} extra</div>}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            <div className="p-6 bg-slate-50 flex justify-center border-t border-slate-100">
+                                <button onClick={() => setVariationModalProduct(null)} className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-rose-500 transition-colors">
+                                    <X size={14} /> Close & Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {
                     showBillPreview && (
                         <BillPreviewModal

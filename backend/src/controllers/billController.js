@@ -36,8 +36,7 @@ exports.createBill = async (req, res) => {
             const counter = await Counter.findOne({ _id: counter_id, company_id: req.user.restaurant_id });
             if (!counter) return res.status(400).json({ success: false, error: 'Invalid Counter' });
         }
-
-        const billNumber = await generateBillNumber(req.user.restaurant_id);
+        const billNumber = `TEMP-${Date.now()}-${Math.floor(Math.random()*1000)}`;
 
         const newBill = await Bill.create({
             company_id: req.user.restaurant_id,
@@ -63,7 +62,9 @@ exports.createBill = async (req, res) => {
 // @access  Admin/Owner/Billing
 exports.addItemToBill = async (req, res) => {
     try {
-        const { product_id, quantity } = req.body;
+        const { product_id, quantity, variation } = req.body;
+        // variation: { name: 'Small', amount: 50 }
+
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
@@ -75,6 +76,9 @@ exports.addItemToBill = async (req, res) => {
         if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
         if (!product.is_active) return res.status(400).json({ success: false, error: 'Product is inactive' });
 
+        const itemName = variation ? `${product.name} - ${variation.name}` : product.name;
+        const itemUnitPrice = variation ? (product.selling_price + variation.amount) : product.selling_price;
+
         // Stock Check - only for products that track stock
         if (product.opening_stock > 0 || product.current_stock > 0) {
             if (product.current_stock < quantity) {
@@ -82,10 +86,10 @@ exports.addItemToBill = async (req, res) => {
             }
         }
 
-        // Add or Update Item
-        const existingItemIndex = bill.items.findIndex(p => p.product_id.toString() === product_id);
-
-        let newItemTotal = 0;
+        // Add or Update Item - Group by Name + Product ID
+        const existingItemIndex = bill.items.findIndex(p => 
+            p.product_id.toString() === product_id && p.name === itemName
+        );
 
         if (existingItemIndex > -1) {
             // Update quantity
@@ -95,11 +99,11 @@ exports.addItemToBill = async (req, res) => {
             // New Item
             bill.items.push({
                 product_id: product._id,
-                name: product.name,
+                name: itemName,
                 category: product.category,
                 quantity,
-                unit_price: product.selling_price,
-                total_price: quantity * product.selling_price
+                unit_price: itemUnitPrice,
+                total_price: quantity * itemUnitPrice
             });
         }
 
@@ -165,7 +169,7 @@ exports.removeItemFromBill = async (req, res) => {
 };
 exports.processPayment = async (req, res) => {
     try {
-        const { payment_modes, sub_total, tax_amount, discount_amount, grand_total, table_no, persons, customer_name, customer_phone, captain_name, waiter_name } = req.body;
+        const { payment_modes, sub_total, tax_amount, discount_amount, grand_total, table_no, persons, customer_name, customer_phone, customer_address, captain_name, waiter_name, is_partial, delivery_date, delivery_time, delivery_address, type } = req.body;
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
@@ -182,24 +186,27 @@ exports.processPayment = async (req, res) => {
             if (!payment.type || !['CASH', 'UPI', 'CARD', 'ONLINE', 'SPLIT'].includes(payment.type)) {
                 return res.status(400).json({ success: false, error: 'Invalid payment type. Must be CASH, UPI, CARD, ONLINE, or SPLIT' });
             }
-
-            if (typeof payment.amount !== 'number' || payment.amount <= 0) {
-                return res.status(400).json({ success: false, error: 'Payment amount must be a positive number' });
+            if (typeof payment.amount !== 'number' || payment.amount < 0) {
+                return res.status(400).json({ success: false, error: 'Payment amount must be a number' });
             }
-
             totalPaid += payment.amount;
         }
 
         // Final totals (prefer values from frontend but fallback to bill values)
         const finalGrandTotal = grand_total !== undefined ? grand_total : bill.grand_total;
 
-        // Validate that total paid is at least equal to grand total
-        if (totalPaid < (finalGrandTotal - 0.1)) { // Small buffer for float math
-            return res.status(400).json({ success: false, error: 'Total payment amount is less than bill amount' });
+        // Balance check: if not partial, must cover full amount
+        if (!is_partial && totalPaid < (finalGrandTotal - 0.1)) {
+            return res.status(400).json({ success: false, error: 'Total payment amount is less than bill amount. Use partial payment mode for advances.' });
+        }
+
+        // Generate final sequential bill number if not already generated
+        if (!bill.bill_number || bill.bill_number.startsWith('TEMP-')) {
+            bill.bill_number = await generateBillNumber(req.user.restaurant_id);
         }
 
         // Update bill status and final financial values
-        bill.status = 'PAID';
+        bill.status = is_partial ? 'ADVANCE' : 'PAID';
         bill.payment_modes = payment_modes;
         bill.total_paid = totalPaid;
         bill.sub_total = sub_total !== undefined ? sub_total : bill.sub_total;
@@ -210,8 +217,13 @@ exports.processPayment = async (req, res) => {
         bill.persons = persons !== undefined ? persons : bill.persons;
         bill.customer_name = customer_name !== undefined ? customer_name : bill.customer_name;
         bill.customer_phone = customer_phone !== undefined ? customer_phone : bill.customer_phone;
+        bill.customer_address = customer_address !== undefined ? customer_address : bill.customer_address;
         bill.captain_name = captain_name !== undefined ? captain_name : bill.captain_name;
         bill.waiter_name = waiter_name !== undefined ? waiter_name : bill.waiter_name;
+        bill.type = type || bill.type;
+        bill.delivery_date = delivery_date;
+        bill.delivery_time = delivery_time;
+        bill.delivery_address = delivery_address;
 
         if (payment_modes.length === 1) {
             bill.payment_mode = payment_modes[0].type;
@@ -252,6 +264,7 @@ exports.processPayment = async (req, res) => {
 
             const salesL = await Ledger.findOne({ company_id: coId, name: 'Sales Account' });
             if (salesL) {
+                // 1. Credit Sales Account for full bill amount
                 await AccountTransaction.create({
                     company_id: coId, ledger_id: salesL._id, type: 'CREDIT', amount: bill.grand_total,
                     voucher_type: 'SALES', voucher_number: bill.bill_number, reference_id: bill._id,
@@ -259,6 +272,7 @@ exports.processPayment = async (req, res) => {
                 });
                 await Ledger.findByIdAndUpdate(salesL._id, { $inc: { opening_balance: -bill.grand_total } });
 
+                // 2. Debit Payment Method Ledgers for amount actually paid
                 for (const pm of payment_modes) {
                     let accName = pm.type === 'CASH' ? 'Cash in Hand' : 'HDFC Bank';
                     const payL = await Ledger.findOne({ company_id: coId, name: accName });
@@ -269,6 +283,25 @@ exports.processPayment = async (req, res) => {
                             narration: `Receipt - Bill ${bill.bill_number} (${pm.type})`, date: new Date()
                         });
                         await Ledger.findByIdAndUpdate(payL._id, { $inc: { opening_balance: pm.amount } });
+                    }
+                }
+
+                // 3. If Partial Payment, Debit Customer Ledger for the balance
+                const balance = bill.grand_total - totalPaid;
+                if (balance > 0.01) {
+                    // Try to find ledger by phone first, then name
+                    let custL = await Ledger.findOne({ company_id: coId, phone: bill.customer_phone, party_type: 'CUSTOMER' });
+                    if (!custL) {
+                        custL = await Ledger.findOne({ company_id: coId, name: bill.customer_name, party_type: 'CUSTOMER' });
+                    }
+
+                    if (custL) {
+                        await AccountTransaction.create({
+                            company_id: coId, ledger_id: custL._id, type: 'DEBIT', amount: balance,
+                            voucher_type: 'SALES', voucher_number: bill.bill_number, reference_id: bill._id,
+                            narration: `Outstanding Balance - Bill ${bill.bill_number}`, date: new Date()
+                        });
+                        await Ledger.findByIdAndUpdate(custL._id, { $inc: { opening_balance: balance } });
                     }
                 }
             }
@@ -286,13 +319,85 @@ exports.processPayment = async (req, res) => {
 
 exports.updateBill = async (req, res) => {
     try {
-        const { items, status, kitchen_status, sub_total, tax_amount, discount_amount, delivery_charge, container_charge, round_off, grand_total, table_no, persons, order_mode, customer_name, customer_phone, captain_name, waiter_name } = req.body;
+        const { items, status, kitchen_status, sub_total, tax_amount, discount_amount, delivery_charge, container_charge, round_off, grand_total, table_no, persons, order_mode, customer_name, customer_phone, captain_name, waiter_name, action_type } = req.body;
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
         if (bill.status === 'PAID') return res.status(400).json({ success: false, error: 'Bill already paid' });
 
-        if (items) bill.items = items;
+        let newlyGeneratedKot = null;
+
+        if (items) {
+            // Merge `sent_kot_qty` properly to avoid overwriting from frontend
+            const existingItemsMap = new Map();
+            if (bill.items) {
+                bill.items.forEach(oldItem => {
+                    const key = oldItem.product_id.toString() + '_' + oldItem.name;
+                    existingItemsMap.set(key, oldItem.sent_kot_qty || 0);
+                });
+            }
+
+            let currentKotItems = [];
+
+            items.forEach((item, idx) => {
+                const key = item.product_id.toString() + '_' + item.name;
+                const sentQty = existingItemsMap.get(key) || 0;
+                items[idx].sent_kot_qty = sentQty;
+
+                if (action_type === 'GENERATE_KOT') {
+                    const unprintedDiff = item.quantity - sentQty;
+                    if (unprintedDiff > 0) {
+                        currentKotItems.push({
+                            product_id: item.product_id,
+                            name: item.name,
+                            quantity: unprintedDiff,
+                            category: item.category
+                        });
+                        items[idx].sent_kot_qty = item.quantity;
+                    }
+                }
+            });
+
+            bill.items = items;
+
+            if (action_type === 'GENERATE_KOT' && currentKotItems.length > 0) {
+                // Generate a KOT number
+                const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const todayKots = await Bill.find({
+                    company_id: req.user.restaurant_id,
+                    'kots.kot_number': { $regex: `^KOT-${dateStr}` }
+                });
+
+                let nextNum = 1;
+                todayKots.forEach(b => {
+                    if (b.kots) {
+                        b.kots.forEach(k => {
+                            if (k.kot_number && k.kot_number.startsWith(`KOT-${dateStr}`)) {
+                                const parts = k.kot_number.split('-');
+                                if (parts.length === 3) {
+                                    const num = parseInt(parts[2], 10);
+                                    if (num >= nextNum) nextNum = num + 1;
+                                }
+                            }
+                        });
+                    }
+                });
+
+                const newKotNo = `KOT-${dateStr}-${String(nextNum).padStart(4, '0')}`;
+                newlyGeneratedKot = {
+                    kot_number: newKotNo,
+                    created_at: new Date(),
+                    items: currentKotItems
+                };
+                if (!bill.kots) bill.kots = [];
+                bill.kots.push(newlyGeneratedKot);
+            }
+        }
+        
+        if (action_type === 'GENERATE_BILL_NO' && (!bill.bill_number || bill.bill_number.startsWith('TEMP-'))) {
+            bill.bill_number = await generateBillNumber(req.user.restaurant_id);
+        }
+
         if (status) bill.status = status;
         if (kitchen_status) bill.kitchen_status = kitchen_status;
         if (sub_total !== undefined) bill.sub_total = sub_total;
@@ -312,7 +417,7 @@ exports.updateBill = async (req, res) => {
         bill.waiter_name = waiter_name !== undefined ? waiter_name : bill.waiter_name;
 
         await bill.save();
-        res.status(200).json({ success: true, data: bill });
+        res.status(200).json({ success: true, data: bill, new_kot: newlyGeneratedKot });
     } catch (error) {
         console.error("Update Bill Error:", error);
         res.status(500).json({ success: false, error: 'Server Error' });

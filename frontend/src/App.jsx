@@ -42,6 +42,7 @@ import DayWiseSales from './pages/dashboard/DayWiseSales.jsx';
 import MonthWiseSales from './pages/dashboard/MonthWiseSales.jsx';
 import ItemWiseSales from './pages/dashboard/ItemWiseSales.jsx';
 import CategoryWiseSales from './pages/dashboard/CategoryWiseSales.jsx';
+import TransactionWiseSales from './pages/dashboard/TransactionWiseSales.jsx';
 import DayWisePurchase from './pages/dashboard/DayWisePurchase.jsx';
 import SupplierWisePurchase from './pages/dashboard/SupplierWisePurchase.jsx';
 import CustomerOutstanding from './pages/dashboard/CustomerOutstanding.jsx';
@@ -51,11 +52,13 @@ import AccountsPayable from './pages/dashboard/AccountsPayable.jsx';
 import Daybook from './pages/dashboard/Daybook.jsx';
 import CashBalance from './pages/dashboard/CashBalance.jsx';
 import BankBalance from './pages/dashboard/BankBalance.jsx';
+import CashAndBank from './pages/dashboard/CashAndBank.jsx';
 import PrinterManagement from './pages/dashboard/PrinterManagement.jsx';
 import KitchenManagement from './pages/dashboard/KitchenManagement.jsx';
 import KitchenDisplay, { KitchenDisplayList } from './pages/dashboard/KitchenDisplay.jsx';
 import PrinterDisplay, { PrinterDisplayList } from './pages/dashboard/PrinterDisplay.jsx';
 import OrderIntegrationSettings from './pages/dashboard/OrderIntegrationSettings.jsx';
+import SalesProfit from './pages/dashboard/SalesProfit.jsx';
 
 const ProtectedRoute = ({ children, adminOnly }) => {
     const { user, loading, isAdmin } = useAuth();
@@ -201,6 +204,8 @@ function AppRoutes() {
                             <Route path="reports/sales/month" element={<PermissionRoute pageKey="sales_summary"><MonthWiseSales /></PermissionRoute>} />
                             <Route path="reports/sales/item" element={<PermissionRoute pageKey="sales_summary"><ItemWiseSales /></PermissionRoute>} />
                             <Route path="reports/sales/category" element={<PermissionRoute pageKey="sales_summary"><CategoryWiseSales /></PermissionRoute>} />
+                            <Route path="reports/sales/transaction" element={<PermissionRoute pageKey="sales_summary"><TransactionWiseSales /></PermissionRoute>} />
+                            <Route path="reports/sales/profit" element={<PermissionRoute pageKey="sales_summary"><SalesProfit /></PermissionRoute>} />
 
                             {/* Purchase Summary */}
                             <Route path="reports/purchase/day" element={<PermissionRoute pageKey="purchase_summary"><DayWisePurchase /></PermissionRoute>} />
@@ -214,8 +219,9 @@ function AppRoutes() {
 
                             {/* Accounts */}
                             <Route path="accounts/daybook" element={<PermissionRoute pageKey="accounts"><Daybook /></PermissionRoute>} />
-                            <Route path="accounts/cash" element={<PermissionRoute pageKey="accounts"><CashBalance /></PermissionRoute>} />
-                            <Route path="accounts/bank" element={<PermissionRoute pageKey="accounts"><BankBalance /></PermissionRoute>} />
+                             <Route path="accounts/cash" element={<PermissionRoute pageKey="accounts"><CashBalance /></PermissionRoute>} />
+                             <Route path="accounts/bank" element={<PermissionRoute pageKey="accounts"><BankBalance /></PermissionRoute>} />
+                             <Route path="accounts/cash-bank" element={<PermissionRoute pageKey="accounts"><CashAndBank /></PermissionRoute>} />
 
                             {/* Settings Extensions */}
                             <Route path="settings/integration" element={<PermissionRoute pageKey="settings"><OrderIntegrationSettings /></PermissionRoute>} />

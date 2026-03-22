@@ -18,13 +18,31 @@ const {
     getDaybook,
     getLedgerStatement,
     getAgingReport,
-    getAccountBalances
+    getAccountBalances,
+    getSalesProfitReport,
+    getSalesRegister,
+    getItemWiseSalesDetailed,
+    getSalesTransactionSummary,
+    getDaybookReport,
+    getCashBankReport
 } = require('../controllers/reportsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes require authentication and admin/owner access
 router.use(protect);
 router.use(authorize('ADMIN', 'OWNER'));
+
+// Transaction-wise Sales Summary
+router.get('/sales/transaction-summary', getSalesTransactionSummary);
+
+// Sales/Stock Detailed Report
+router.get('/sales/item-detailed', getItemWiseSalesDetailed);
+
+// Sales Register
+router.get('/sales-register', getSalesRegister);
+
+// Sales profit report
+router.get('/sales-profit', getSalesProfitReport);
 
 // Daily sales report
 router.get('/daily', getDailyReport);
@@ -79,5 +97,10 @@ router.get('/aging-report', getAgingReport);
 
 // Account Balances (Cash/Bank)
 router.get('/account-balances', getAccountBalances);
+
+// Accounts Reports
+router.get('/accounts/daybook', getDaybookReport);
+router.get('/accounts/ledger-statement', getLedgerStatement);
+router.get('/accounts/cash-bank', getCashBankReport);
 
 module.exports = router;

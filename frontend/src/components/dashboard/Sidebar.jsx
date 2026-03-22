@@ -6,7 +6,7 @@ import {
     Users, Pocket, UserCircle, User, Book, ShoppingCart, Wallet,
     History, BarChart, Grid, ChevronDown, ChevronRight, Calculator,
     PieChart, List, CreditCard, Landmark, Printer, ChefHat, Lock, Globe,
-    TrendingUp, TrendingDown, Package, Monitor
+    TrendingUp, TrendingDown, Package, Monitor, Receipt, LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../pages/dashboard/Dashboard.css';
@@ -44,9 +44,15 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             subItems: [
                 { label: "Sales Bill", route: "/dashboard/self-service/table-select", icon: <PlusCircle size={18} /> },
                 { label: "Purchase Entry", route: "/dashboard/self-service/purchase", icon: <ShoppingCart size={18} /> },
-                { label: "Purchase Invoices", route: "/dashboard/self-service/purchase-invoices", icon: <History size={18} /> },
-                { label: "Receipt Entry", route: "/dashboard/self-service/receipts", icon: <FileText size={18} /> },
-                { label: "Voucher", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
+                {
+                    label: "Voucher",
+                    icon: <Wallet size={18} />,
+                    pageKey: "vouchers",
+                    subItems: [
+                        { label: "Receipt Entry", route: "/dashboard/self-service/receipts", icon: <FileText size={18} /> },
+                        { label: "Voucher Master", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
+                    ]
+                }
             ]
         },
         {
@@ -78,8 +84,10 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             subItems: [
                 { label: "Day Wise", route: "/dashboard/self-service/reports/sales/day", icon: <List size={18} /> },
                 { label: "Month Wise", route: "/dashboard/self-service/reports/sales/month", icon: <List size={18} /> },
-                { label: "Item Wise", route: "/dashboard/self-service/reports/sales/item", icon: <List size={18} /> },
-                { label: "Category Wise", route: "/dashboard/self-service/reports/sales/category", icon: <List size={18} /> }
+                { label: "Item Wise", route: "/dashboard/self-service/reports/sales/item", icon: <Package size={18} /> },
+                { label: "Category Wise", route: "/dashboard/self-service/reports/sales/category", icon: <LayoutGrid size={18} /> },
+                { label: "Transaction Wise", route: "/dashboard/self-service/reports/sales/transaction", icon: <Receipt size={18} /> },
+                { label: "Sales Profit", route: "/dashboard/self-service/reports/sales/profit", icon: <TrendingUp size={18} /> }
             ]
         },
         {
@@ -109,8 +117,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             subItems: [
                 { label: "Daybook", route: "/dashboard/self-service/accounts/daybook", icon: <List size={18} /> },
                 { label: "Ledger Statement", route: "/dashboard/self-service/ledger-statement", icon: <FileText size={18} /> },
-                { label: "Cash Balance", route: "/dashboard/self-service/accounts/cash", icon: <Wallet size={18} /> },
-                { label: "Bank Balance", route: "/dashboard/self-service/accounts/bank", icon: <Landmark size={18} /> }
+                { label: "Cash & Bank", route: "/dashboard/self-service/accounts/cash-bank", icon: <Landmark size={18} /> }
             ]
         },
         {
@@ -141,7 +148,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             <div key={item.label} className="menu-group">
                 {hasSubItems ? (
                     <div
-                        className={`nav-item ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}`}
+                        className={`nav-item ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''} ${isSub ? 'sub-nav-item' : ''}`}
                         onClick={() => toggleMenu(item.label)}
                         style={{ cursor: 'pointer' }}
                     >

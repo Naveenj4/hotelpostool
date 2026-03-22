@@ -6,6 +6,7 @@ const SidebarPaymentFlow = ({
     grandTotal = 0,
     onPaymentSubmit,
     onCancel,
+    partialAllowed = false,
     loading = false
 }) => {
     const [activeMethod, setActiveMethod] = useState('CASH');
@@ -27,12 +28,13 @@ const SidebarPaymentFlow = ({
     const cardAmt = parseFloat(data.cardAmount) || 0;
     const rcvdVal = parseFloat(data.cashReceived) || 0;
 
-    const totalPaid = cashAmt + upiAmt + cardAmt;
+    const totalPaid = (cashAmt + upiAmt + cardAmt).toFixed(2);
+    const numTotalPaid = parseFloat(totalPaid);
     const cashBalance = Math.max(0, rcvdVal - cashAmt);
 
     // Auto-fill total on first mount
     useEffect(() => {
-        if (totalPaid === 0 && netPayable > 0) {
+        if (numTotalPaid === 0 && netPayable > 0) {
             setData(prev => ({ ...prev, cashAmount: netPayable.toFixed(2) }));
         }
     }, [netPayable]);
@@ -57,7 +59,7 @@ const SidebarPaymentFlow = ({
             effectiveOldVal = rcvdVal;
         }
 
-        const sumOthers = totalPaid - (parseFloat(data[oldKey]) || 0) - currentNewVal;
+        const sumOthers = numTotalPaid - (parseFloat(data[oldKey]) || 0) - currentNewVal;
         const totalWithEffective = sumOthers + effectiveOldVal;
 
         // Case 1: Pure Switch
@@ -87,14 +89,20 @@ const SidebarPaymentFlow = ({
         if (cashAmt > 0) modes.push({ type: 'CASH', amount: cashAmt, cash_received: rcvdVal, balance_return: cashBalance });
         if (upiAmt > 0) modes.push({ type: 'UPI', amount: upiAmt });
         if (cardAmt > 0) modes.push({ type: 'CARD', amount: cardAmt });
-        onPaymentSubmit(modes, tipVal);
+        onPaymentSubmit(modes, tipVal, numTotalPaid < (netPayable - 0.01));
     };
 
     const isConfirmDisabled = useMemo(() => {
         if (loading) return true;
-        // Sum must exactly match or slightly exceed net (allowing for small float diffs)
-        const isCovered = totalPaid >= (netPayable - 0.01);
-        if (!isCovered) return true;
+        
+        // If partial is allowed, we just need ANY amount > 0
+        if (partialAllowed) {
+            if (numTotalPaid <= 0) return true;
+        } else {
+            // Sum must exactly match or slightly exceed net
+            const isCovered = numTotalPaid >= (netPayable - 0.01);
+            if (!isCovered) return true;
+        }
 
         // Cash specific: if any cash amount is set, received must cover it
         if (cashAmt > 0) {
@@ -102,7 +110,7 @@ const SidebarPaymentFlow = ({
         }
 
         return false;
-    }, [loading, totalPaid, netPayable, cashAmt, data.cashReceived, rcvdVal]);
+    }, [loading, numTotalPaid, netPayable, cashAmt, data.cashReceived, rcvdVal, partialAllowed]);
 
     const usedModesCount = [cashAmt, upiAmt, cardAmt].filter(a => a > 0).length;
 
@@ -218,7 +226,7 @@ const SidebarPaymentFlow = ({
                             onClick={submit}
                             disabled={isConfirmDisabled}
                         >
-                            {loading ? 'PROCESSING...' : `CONFIRM ${usedModesCount > 1 ? 'SPLIT' : activeMethod} PAYMENT`}
+                            {loading ? 'PROCESSING...' : (numTotalPaid < (netPayable - 0.01) && partialAllowed) ? 'CONFIRM PARTIAL PAYMENT' : `CONFIRM ${usedModesCount > 1 ? 'SPLIT' : activeMethod} PAYMENT`}
                         </button>
                         <button className="unified-back-btn" onClick={onCancel}>Cancel and go back</button>
                     </div>

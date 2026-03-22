@@ -155,22 +155,19 @@ const TableTypeMaster = () => {
             )}
 
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Layers className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Spatial Zones</span>
-                            </div>
-                            <h2>Table Type Creation</h2>
-                            <p>Categorize your dining areas into zones like Garden, AC Hall, or Rooftop.</p>
-                        </div>
-                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Create New TableType
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Table Type Creation"
+                    actions={
+                        <button className="btn-premium-primary !py-2 !px-6" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={18} /> 
+                            <span className="text-[10px] uppercase font-black">Create New TableType</span>
                         </button>
-                    </div>
+                    }
+                />
+                <div className="master-content-layout fade-in">
+                    {/* Header relocated */}
+
 
                     <div className="toolbar-premium">
                         <div className="search-premium">

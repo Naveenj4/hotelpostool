@@ -222,22 +222,19 @@ const TableMaster = () => {
             )}
 
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Layers className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Floor Logic Architect</span>
-                            </div>
-                            <h2>Table Creation</h2>
-                            <p>Spatial configuration and seating capacity management.</p>
-                        </div>
-                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Add New Table
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Table Creation"
+                    actions={
+                        <button className="btn-premium-primary !py-2 !px-6" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={18} /> 
+                            <span className="text-[10px] uppercase font-black">Add New Table</span>
                         </button>
-                    </div>
+                    }
+                />
+                <div className="master-content-layout fade-in">
+                    {/* Header relocated */}
+
 
                     <div className="toolbar-premium">
                         <div className="search-premium">

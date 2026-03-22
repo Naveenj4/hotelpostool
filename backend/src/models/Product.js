@@ -126,8 +126,8 @@ const productSchema = new mongoose.Schema({
     serve_types: {
         dine_in: { type: Boolean, default: true },
         delivery: { type: Boolean, default: true },
-        parcel: { type: Boolean, default: true },
-        order: { type: Boolean, default: true }
+        pickup: { type: Boolean, default: true },
+        party_order: { type: Boolean, default: true }
     },
 
     online_order: {

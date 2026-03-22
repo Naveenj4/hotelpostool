@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Menu, User, Calendar, Clock, Bell, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const Header = ({ toggleSidebar, restaurantName }) => {
+const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
     const { user, logout } = useAuth();
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -29,54 +29,71 @@ const Header = ({ toggleSidebar, restaurantName }) => {
     };
 
     return (
-        <header className="dashboard-header">
+        <header className={`dashboard-header ${title ? 'master-header-mode' : ''}`}>
             <div className="header-left">
                 <button className="icon-btn menu-toggle" onClick={toggleSidebar}>
                     <Menu size={22} />
                 </button>
                 <div className="restaurant-badge">
-                    <span className="restaurant-name">{restaurantName || "RestoSaaS Partner"}</span>
+                    {title ? (
+                         <div className="flex items-center gap-4">
+                             <div className="w-[1px] h-6 bg-slate-200/50 mx-2 hidden md:block"></div>
+                             <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">{title}</h2>
+                         </div>
+                    ) : (
+                        <span className="restaurant-name">{restaurantName || "RestoSaaS Partner"}</span>
+                    )}
                 </div>
             </div>
 
-            <div className="header-center">
-                <div className="date-time-display">
-                    <div className="display-item">
-                        <Calendar size={13} />
-                        <span>{formatDate(currentTime)}</span>
-                    </div>
-                    <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 300, fontSize: '0.8rem' }}>|</span>
-                    <div className="display-item">
-                        <Clock size={13} />
-                        <span>{formatTime(currentTime)}</span>
+            {!title && (
+                <div className="header-center">
+                    <div className="date-time-display">
+                        <div className="display-item">
+                            <Calendar size={13} />
+                            <span>{formatDate(currentTime)}</span>
+                        </div>
+                        <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 300, fontSize: '0.8rem' }}>|</span>
+                        <div className="display-item">
+                            <Clock size={13} />
+                            <span>{formatTime(currentTime)}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             <div className="header-right">
-                <button className="icon-btn" title="Notifications">
-                    <Bell size={18} />
-                </button>
+                {actions ? (
+                     <div className="flex items-center gap-3 mr-4">
+                         {actions}
+                     </div>
+                ) : (
+                    <>
+                        <button className="icon-btn" title="Notifications">
+                            <Bell size={18} />
+                        </button>
 
-                <div className="user-profile">
-                    <div className="user-info">
-                        <span className="user-name">{user?.name || 'OWNER'}</span>
-                        <span className="user-role">{user?.role || 'Admin'}</span>
-                    </div>
-                    <div className="user-avatar">
-                        <User size={17} />
-                    </div>
-                </div>
+                        <div className="user-profile">
+                            <div className="user-info">
+                                <span className="user-name">{user?.name || 'OWNER'}</span>
+                                <span className="user-role">{user?.role || 'Admin'}</span>
+                            </div>
+                            <div className="user-avatar">
+                                <User size={17} />
+                            </div>
+                        </div>
 
-                <div className="header-divider"></div>
+                        <div className="header-divider"></div>
 
-                <button
-                    className="icon-btn logout-header-btn"
-                    onClick={logout}
-                    title="Logout"
-                >
-                    <LogOut size={18} />
-                </button>
+                        <button
+                            className="icon-btn logout-header-btn"
+                            onClick={logout}
+                            title="Logout"
+                        >
+                            <LogOut size={18} />
+                        </button>
+                    </>
+                )}
             </div>
         </header>
     );

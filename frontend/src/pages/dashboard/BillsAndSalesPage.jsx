@@ -39,7 +39,7 @@ const BillsAndSalesPage = () => {
     const [startDateCust, setStartDateCust] = useState('');
     const [endDateCust, setEndDateCust] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    
+
     const [selectedBill, setSelectedBill] = useState(null);
     const [showDetail, setShowDetail] = useState(false);
     const [fetchingDetail, setFetchingDetail] = useState(false);
@@ -64,7 +64,7 @@ const BillsAndSalesPage = () => {
             if (!savedUser) return;
             const { token } = JSON.parse(savedUser);
             const headers = { 'Authorization': `Bearer ${token}` };
-            
+
             let start, end;
             if (startDateCust && endDateCust) {
                 start = startDateCust;
@@ -94,8 +94,8 @@ const BillsAndSalesPage = () => {
         try {
             const savedUser = localStorage.getItem('user');
             const { token } = JSON.parse(savedUser);
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${id}`, { 
-                headers: { Authorization: `Bearer ${token}` } 
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
             if (data.success) {
@@ -324,65 +324,65 @@ const BillsAndSalesPage = () => {
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
-                              <table className="table-premium">
-                                  <thead>
-                                      <tr>
-                                          <th>#</th>
-                                          <th>Bill No.</th>
-                                          <th>Date & Time</th>
-                                          <th>Items Ordered</th>
-                                          <th>Qty</th>
-                                          <th className="text-right">Grand Total</th>
-                                          <th className="text-right">Action</th>
-                                      </tr>
-                                  </thead>
-                                  <tbody>
-                                      {allBills.length === 0 ? (
-                                          <tr><td colSpan="7" style={{ textAlign: 'center', padding: '80px 0' }}>
-                                              <FileText size={56} className="text-slate-100 mx-auto mb-4" />
-                                              <p className="font-bold text-slate-400">No bills found for selected period.</p>
-                                          </td></tr>
-                                      ) : allBills.map((bill, index) => {
-                                          const items = bill.items?.map(i => `${i.name}(${i.quantity})`).join(', ') || '—';
-                                          const qty = bill.items?.reduce((s, i) => s + i.quantity, 0) || 0;
-                                          return (
-                                              <tr key={bill._id} className="group cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => fetchBillDetail(bill._id)}>
-                                                  <td className="text-slate-400 font-bold">{index + 1}</td>
-                                                  <td>
-                                                      <span className="font-black text-slate-800">{bill.bill_number}</span>
-                                                  </td>
-                                                  <td>
-                                                      <div className="flex items-center gap-2">
-                                                          <Calendar size={14} className="text-slate-300" />
-                                                          <span className="text-sm font-bold text-slate-600">
-                                                              {new Date(bill.createdAt).toLocaleDateString('en-IN', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                          </span>
-                                                      </div>
-                                                  </td>
-                                                  <td>
-                                                      <span className="text-xs font-bold text-slate-500 max-w-xs truncate block" title={items}>{items}</span>
-                                                  </td>
-                                                  <td>
-                                                      <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-black text-slate-600">{qty}</span>
-                                                  </td>
-                                                  <td className="text-right">
-                                                      <span className="font-black text-slate-900 text-base">₹{(bill.grand_total || 0).toLocaleString('en-IN')}</span>
-                                                  </td>
-                                                  <td className="text-right">
-                                                      <div className="flex justify-end gap-2">
-                                                          <button onClick={(e) => { e.stopPropagation(); fetchBillDetail(bill._id); }} className="action-icon-btn edit" title="View Bill">
-                                                              <Eye size={16} />
-                                                          </button>
-                                                          <button onClick={(e) => { e.stopPropagation(); handleDeleteBill(bill._id); }} className="action-icon-btn delete" title="Cancel Bill">
-                                                              <Trash2 size={16} />
-                                                          </button>
-                                                      </div>
-                                                  </td>
-                                              </tr>
-                                          );
-                                      })}
-                                  </tbody>
-                              </table>
+                                <table className="table-premium">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Bill No.</th>
+                                            <th>Date & Time</th>
+                                            <th>Items Ordered</th>
+                                            <th>Qty</th>
+                                            <th className="text-right">Grand Total</th>
+                                            <th className="text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {allBills.length === 0 ? (
+                                            <tr><td colSpan="7" style={{ textAlign: 'center', padding: '80px 0' }}>
+                                                <FileText size={56} className="text-slate-100 mx-auto mb-4" />
+                                                <p className="font-bold text-slate-400">No bills found for selected period.</p>
+                                            </td></tr>
+                                        ) : allBills.map((bill, index) => {
+                                            const items = bill.items?.map(i => `${i.name}(${i.quantity})`).join(', ') || '—';
+                                            const qty = bill.items?.reduce((s, i) => s + i.quantity, 0) || 0;
+                                            return (
+                                                <tr key={bill._id} className="group cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => fetchBillDetail(bill._id)}>
+                                                    <td className="text-slate-400 font-bold">{index + 1}</td>
+                                                    <td>
+                                                        <span className="font-black text-slate-800">{bill.bill_number}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar size={14} className="text-slate-300" />
+                                                            <span className="text-sm font-bold text-slate-600">
+                                                                {new Date(bill.createdAt).toLocaleDateString('en-IN', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className="text-xs font-bold text-slate-500 max-w-xs truncate block" title={items}>{items}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-black text-slate-600">{qty}</span>
+                                                    </td>
+                                                    <td className="text-right">
+                                                        <span className="font-black text-slate-900 text-base">₹{(bill.grand_total || 0).toLocaleString('en-IN')}</span>
+                                                    </td>
+                                                    <td className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={(e) => { e.stopPropagation(); fetchBillDetail(bill._id); }} className="action-icon-btn edit" title="View Bill">
+                                                                <Eye size={16} />
+                                                            </button>
+                                                            <button onClick={(e) => { e.stopPropagation(); handleDeleteBill(bill._id); }} className="action-icon-btn delete" title="Cancel Bill">
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </>)}
@@ -478,7 +478,7 @@ const BillsAndSalesPage = () => {
                                 </div>
 
                                 <div className="mt-8 flex gap-4">
-                                    <button 
+                                    <button
                                         onClick={() => setPrintingBillId(selectedBill._id)}
                                         className="flex-1 bg-indigo-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
                                     >
@@ -491,9 +491,9 @@ const BillsAndSalesPage = () => {
                 )}
 
                 {printingBillId && (
-                    <BillPreviewModal 
-                        isOpen={!!printingBillId} 
-                        billId={printingBillId} 
+                    <BillPreviewModal
+                        isOpen={!!printingBillId}
+                        billId={printingBillId}
                         onClose={() => setPrintingBillId(null)}
                         paymentModes={selectedBill?.payment_modes}
                     />

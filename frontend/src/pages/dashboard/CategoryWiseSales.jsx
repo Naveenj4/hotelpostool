@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../../components/dashboard/Sidebar';
-import Header from '../../components/dashboard/Header';
+import Sidebar from '@/components/dashboard/Sidebar';
+import Header from '@/components/dashboard/Header';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -13,7 +13,21 @@ import {
     ArcElement
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { Download, Loader2, Calendar, Layers } from 'lucide-react';
+import { 
+    Download, 
+    Loader2, 
+    Calendar, 
+    Layers, 
+    Activity, 
+    Target, 
+    RefreshCw, 
+    ChevronRight, 
+    Eye,
+    Landmark,
+    PieChart,
+    Database,
+    Printer
+} from 'lucide-react';
 import './Dashboard.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -31,17 +45,7 @@ const CategoryWiseSales = () => {
         end: new Date().toISOString().split('T')[0]
     });
 
-    const toggleSidebar = () => {
-        if (window.innerWidth <= 768) {
-            setIsMobileSidebarOpen(!isMobileSidebarOpen);
-        } else {
-            const newState = !isCollapsed;
-            setIsCollapsed(newState);
-            localStorage.setItem('sidebarCollapsed', newState);
-        }
-    };
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const savedUser = localStorage.getItem('user');
@@ -66,45 +70,49 @@ const CategoryWiseSales = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [dateRange]);
 
     useEffect(() => {
         fetchData();
-    }, [dateRange]);
+    }, [fetchData]);
+
+    const toggleSidebar = () => {
+        if (window.innerWidth <= 768) setIsMobileSidebarOpen(!isMobileSidebarOpen);
+        else {
+            const newState = !isCollapsed;
+            setIsCollapsed(newState);
+            localStorage.setItem('sidebarCollapsed', newState);
+        }
+    };
+
+    const fmt = (num) => (num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const exportToCSV = () => {
         if (!data.length) return;
-        const headers = "Category Name,Items Sold,Total Revenue\n";
-        const rows = data.map(row => `"${row.category}",${row.itemCount},${row.totalSales}`).join('\n');
-        const csvContent = "data:text/csv;charset=utf-8," + headers + rows;
-        const encodedUri = encodeURI(csvContent);
+        const headers = ["Segment", "Unit Volume", "Revenue Realization"];
+        const rows = data.map(d => [d.category, d.itemCount, d.totalSales]);
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Category_Wise_Sales_${dateRange.start}_to_${dateRange.end}.csv`);
-        document.body.appendChild(link);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Category_Audit_${dateRange.start}.csv`);
         link.click();
-        document.body.removeChild(link);
     };
 
-    const generateColors = (count) => {
-        const colors = [
-            '#38bdf8', '#818cf8', '#a78bfa', '#f472b6', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf'
-        ];
-        return Array.from({ length: count }, (_, i) => colors[i % colors.length]);
-    };
-
-    const chartRenderData = data.slice(0, 8); // Display top 8 in pie/doughnut 
-    const palette = generateColors(chartRenderData.length);
+    const chartRenderData = data.slice(0, 8); 
+    const industrialPalette = [
+        '#4f46e5', '#1e1b4b', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff', '#f5f3ff'
+    ];
 
     const chartData = {
         labels: chartRenderData.map(d => d.category),
         datasets: [
             {
                 data: chartRenderData.map(d => d.totalSales),
-                backgroundColor: palette,
-                borderWidth: 2,
-                borderColor: '#ffffff',
-                hoverOffset: 10
+                backgroundColor: industrialPalette,
+                borderWidth: 0,
+                hoverOffset: 20
             }
         ]
     };
@@ -112,164 +120,173 @@ const CategoryWiseSales = () => {
     const chartOptions = {
         responsive: true,
         plugins: {
-            legend: {
-                position: 'right',
-                labels: { font: { weight: 'bold' } }
-            },
+            legend: { display: false },
             tooltip: {
-                callbacks: {
-                    label: function (context) {
-                        return `${context.label}: ₹${context.raw.toLocaleString('en-IN')}`;
-                    }
-                }
+                backgroundColor: '#0f172a',
+                padding: 12,
+                cornerRadius: 8,
+                titleFont: { size: 10, weight: 'bold' },
+                bodyFont: { size: 12, weight: '900' }
             }
         },
-        cutout: '65%', // Doughnut hole size
-        onClick: (event, elements) => {
-            if (elements.length > 0) {
-                const index = elements[0].index;
-                const label = chartData.labels[index];
-                navigate('/dashboard/self-service/bills-sales', { state: { search: label } });
-            }
-        }
+        cutout: '80%',
     };
 
     const sortedTableData = [...data].sort((a, b) => b.totalSales - a.totalSales);
 
     return (
-        <div className="dashboard-layout">
+        <div className="dashboard-layout bg-white">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+            
+            {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+            )}
 
-            <main className="dashboard-main">
+            <main className="dashboard-main overflow-hidden font-sans">
                 <Header toggleSidebar={toggleSidebar} />
 
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Layers className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Sales Summary</span>
+                <div className="dashboard-content fade-in p-6 lg:p-14 max-w-[2000px] mx-auto w-full">
+                    
+                    {/* Industrial Header */}
+                    <div className="flex flex-col xl:flex-row justify-between items-end xl:items-center mb-16 gap-8 border-b border-slate-100 pb-10">
+                        <div>
+                            <div className="flex items-center gap-2 mb-4 text-[#101828]">
+                                <Layers size={24} strokeWidth={2.5} />
+                                <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-40">Segmental Intelligence</span>
                             </div>
-                            <h2>Category Analytics Profile</h2>
-                            <p>Strategic categorization of menu performance.</p>
+                            <h2 className="text-5xl font-black text-slate-900 tracking-[-0.04em] mb-3 uppercase">Category Analytics</h2>
+                            <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-lg">High-precision breakdown of revenue streams by operational segments.</p>
                         </div>
-                        <div className="flex gap-3">
-                            <button onClick={exportToCSV} className="btn-premium-outline">
-                                <Download size={18} /> EXPORT CSV
+
+                        <div className="flex flex-col sm:flex-row items-center gap-4 p-2 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                            <div className="flex items-center px-6 py-3 gap-6 border-r border-slate-200">
+                                <Calendar size={20} className="text-indigo-600" />
+                                <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+                                    <input type="date" value={dateRange.start} onChange={e => setDateRange(p => ({...p, start: e.target.value}))} className="bg-transparent border-none outline-none w-[115px] p-0"/>
+                                    <span className="opacity-30">—</span>
+                                    <input type="date" value={dateRange.end} onChange={e => setDateRange(p => ({...p, end: e.target.value}))} className="bg-transparent border-none outline-none w-[115px] p-0"/>
+                                </div>
+                            </div>
+                            <button className="h-12 px-8 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 shadow-lg shadow-slate-200" onClick={fetchData}>
+                                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh Period
                             </button>
                         </div>
                     </div>
 
-                    <div className="toolbar-premium">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="date"
-                                    value={dateRange.start}
-                                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                                    className="input-premium pl-11"
-                                    style={{ width: '180px' }}
-                                />
-                            </div>
-                            <span className="text-slate-400 font-bold px-2">TO</span>
-                            <div className="relative">
-                                <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="date"
-                                    value={dateRange.end}
-                                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                                    className="input-premium pl-11"
-                                    style={{ width: '180px' }}
-                                />
-                            </div>
+                    {/* Industrial Summary Counters */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-20">
+                        <div className="group col-span-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Activity size={12} className="text-indigo-500" /> Aggregate Segment Yield
+                            </p>
+                            <h4 className="text-4xl font-black text-indigo-600 tracking-tighter mb-2 group-hover:translate-x-1 transition-transform">₹{fmt(summary.totalSales)}</h4>
+                            <div className="h-1 w-24 bg-indigo-500 rounded-full opacity-20 group-hover:opacity-100 transition-opacity"></div>
                         </div>
-                        <div className="flex gap-4 items-center">
-                            <div className="text-right">
-                                <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Category Aggregate</div>
-                                <div className="text-xl font-black text-indigo-600">₹{summary.totalSales.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                            </div>
-                            <div className="h-10 w-px bg-slate-200"></div>
-                            <div className="text-right">
-                                <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Inventory Flow</div>
-                                <div className="text-xl font-black text-slate-800">{summary.itemCount}</div>
-                            </div>
+
+                        <div className="group">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Target size={12} className="text-slate-900" /> Net Inventory Flow
+                            </p>
+                            <h4 className="text-4xl font-black text-slate-900 tracking-tighter mb-2 group-hover:translate-x-1 transition-transform">{summary.itemCount} Units</h4>
+                            <div className="h-1 w-12 bg-slate-900 rounded-full opacity-20 group-hover:opacity-100 transition-opacity"></div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-4">
+                            <button onClick={exportToCSV} className="h-12 px-8 bg-white border border-slate-200 rounded-2xl text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-all flex items-center gap-3">
+                                <Download size={16} /> Export XLS
+                            </button>
                         </div>
                     </div>
 
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center p-20">
-                            <Loader2 className="animate-spin text-indigo-600 mb-4" size={48} />
-                            <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Assembling Category Metrics...</p>
+                        <div className="flex flex-col items-center justify-center p-32">
+                            <Loader2 className="animate-spin text-indigo-600 mb-6" size={48} />
+                            <p className="text-slate-300 font-bold tracking-widest uppercase text-[10px]">Assembling Segmental Matrix...</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5 gap-6">
-                            <div className="md:col-span-1 lg:col-span-1 xl:col-span-2">
-                                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-100/50 flex flex-col justify-center items-center h-full">
-                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 w-full text-left">Revenue Distribution</h3>
-                                    <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-                                        {data.length > 0 ? (
-                                            <Doughnut data={chartData} options={chartOptions} />
-                                        ) : (
-                                            <div className="flex justify-center items-center h-32 text-slate-400 font-bold text-sm">No category data</div>
-                                        )}
-                                        {data.length > 0 && (
-                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-4 -ml-16">
-                                                <div className="text-2xl font-black text-slate-800">
-                                                    {chartRenderData.length}
-                                                </div>
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Divisions</div>
-                                            </div>
-                                        )}
+                        <div className="grid grid-cols-1 xl:grid-cols-5 gap-16 mb-20 items-start">
+                            {/* Visual Analytics */}
+                            <div className="xl:col-span-2 flex flex-col items-center bg-[#FAFAFB] p-16 rounded-[3rem] border border-slate-100 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                                    <PieChart size={200} />
+                                </div>
+                                <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] mb-16 self-start">Yield Distribution</h3>
+                                <div className="relative w-full max-w-[320px] aspect-square">
+                                    <Doughnut data={chartData} options={chartOptions} />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span className="text-5xl font-black text-slate-900 tracking-tighter">{data.length}</span>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">Active Nodes</span>
                                     </div>
+                                </div>
+                                <div className="mt-16 w-full grid grid-cols-2 gap-4">
+                                    {chartRenderData.map((d, i) => (
+                                        <div key={i} className="flex items-center gap-3">
+                                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: industrialPalette[i] }}></div>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight truncate">{d.category}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="md:col-span-1 lg:col-span-1 xl:col-span-3">
-                                <div className="table-container-premium max-h-[500px] overflow-y-auto w-full">
-                                    <table className="table-premium w-full">
-                                        <thead className="sticky top-0 bg-white z-10 shadow-sm">
-                                            <tr>
-                                                <th>Category Segment</th>
-                                                <th style={{ textAlign: 'center' }}>Units</th>
-                                                <th style={{ textAlign: 'right' }}>Revenue Yield</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {sortedTableData.length === 0 ? (
-                                                <tr><td colSpan="3" className="text-center py-10 text-slate-400 font-bold">No categorical entries mapped</td></tr>
-                                            ) : (
-                                                sortedTableData.map((cat, ix) => (
-                                                    <tr key={ix}
-                                                        onClick={() => navigate('/dashboard/self-service/bills-sales', { state: { search: cat.category } })}
-                                                        style={{ cursor: 'pointer' }}
-                                                        className="hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        <td className="font-bold text-slate-700">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-2 h-2 rounded-full" style={{ background: palette[ix % palette.length] }}></div>
-                                                                {cat.category || 'Uncategorized'}
+                            {/* Segment Data Precinct */}
+                            <div className="xl:col-span-3 bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-[#FAFAFB] text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                        <tr>
+                                            <th className="p-6">Segment Hub</th>
+                                            <th className="p-6 text-center">Operational Units</th>
+                                            <th className="p-6 text-right">Yield Recognition</th>
+                                            <th className="p-6 text-center">Audit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {sortedTableData.length === 0 ? (
+                                            <tr><td colSpan={4} className="p-20 text-center text-slate-300 font-bold uppercase text-[9px]">No categorical data detected</td></tr>
+                                        ) : (
+                                            sortedTableData.map((cat, ix) => (
+                                                <tr key={ix} className="hover:bg-slate-50 transition-all group cursor-pointer" onClick={() => navigate('/dashboard/self-service/bills-sales', { state: { search: cat.category } })}>
+                                                    <td className="p-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                                                                <Database size={14} />
                                                             </div>
-                                                        </td>
-                                                        <td className="text-center">
-                                                            <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded text-xs font-black border border-emerald-100">
-                                                                {cat.itemCount}
-                                                            </span>
-                                                        </td>
-                                                        <td className="text-right font-black text-indigo-600">
-                                                            ₹{cat.totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                            <span className="text-sm font-bold text-slate-900 uppercase tracking-tight group-hover:text-indigo-600 transition-colors">{cat.category || 'Generic/Misc'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-6 text-center">
+                                                        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full uppercase">
+                                                            {cat.itemCount} Units
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-6 text-right font-black text-slate-900 text-base">
+                                                        ₹{fmt(cat.totalSales)}
+                                                    </td>
+                                                    <td className="p-6 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center mx-auto shadow-lg">
+                                                            <ChevronRight size={14} />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}
+
                 </div>
             </main>
+
+            <style jsx>{`
+                .fade-in {
+                    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 };

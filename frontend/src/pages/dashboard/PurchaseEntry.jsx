@@ -123,20 +123,14 @@ const PurchaseEntry = () => {
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Purchase Entry"
+                    actions={
+                        <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">Inventory Inflow</span>
+                    }
+                />
                 <div className="master-content-layout fade-in p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
-                    <div className="master-header-premium-refined flex-col md:flex-row mb-12">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-100">
-                                    <ShoppingCart size={20} />
-                                </div>
-                                <span className="metric-pill-modern">Inventory Inflow</span>
-                            </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Purchase Entry</h2>
-                            <p className="text-slate-500 font-bold mt-2 text-lg">Orchestrate stock inward, GRN verification, and vendor settlements.</p>
-                        </div>
-                    </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">
                         {/* Bill Header Card */}

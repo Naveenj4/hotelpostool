@@ -108,9 +108,11 @@ exports.deleteBrand = async (req, res) => {
         });
 
         if (productsCount > 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Cannot delete brand because there are products associated with it'
+            brand.is_active = false;
+            await brand.save();
+            return res.status(200).json({
+                success: true,
+                message: 'Brand preserved but deactivated because products are associated with it'
             });
         }
 

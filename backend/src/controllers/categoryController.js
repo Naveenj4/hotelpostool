@@ -18,7 +18,7 @@ exports.getCategories = async (req, res) => {
 // @access  Admin/Owner
 exports.createCategory = async (req, res) => {
     try {
-        const { name, type } = req.body;
+        const { name, type, hsn_code, hsn_description } = req.body;
 
         const existingCategory = await Category.findOne({
             company_id: req.user.restaurant_id,
@@ -32,6 +32,8 @@ exports.createCategory = async (req, res) => {
         const category = await Category.create({
             name,
             type,
+            hsn_code,
+            hsn_description,
             company_id: req.user.restaurant_id
         });
 
@@ -105,15 +107,17 @@ exports.deleteCategory = async (req, res) => {
 
         // Check if any products are associated with this category
         const Product = require('../models/Product'); // Import here to avoid circular dependency
-        const productsCount = await Product.countDocuments({ 
-            category: category.name, 
-            company_id: req.user.restaurant_id 
+        const productsCount = await Product.countDocuments({
+            category: category.name,
+            company_id: req.user.restaurant_id
         });
 
         if (productsCount > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Cannot delete category because there are products associated with it' 
+            category.is_active = false;
+            await category.save();
+            return res.status(200).json({
+                success: true,
+                message: 'Category preserved but deactivated because products are associated with it'
             });
         }
 

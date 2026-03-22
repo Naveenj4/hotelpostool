@@ -1,107 +1,187 @@
 const mongoose = require('mongoose');
 const Bill = require('../models/Bill');
 const Product = require('../models/Product');
+const Purchase = require('../models/Purchase');
+const Ledger = require('../models/Ledger');
+const Voucher = require('../models/Voucher');
 
 // @desc    Get dashboard summary
 // @route   GET /api/dashboard/summary
 // @access  Private (Admin, Billing)
 exports.getDashboardSummary = async (req, res) => {
     try {
-        const hotelId = req.user.restaurant_id._id || req.user.restaurant_id; // Get the ObjectId
+        const hotelId = req.user.restaurant_id._id || req.user.restaurant_id;
 
-        // Get today's date for calculating today's sales
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const { startDate, endDate } = req.query;
 
-        // Fetch today's PAID bills
-        const todayBillsPromise = Bill.find({
-            company_id: hotelId,
-            createdAt: { $gte: today, $lt: tomorrow },
+        // Determine date range for "today" or selected period
+        let start = new Date();
+        start.setHours(0, 0, 0, 0);
+        let end = new Date(start);
+        end.setDate(end.getDate() + 1);
+
+        if (startDate && endDate) {
+            start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+        }
+
+        // Today Dates Filter
+        const periodFilter = {
+            company_id: new mongoose.Types.ObjectId(hotelId),
+            createdAt: { $gte: start, $lt: end },
             status: 'PAID'
-        });
+        };
 
-        // Get top selling products for today only (aggregate bill items by product)
-        const topProductsPromise = Bill.aggregate([
-            {
-                $match: {
-                    company_id: new mongoose.Types.ObjectId(hotelId),
-                    createdAt: { $gte: today, $lt: tomorrow },
-                    status: 'PAID'
-                }
-            },
-            { $unwind: "$items" },
-            {
-                $group: {
-                    _id: "$items.product_id",
-                    name: { $first: "$items.name" },
-                    quantity: { $sum: "$items.quantity" },
-                    sales: { $sum: "$items.total_price" }
-                }
-            },
-            { $sort: { quantity: -1 } },
-            { $limit: 5 }
+        const purchasePeriodFilter = {
+             company_id: new mongoose.Types.ObjectId(hotelId),
+             purchase_date: { $gte: start, $lt: end },
+             is_deleted: false
+        };
+
+        // 1. SALES
+        const periodSalesPromise = Bill.aggregate([
+            { $match: periodFilter },
+            { $group: { _id: null, total: { $sum: "$grand_total" }, count: { $sum: 1 } } }
         ]);
 
-        // Get low stock items (products with current_stock < 10)
-        const lowStockItemsPromise = Product.find({
-            company_id: hotelId,
-            current_stock: { $lt: 10 },
-            is_active: true
-        });
-
-        // Get today's purchases
-        const Purchase = require('../models/Purchase');
-        const todayPurchasesPromise = Purchase.find({ company_id: hotelId, purchase_date: { $gte: today, $lt: tomorrow } });
-
-        // Get total outstanding balances
-        const Supplier = require('../models/Supplier');
-        const Customer = require('../models/Customer');
-        const supplierOutstandingPromise = Supplier.aggregate([{ $match: { company_id: new mongoose.Types.ObjectId(hotelId) } }, { $group: { _id: null, total: { $sum: "$opening_balance" } } }]);
-        const customerOutstandingPromise = Customer.aggregate([{ $match: { company_id: new mongoose.Types.ObjectId(hotelId) } }, { $group: { _id: null, total: { $sum: "$opening_balance" } } }]);
-
-        // Latest 5 Vouchers
-        const Voucher = require('../models/Voucher');
-        const latestVouchersPromise = Voucher.find({ company_id: hotelId }).sort({ createdAt: -1 }).limit(5).populate('debit_ledger', 'name').populate('credit_ledger', 'name');
-
-        // Wait for all promises to resolve
-        const [todayBills, topProductsResult, lowStockItems, todayPurchases, supplierOut, customerOut, latestVouchers] = await Promise.all([
-            todayBillsPromise,
-            topProductsPromise,
-            lowStockItemsPromise,
-            todayPurchasesPromise,
-            supplierOutstandingPromise,
-            customerOutstandingPromise,
-            latestVouchersPromise
+        const totalSalesPromise = Bill.aggregate([
+            { $match: { company_id: new mongoose.Types.ObjectId(hotelId), status: 'PAID' } },
+            { $group: { _id: null, total: { $sum: "$grand_total" } } }
         ]);
 
-        // Calculate today's sales and purchases
-        const todaySales = todayBills.reduce((sum, bill) => sum + (bill.grand_total || 0), 0);
-        const todayPurchasesTotal = todayPurchases.reduce((sum, p) => sum + (p.grand_total || 0), 0);
-        const totalBills = todayBills.length;
+        // Returns (Cancelled Bills for Demo)
+        const periodReturnPromise = Bill.aggregate([
+            { $match: { company_id: new mongoose.Types.ObjectId(hotelId), createdAt: { $gte: start, $lt: end }, status: 'CANCELLED' } },
+            { $group: { _id: null, total: { $sum: "$grand_total" } } }
+        ]);
 
-        // ... (existing paymentSummary logic) ...
-        let paymentSummary = {};
-        todayBills.forEach(bill => {
-            if (bill.payment_modes && bill.payment_modes.length > 0) {
-                bill.payment_modes.forEach(payment => {
-                    if (!paymentSummary[payment.type]) paymentSummary[payment.type] = 0;
-                    paymentSummary[payment.type] += payment.amount;
-                });
-            }
-        });
+        // 2. PURCHASES
+        const periodPurchasesPromise = Purchase.aggregate([
+            { $match: purchasePeriodFilter },
+            { $group: { _id: null, total: { $sum: "$grand_total" } } }
+        ]);
+
+        const totalPurchasesPromise = Purchase.aggregate([
+             { $match: { company_id: new mongoose.Types.ObjectId(hotelId), is_deleted: false } },
+             { $group: { _id: null, total: { $sum: "$grand_total" } } }
+        ]);
+
+        // Returns (Purchase Returns logic missing in schema, default to 0)
+
+        // 3. PAYMENTS & VOUCHERS
+        const voucherPeriodFilter = {
+            company_id: new mongoose.Types.ObjectId(hotelId),
+            date: { $gte: start, $lt: end },
+            is_deleted: false
+        };
+
+        const periodReceiptsPromise = Voucher.aggregate([
+            { $match: { ...voucherPeriodFilter, voucher_type: 'RECEIPT' } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+
+        const periodPaymentsPromise = Voucher.aggregate([
+            { $match: { ...voucherPeriodFilter, voucher_type: 'PAYMENT' } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+
+        // CASH & BANK BALANCES
+        const ledgersPromise = Ledger.find({ company_id: hotelId });
+
+        // OUTSTANDING (Receivable / Payable)
+        // Receivable = Sundry Debtors
+        // Payable = Sundry Creditors
+
+        // AGGREGATE DAILY DATA FOR GRAPHS
+        const dailySalesPromise = Bill.aggregate([
+            { $match: periodFilter },
+            { $group: {
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                total: { $sum: "$grand_total" }
+            }},
+            { $sort: { _id: 1 } }
+        ]);
+
+        const dailyReceiptsPromise = Voucher.aggregate([
+            { $match: { ...voucherPeriodFilter, voucher_type: 'RECEIPT' } },
+            { $group: {
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                total: { $sum: "$amount" }
+            }},
+            { $sort: { _id: 1 } }
+        ]);
+
+        const dailyPaymentsPromise = Voucher.aggregate([
+            { $match: { ...voucherPeriodFilter, voucher_type: 'PAYMENT' } },
+            { $group: {
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                total: { $sum: "$amount" }
+            }},
+            { $sort: { _id: 1 } }
+        ]);
+
+        const [
+            periodSales, totalSales, periodReturn,
+            periodPurchases, totalPurchases,
+            periodReceipts, periodPayments,
+            ledgers,
+            dailySales, dailyReceipts, dailyPayments
+        ] = await Promise.all([
+            periodSalesPromise, totalSalesPromise, periodReturnPromise,
+            periodPurchasesPromise, totalPurchasesPromise,
+            periodReceiptsPromise, periodPaymentsPromise,
+            ledgersPromise,
+            dailySalesPromise, dailyReceiptsPromise, dailyPaymentsPromise
+        ]);
+
+        const sumCash = ledgers.filter(l => l.group === 'CASH_IN_HAND').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+        const sumBank = ledgers.filter(l => l.group === 'BANK_ACCOUNTS').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+        
+        const receivableAmount = ledgers.filter(l => l.group === 'SUNDRY_DEBTORS').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+        const payableAmount = ledgers.filter(l => l.group === 'SUNDRY_CREDITORS').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+
+        // Normalize graph dates
+        const graphLabelsMap = new Set();
+        dailySales.forEach(d => graphLabelsMap.add(d._id));
+        dailyReceipts.forEach(d => graphLabelsMap.add(d._id));
+        dailyPayments.forEach(d => graphLabelsMap.add(d._id));
+        
+        let graphLabels = Array.from(graphLabelsMap).sort();
+        if (graphLabels.length === 0) {
+            graphLabels = [start.toISOString().split('T')[0]]; // Default single point
+        }
+
+        const chartData = {
+            labels: graphLabels,
+            sales: graphLabels.map(l => dailySales.find(d => d._id === l)?.total || 0),
+            receipts: graphLabels.map(l => dailyReceipts.find(d => d._id === l)?.total || 0),
+            payments: graphLabels.map(l => dailyPayments.find(d => d._id === l)?.total || 0),
+        };
 
         const summary = {
-            todaySales,
-            todayPurchases: todayPurchasesTotal,
-            totalBills,
-            supplierOutstanding: supplierOut[0]?.total || 0,
-            customerOutstanding: customerOut[0]?.total || 0,
-            paymentSummary: Object.keys(paymentSummary).map(mode => ({ mode, amount: paymentSummary[mode] })),
-            topProducts: topProductsResult.map(item => ({ name: item.name, quantity: item.quantity, sales: item.sales })),
-            lowStockItems: lowStockItems.map(p => ({ item: p.name, remaining: p.current_stock, unit: 'units' })),
-            latestVouchers: latestVouchers.map(v => ({ date: v.date, type: v.voucher_type, amount: v.amount, dr: v.debit_ledger?.name, cr: v.credit_ledger?.name })),
+            todaySales: periodSales[0]?.total || 0,
+            totalBills: periodSales[0]?.count || 0,
+            todayReturns: periodReturn[0]?.total || 0,
+            totalSales: totalSales[0]?.total || 0,
+
+            todayPurchases: periodPurchases[0]?.total || 0,
+            todayPurchaseReturns: 0, // Placeholder
+            totalPurchases: totalPurchases[0]?.total || 0,
+
+            todayPaymentIn: periodReceipts[0]?.total || 0,
+            todayPaymentOut: periodPayments[0]?.total || 0,
+
+            todayCashBalance: sumCash,
+            todayBankBalance: sumBank,
+            totalCashBank: sumCash + sumBank,
+
+            receivableAmount: receivableAmount,
+            payableAmount: payableAmount,
+
+            chartData: chartData,
+
             restaurantInfo: { printName: req.user.restaurant_id?.print_name || req.user.restaurant_id?.company_name || 'Restaurant' }
         };
 

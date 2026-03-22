@@ -3,47 +3,96 @@ import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import {
     TrendingUp,
+    TrendingDown,
     CreditCard,
-    AlertTriangle,
-    ArrowUpRight,
     ShoppingBag,
     Wallet,
     Activity,
     ArrowRight,
-    Zap,
-    MapPin,
-    Users,
-    Briefcase,
+    ArrowDownRight,
+    ArrowUpRight,
     PieChart,
     Search,
     Filter,
-    Download
+    Download,
+    Calendar,
+    Landmark,
+    Banknote,
+    Users,
+    Briefcase,
+    ChevronRight,
+    ArrowUp,
+    ArrowDown,
+    Layers,
+    DollarSign
 } from 'lucide-react';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+} from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
 import './Dashboard.css';
 
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+);
 
-const StatCard = ({ label, value, icon, color, trend, percentage }) => (
-    <div className="bento-card group flex flex-col justify-between relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white h-full p-6">
-        <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" style={{ backgroundColor: color }}></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-        <div className="relative z-10 flex flex-col flex-1">
-            <div className="flex justify-between items-start mb-3">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-md" style={{ backgroundColor: `${color}14`, color: color }}>
+const StatCard = ({ label, value, icon, color, trend, iconBg }) => (
+    <div className="group relative bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-500 overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-110 opacity-50"></div>
+        
+        <div className="relative z-10 flex flex-col h-full justify-between">
+            <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-transform duration-500 group-hover:rotate-6 group-hover:scale-110" style={{ backgroundColor: iconBg || `${color}10`, color: color }}>
                     {icon}
                 </div>
                 {trend && (
-                    <div className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-[8px] font-extrabold uppercase tracking-tight ${trend.startsWith('+') ? 'bg-emerald-500/20 text-emerald-700' : 'bg-red-500/20 text-red-700'}`}>
-                        {trend.startsWith('+') ? <ArrowUpRight size={10} /> : <ArrowUpRight size={10} className="rotate-90" />}
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-tight ${trend.startsWith('+') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                        {trend.startsWith('+') ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                         {trend}
                     </div>
                 )}
             </div>
-            <div className="flex-1 flex flex-col justify-end">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-                <p className="text-xl font-black text-slate-900 tracking-tighter">{value}</p>
+            
+            <div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] mb-2">{label}</p>
+                <div className="flex items-baseline gap-1">
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{value}</h3>
+                </div>
             </div>
         </div>
+    </div>
+);
+
+const ReportSectionHeader = ({ icon, title, subtitle }) => (
+    <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-600 flex items-center justify-center rounded-2xl shadow-lg shadow-indigo-200 text-white">
+                {icon}
+            </div>
+            <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1 uppercase">{title}</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{subtitle}</p>
+            </div>
+        </div>
+        <div className="h-px flex-1 bg-slate-100 hidden xl:block mx-8 opacity-50"></div>
     </div>
 );
 
@@ -52,28 +101,41 @@ const SelfServiceDashboard = () => {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [dashboardData, setDashboardData] = useState({});
     const [loading, setLoading] = useState(true);
+    
+    const [dateRange, setDateRange] = useState({
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0]
+    });
+
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            if (!savedUser) {
+                setLoading(false);
+                return;
+            }
+            const { token } = JSON.parse(savedUser);
+            const queryParams = new URLSearchParams({
+                startDate: dateRange.startDate || '',
+                endDate: dateRange.endDate || ''
+            }).toString();
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/dashboard/summary?${queryParams}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.success) setDashboardData(result.data);
+        } catch (error) {
+            console.error("Dashboard fetch error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const savedUser = localStorage.getItem('user');
-                if (!savedUser) return;
-                const { token } = JSON.parse(savedUser);
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/dashboard/summary`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const result = await response.json();
-                if (result.success) setDashboardData(result.data);
-            } catch (error) {
-                console.error("Dashboard fetch error:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchDashboardData();
-
-
-    }, []);
+    }, [dateRange]);
 
     const toggleSidebar = () => {
         if (window.innerWidth <= 768) setIsMobileSidebarOpen(!isMobileSidebarOpen);
@@ -84,18 +146,25 @@ const SelfServiceDashboard = () => {
         }
     };
 
-    if (loading) {
+    const handleDateChange = (e, field) => {
+        setDateRange(prev => ({ ...prev, [field]: e.target.value }));
+    };
+
+    if (loading && !dashboardData.todaySales && dashboardData.todaySales !== 0) {
         return (
-            <div className="dashboard-layout premium-gradient-bg">
+            <div className="dashboard-layout bg-slate-50">
                 <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
                 <main className="dashboard-main">
                     <Header toggleSidebar={toggleSidebar} />
-                    <div className="dashboard-content p-10 flex items-center justify-center">
-                        <div className="animate-pulse flex flex-col items-center">
-                            <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 text-indigo-600">
-                                <Activity size={32} />
+                    <div className="dashboard-content flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                            <div className="relative">
+                                <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Activity size={24} className="text-indigo-600 opacity-50" />
+                                </div>
                             </div>
-                            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Loading Dashboard...</p>
+                            <p className="mt-6 text-sm font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">Analyzing Metrics...</p>
                         </div>
                     </div>
                 </main>
@@ -103,276 +172,251 @@ const SelfServiceDashboard = () => {
         );
     }
 
-    const grossProfit = (dashboardData?.todaySales || 0) - (dashboardData?.todayPurchases || 0);
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { 
+                position: 'top', 
+                align: 'end',
+                labels: { 
+                    font: { family: "'Inter', sans-serif", weight: 900, size: 10 }, 
+                    usePointStyle: true, 
+                    pointStyle: 'circle',
+                    padding: 24,
+                    color: '#64748b'
+                } 
+            },
+            tooltip: { 
+                backgroundColor: '#0f172a', 
+                titleFont: { size: 12, weight: 800 }, 
+                bodyFont: { size: 13, weight: 900 }, 
+                padding: 16, 
+                cornerRadius: 12, 
+                displayColors: false,
+                borderWidth: 1,
+                borderColor: '#1e293b'
+            }
+        },
+        scales: {
+            y: { 
+                beginAtZero: true, 
+                grid: { color: '#f1f5f9', drawBorder: false }, 
+                ticks: { 
+                    font: { weight: 700, size: 10 }, 
+                    color: '#94a3b8',
+                    padding: 10,
+                    callback: (value) => '₹' + value.toLocaleString() 
+                } 
+            },
+            x: { 
+                grid: { display: false, drawBorder: false }, 
+                ticks: { 
+                    font: { weight: 700, size: 10 }, 
+                    color: '#94a3b8',
+                    padding: 10
+                } 
+            }
+        }
+    };
+
+    const fmt = (num) => (num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
-        <div className="dashboard-layout premium-gradient-bg">
+        <div className="dashboard-layout bg-[#F8FAFC]">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
 
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
 
-            <main className="dashboard-main">
-                {/* top_header_section mapped implicitly through Header, but adding the specific action bar below */}
+            <main className="dashboard-main overflow-hidden">
                 <Header toggleSidebar={toggleSidebar} restaurantName={dashboardData?.restaurantInfo?.printName} />
 
-                <div className="dashboard-content fade-in p-8 lg:p-12 max-w-[1500px] mx-auto w-full">
+                <div className="dashboard-content fade-in p-6 lg:p-10 max-w-[1800px] mx-auto w-full">
 
-                    {/* search_and_action_bar */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+                    {/* Header Action Bar */}
+                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-12 gap-8">
                         <div>
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-2">CEO Overview</h2>
-                            <p className="text-slate-500 font-medium text-base">Welcome back, monitor your key metrics here.</p>
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-wider border border-indigo-100">Live Analytics</span>
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            </div>
+                            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">MAIN DASH BOARD</h2>
+                            <p className="text-slate-400 font-bold text-sm tracking-wide">Enterprise Resource Analysis & Financial Forecasting</p>
                         </div>
-                        <div className="flex items-center gap-2 w-full md:w-auto md:flex-nowrap">
-                            <div className="relative flex-1 md:flex-none md:w-72">
-                                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex-shrink-0" />
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 text-sm font-medium bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 hover:border-slate-300 transition-all duration-200 placeholder-slate-400"
+                        
+                        {/* Period Filter Card */}
+                        <div className="flex flex-col sm:flex-row items-center gap-2 p-2 bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50">
+                            <div className="flex items-center px-6 py-3 gap-4">
+                                <Calendar size={18} className="text-indigo-600" />
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Analysis Range</span>
+                                    <div className="flex items-center gap-2 text-sm font-black text-slate-700">
+                                        <input
+                                            type="date"
+                                            value={dateRange.startDate}
+                                            onChange={(e) => handleDateChange(e, 'startDate')}
+                                            className="bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-32"
+                                        />
+                                        <ChevronRight size={14} className="text-slate-300" />
+                                        <input
+                                            type="date"
+                                            value={dateRange.endDate}
+                                            onChange={(e) => handleDateChange(e, 'endDate')}
+                                            className="bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-32"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={fetchDashboardData}
+                                className="h-14 px-8 bg-indigo-600 text-white rounded-[1.75rem] font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all duration-300 active:scale-95 shadow-lg shadow-indigo-100"
+                            >
+                                Refresh Sync
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Metric Grids */}
+                    <div className="grid grid-cols-1 gap-16">
+                        
+                        {/* Sales Section */}
+                        <section aria-labelledby="sales-report">
+                            <ReportSectionHeader icon={<TrendingUp />} title="Sales Report" subtitle="Revenue Stream & Returns Analysis" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                <StatCard label="TODAY SALES" value={`₹${fmt(dashboardData.todaySales)}`} icon={<TrendingUp size={28} />} color="#6366f1" trend="+12.4%" />
+                                <StatCard label="TODAY RETURN" value={`₹${fmt(dashboardData.todayReturns)}`} icon={<TrendingDown size={28} />} color="#f43f5e" />
+                                <StatCard label="TOTAL SALES" value={`₹${fmt(dashboardData.totalSales)}`} icon={<Layers size={28} />} color="#4338ca" />
+                            </div>
+                        </section>
+
+                        {/* Purchase Section */}
+                        <section aria-labelledby="purchase-report">
+                            <ReportSectionHeader icon={<ShoppingBag />} title="Inventory Report" subtitle="Procurement & Supplier Returns" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                <StatCard label="TODAY PURCHASE" value={`₹${fmt(dashboardData.todayPurchases)}`} icon={<ShoppingBag size={28} />} color="#fb923c" />
+                                <StatCard label="TOADY RETURN" value={`₹${fmt(dashboardData.todayPurchaseReturns)}`} icon={<ArrowRight size={28} />} color="#f43f5e" />
+                                <StatCard label="TOTAL PURCHASE" value={`₹${fmt(dashboardData.totalPurchases)}`} icon={<Briefcase size={28} />} color="#ea580c" />
+                            </div>
+                        </section>
+
+                        {/* Payments Row */}
+                        <section aria-labelledby="payment-report">
+                            <ReportSectionHeader icon={<CreditCard />} title="Cashflow Report" subtitle="Inflow vs Outflow Liquidity" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-5xl">
+                                <StatCard label="TODAY PAYMENT IN" value={`₹${fmt(dashboardData.todayPaymentIn)}`} icon={<ArrowDownRight size={28} />} color="#10b981" iconBg="#ecfdf5" />
+                                <StatCard label="TODAY PAYMENT OUT" value={`₹${fmt(dashboardData.todayPaymentOut)}`} icon={<ArrowUpRight size={28} />} color="#ec4899" iconBg="#fdf2f8" />
+                            </div>
+                        </section>
+
+                        {/* Financial Standing */}
+                        <section aria-labelledby="financial-report">
+                            <ReportSectionHeader icon={<Landmark />} title="Asset Report" subtitle="Balanced Sheets & Outstanding Ledgers" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                                <StatCard label="TODAY CASH BALANCE" value={`₹${fmt(dashboardData.todayCashBalance)}`} icon={<Banknote size={26} />} color="#06b6d4" />
+                                <StatCard label="TODAY BANK BALANCE" value={`₹${fmt(dashboardData.todayBankBalance)}`} icon={<Landmark size={26} />} color="#3b82f6" />
+                                <StatCard label="TOTAL CASH + BANK" value={`₹${fmt((dashboardData.todayCashBalance || 0) + (dashboardData.todayBankBalance || 0))}`} icon={<Wallet size={26} />} color="#6366f1" />
+                                <StatCard label="RECEIVABLE AMOUNT" value={`₹${fmt(dashboardData.receivableAmount)}`} icon={<ArrowDownRight size={26} />} color="#8b5cf6" />
+                                <StatCard label="PAYABLE AMOUNT" value={`₹${fmt(dashboardData.payableAmount)}`} icon={<ArrowUpRight size={26} />} color="#f43f5e" />
+                            </div>
+                        </section>
+
+                    </div>
+
+                    {/* Analytics Graphics */}
+                    <div className="mt-24 mb-10 pt-10 border-t border-slate-100">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-10 bg-indigo-600 rounded-full"></div>
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Graphical Data Analytics</h3>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-20">
+                        
+                        {/* 1. Main Trend */}
+                        <div className="lg:col-span-12 bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-premium">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 border-b border-slate-50 pb-8 gap-4">
+                                <div>
+                                    <h4 className="text-xl font-black text-slate-900 tracking-tight">TOTAL SALES ANALYSIS</h4>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Periodical growth trajectories</p>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs font-black text-slate-500 uppercase tracking-widest">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-md bg-indigo-600"></div>
+                                        <span>Primary Stream</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="h-[400px]">
+                                <Line 
+                                    data={ {
+                                        labels: dashboardData?.chartData?.labels || [],
+                                        datasets: [{
+                                            label: 'Sales Revenue',
+                                            data: dashboardData?.chartData?.sales || [],
+                                            borderColor: '#6366f1',
+                                            backgroundColor: (context) => {
+                                                const ctx = context.chart.ctx;
+                                                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                                                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+                                                gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+                                                return gradient;
+                                            },
+                                            borderWidth: 5,
+                                            tension: 0.4,
+                                            fill: true,
+                                            pointBackgroundColor: '#fff',
+                                            pointBorderColor: '#6366f1',
+                                            pointBorderWidth: 3,
+                                            pointRadius: 6,
+                                            pointHoverRadius: 8
+                                        }]
+                                    }} 
+                                    options={chartOptions} 
                                 />
                             </div>
-                            <button className="h-10 w-10 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 flex items-center justify-center flex-shrink-0" title="Filter">
-                                <Filter size={18} />
-                            </button>
-                            <button className="h-10 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-5 rounded-lg font-bold text-sm hover:from-indigo-700 hover:to-indigo-800 hover:shadow-lg active:scale-95 transition-all duration-200 shadow-lg shadow-indigo-500/30 flex-shrink-0 border border-indigo-600">
-                                <Download size={16} /> Export
-                            </button>
                         </div>
-                    </div>
 
-                    {/* kpi_metrics_cards - Responsive grid layout */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 mb-10 items-stretch">
-                        {[{
-                            label: 'Total Revenue',
-                            value: `₹${(dashboardData?.todaySales || 0).toLocaleString()}`,
-                            icon: <TrendingUp size={24} />, 
-                            color: '#10b981', 
-                            trend: '+12.5%'
-                        }, {
-                            label: 'Total Expenses',
-                            value: `₹${(dashboardData?.todayPurchases || 0).toLocaleString()}`,
-                            icon: <ShoppingBag size={24} />, 
-                            color: '#ef4444', 
-                            trend: '-4.2%'
-                        }, {
-                            label: 'Gross Profit',
-                            value: `₹${grossProfit.toLocaleString()}`,
-                            icon: <Wallet size={24} />, 
-                            color: '#8b5cf6', 
-                            trend: '+8.1%'
-                        }, {
-                            label: 'Current Ratio',
-                            value: '1.5x',
-                            icon: <Activity size={24} />, 
-                            color: '#f59e0b', 
-                            trend: '+0.2'
-                        }, {
-                            label: 'Total Clients',
-                            value: dashboardData?.totalBills || 0,
-                            icon: <Users size={24} />, 
-                            color: '#3b82f6', 
-                            trend: '+15%'
-                        }, {
-                            label: 'Total Employers',
-                            value: dashboardData?.totalEmployers || 0,
-                            icon: <Briefcase size={24} />, 
-                            color: '#14b8a6', 
-                            trend: '0%'
-                        }].map(({ label, value, icon, color, trend }) => (
-                            <div key={label} className="flex items-stretch">
-                                <StatCard label={label} value={value} icon={icon} color={color} trend={trend} />
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* analytics_visualization_section & top_entities_lists */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
-                        {/* left_panel: World Map Chart Placeholder */}
-                        <div className="lg:col-span-7 bg-white rounded-2xl shadow-premium p-8 flex flex-col relative overflow-hidden border border-slate-200/50">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 className="font-bold text-slate-900 tracking-tight text-lg">Top Country By Session</h3>
-                                    <p className="text-xs text-slate-400 font-medium mt-1">Geographic distribution</p>
-                                </div>
-                                <button className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 transition-all duration-200 active:scale-95">View Map</button>
-                            </div>
-                            <div className="flex-1 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center min-h-[300px] relative">
-                                <div className="w-16 h-16 rounded-2xl bg-white/50 flex items-center justify-center mb-4 shadow-sm">
-                                    <MapPin size={32} className="text-slate-300" />
-                                </div>
-                                <div className="z-10 text-center max-w-xs">
-                                    <p className="text-slate-500 font-bold uppercase tracking-wider text-xs mb-2">Geospatial Distribution</p>
-                                    <p className="text-slate-400 text-sm leading-relaxed">Active locations mapping rendered via telemetry layer interface.</p>
-                                </div>
+                        {/* 2. Inflow/Outflow */}
+                        <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-premium">
+                            <h4 className="text-xl font-black text-slate-900 tracking-tight mb-8">CASH / BANK LIQUIDITY</h4>
+                            <div className="h-[350px]">
+                                <Bar 
+                                    data={{
+                                        labels: dashboardData?.chartData?.labels || [],
+                                        datasets: [
+                                            { label: 'RECEIPTS', data: dashboardData?.chartData?.receipts || [], backgroundColor: '#10b981', borderRadius: 12, barThickness: 15 },
+                                            { label: 'PAYMENTS', data: dashboardData?.chartData?.payments || [], backgroundColor: '#f43f5e', borderRadius: 12, barThickness: 15 }
+                                        ]
+                                    }} 
+                                    options={chartOptions} 
+                                />
                             </div>
                         </div>
 
-                        {/* right_panel: Top Lists & Donuts */}
-                        <div className="lg:col-span-5 flex flex-col gap-6">
-
-                            {/* top_company_list / top_customer_list via topProducts */}
-                            <div className="bg-white rounded-2xl shadow-premium p-6 border border-slate-200/50">
-                                <div className="flex justify-between items-center mb-5">
-                                    <div>
-                                        <h3 className="font-bold text-slate-900 tracking-tight">Top Companies/Customers</h3>
-                                        <p className="text-xs text-slate-400 font-medium mt-1">Best performing clients</p>
-                                    </div>
-                                    <button className="px-3 py-1.5 text-[10px] font-bold uppercase text-slate-500 bg-slate-50 rounded-md border border-slate-200 hover:bg-slate-100 hover:text-indigo-600 hover:border-indigo-300 tracking-widest transition-all duration-200 active:scale-95">More</button>
-                                </div>
-                                <div className="space-y-3">
-                                    {dashboardData?.topProducts?.slice(0, 3).map((prod, i) => (
-                                        <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50/50 rounded-lg transition-all duration-200 border border-transparent hover:border-slate-200">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shadow-sm">
-                                                    {prod.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-bold text-slate-900 truncate max-w-[120px]">{prod.name}</p>
-                                                    <p className="text-[10px] text-slate-400 font-medium">{prod.quantity} units</p>
-                                                </div>
-                                            </div>
-                                            <p className="text-sm font-bold text-slate-900">₹{prod.sales.toLocaleString()}</p>
-                                        </div>
-                                    ))}
-                                    {(!dashboardData?.topProducts || dashboardData.topProducts.length === 0) && (
-                                        <p className="text-sm text-slate-400 font-medium text-center py-6">No active clients found.</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Donut Charts Row */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white rounded-2xl shadow-premium p-6 flex flex-col items-center justify-center text-center border border-slate-200/50">
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-4">Subscribe</h4>
-                                    <div className="w-20 h-20 rounded-full border-4 border-slate-200 border-t-emerald-500 border-r-emerald-500 mb-3 flex items-center justify-center">
-                                        <span className="text-xs font-bold text-slate-900">75%</span>
-                                    </div>
-                                    <p className="text-xs font-medium text-slate-500">Active Rate</p>
-                                </div>
-                                <div className="bg-white rounded-2xl shadow-premium p-6 flex flex-col items-center justify-center text-center border border-slate-200/50">
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-4">Lead Source</h4>
-                                    <PieChart className="text-indigo-500 mb-2" size={40} />
-                                    <div className="flex gap-2 text-[9px] font-bold text-slate-500 uppercase">
-                                        <span className="text-indigo-600">Direct</span> • <span>Referral</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* bottom_analytics_panels */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                        {/* 1. Subscription Overview — Payment Breakdown */}
-                        <div className="bg-white rounded-2xl shadow-premium p-6 border border-slate-200/50">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 className="font-bold text-slate-900 tracking-tight">Subscription Overview</h3>
-                                    <p className="text-xs text-slate-400 font-medium mt-1">Today's breakdown</p>
-                                </div>
-                                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Today</span>
-                            </div>
-                            {dashboardData?.paymentSummary?.length > 0 ? (
-                                <div className="space-y-4">
-                                    {dashboardData.paymentSummary.map((ps, i) => (
-                                        <div key={i}>
-                                            <div className="flex justify-between text-xs font-bold mb-2">
-                                                <span className="text-slate-600 uppercase tracking-wide">{ps.mode}</span>
-                                                <span className="text-slate-900 font-bold">₹{ps.amount.toLocaleString()}</span>
-                                            </div>
-                                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full rounded-full transition-all duration-700"
-                                                    style={{
-                                                        width: `${Math.min(100, dashboardData.todaySales > 0 ? (ps.amount / dashboardData.todaySales) * 100 : 0)}%`,
-                                                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'][i % 4]
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="py-8 text-center text-slate-400 font-medium text-sm">
-                                    <p className="text-2xl mb-2">—</p>
-                                    No payment activity today.
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 2. Tickets by Status — Mapped from Stock Alerts */}
-                        <div className="bg-white rounded-2xl shadow-premium p-6 border border-slate-200/50">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 className="font-bold text-slate-900 tracking-tight">Tickets by Status</h3>
-                                    <p className="text-xs text-slate-400 font-medium mt-1">Stock alerts</p>
-                                </div>
-                                <span className="text-[10px] font-bold uppercase text-rose-600 bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-100">
-                                    {dashboardData?.lowStockItems?.length || 0} open
-                                </span>
-                            </div>
-                            {dashboardData?.lowStockItems?.length > 0 ? (
-                                <div className="space-y-2">
-                                    {dashboardData.lowStockItems.slice(0, 5).map((item, i) => {
-                                        const severity = item.remaining < 3 ? 'Critical' : item.remaining < 7 ? 'Warning' : 'Low';
-                                        const colors = { Critical: 'bg-rose-50 text-rose-600 border-rose-100', Warning: 'bg-amber-50 text-amber-600 border-amber-100', Low: 'bg-yellow-50 text-yellow-600 border-yellow-100' };
-                                        return (
-                                            <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-slate-50/50 hover:bg-slate-100 transition-all duration-200 border border-transparent hover:border-slate-200">
-                                                <div>
-                                                    <p className="font-bold text-sm text-slate-900 truncate max-w-[130px]">{item.item}</p>
-                                                    <p className="text-[10px] text-slate-400 font-medium">{item.unit}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-slate-800 text-sm">{item.remaining}</span>
-                                                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-lg border ${colors[severity]}`}>{severity}</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="py-8 text-center">
-                                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-emerald-600">
-                                        <Activity size={24} />
-                                    </div>
-                                    <p className="text-sm font-medium text-slate-400">All stock levels optimal.</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 3. Recent Activity — Latest Voucher Audit Trail */}
-                        <div className="bg-white rounded-2xl shadow-premium p-6 border border-slate-200/50">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 className="font-bold text-slate-900 tracking-tight">Recent Activity</h3>
-                                    <p className="text-xs text-slate-400 font-medium mt-1">Audit trail</p>
-                                </div>
-                                <button className="px-3 py-1.5 text-[10px] font-bold uppercase text-slate-500 bg-slate-50 rounded-md border border-slate-200 hover:bg-slate-100 hover:text-indigo-600 hover:border-indigo-300 tracking-widest flex items-center gap-1 transition-all duration-200 active:scale-95">
-                                    View All <ArrowRight size={11} />
-                                </button>
-                            </div>
-                            <div className="space-y-3">
-                                {dashboardData?.latestVouchers?.slice(0, 4).map((v, i) => (
-                                    <div key={i} className="flex items-start gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-bold mt-0
-                                            ${v.type === 'RECEIPT' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                                            {v.type === 'RECEIPT' ? '↓' : '↑'}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-slate-900 truncate">{v.dr || 'System'}</p>
-                                            <div className="flex justify-between items-center mt-1">
-                                                <p className="text-[10px] text-slate-400 font-medium">{new Date(v.date).toLocaleDateString()}</p>
-                                                <p className="text-xs font-bold text-slate-900">₹{v.amount?.toLocaleString()}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {(!dashboardData?.latestVouchers || dashboardData.latestVouchers.length === 0) && (
-                                    <div className="py-8 text-center text-slate-400 font-medium text-sm">No recent voucher activity.</div>
-                                )}
+                        {/* 3. Outstanding */}
+                        <div className="lg:col-span-5 bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-premium">
+                            <h4 className="text-xl font-black text-slate-900 tracking-tight mb-8">OUTSTANDING STANDING</h4>
+                            <div className="h-[350px]">
+                                <Bar 
+                                    data={{
+                                        labels: ['Outstanding Balance'],
+                                        datasets: [
+                                            { label: 'RECEIVABLE', data: [dashboardData?.receivableAmount || 0], backgroundColor: '#8b5cf6', borderRadius: 15, barThickness: 45 },
+                                            { label: 'PAYABLE', data: [dashboardData?.payableAmount || 0], backgroundColor: '#f59e0b', borderRadius: 15, barThickness: 45 }
+                                        ]
+                                    }} 
+                                    options={{
+                                        ...chartOptions,
+                                        indexAxis: 'y',
+                                        scales: {
+                                            ...chartOptions.scales,
+                                            x: { ...chartOptions.scales.y, beginAtZero: true },
+                                            y: { ...chartOptions.scales.x }
+                                        }
+                                    }} 
+                                />
                             </div>
                         </div>
 

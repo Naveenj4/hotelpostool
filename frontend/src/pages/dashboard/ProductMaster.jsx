@@ -4,6 +4,7 @@ import Header from '../../components/dashboard/Header';
 import './Dashboard.css';
 import {
     PlusCircle,
+    Minus,
     Search,
     Edit,
     Trash,
@@ -26,7 +27,10 @@ import {
     ChevronRight,
     ArrowRight,
     Eye,
-    EyeOff
+    EyeOff,
+    Table,
+    Truck,
+    Users2
 } from 'lucide-react';
 import { TableSkeleton } from '../../components/Skeleton';
 
@@ -43,6 +47,9 @@ const ProductMaster = () => {
     const [uploading, setUploading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('ALL');
+    const [selectedBrand, setSelectedBrand] = useState('ALL');
+    const [selectedFoodType, setSelectedFoodType] = useState('ALL');
     const fileInputRef = useRef(null);
 
     const initialFormState = {
@@ -80,8 +87,8 @@ const ProductMaster = () => {
         serve_types: {
             dine_in: true,
             delivery: true,
-            parcel: true,
-            order: true
+            pickup: true,
+            party_order: true
         },
         image: '',
         online_order: false,
@@ -182,7 +189,19 @@ const ProductMaster = () => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+        const newValue = type === 'checkbox' ? checked : value;
+
+        if (name === 'category') {
+            const selectedCat = categories.find(c => c.name === value);
+            setFormData(prev => ({
+                ...prev,
+                [name]: newValue,
+                hsn_code: selectedCat?.hsn_code || ''
+            }));
+            return;
+        }
+
+        setFormData(prev => ({ ...prev, [name]: newValue }));
     };
 
     const handleServeTypeChange = (type) => {
@@ -204,6 +223,20 @@ const ProductMaster = () => {
 
     const handleRemoveAddon = (index) => {
         setFormData(prev => ({ ...prev, addons: prev.addons.filter((_, i) => i !== index) }));
+    };
+
+    const handleAddVariation = () => {
+        setFormData(prev => ({ ...prev, variations: [...prev.variations, { name: '', amount: 0 }] }));
+    };
+
+    const handleVariationChange = (index, field, value) => {
+        const newVars = [...formData.variations];
+        newVars[index][field] = value;
+        setFormData(prev => ({ ...prev, variations: newVars }));
+    };
+
+    const handleRemoveVariation = (index) => {
+        setFormData(prev => ({ ...prev, variations: prev.variations.filter((_, i) => i !== index) }));
     };
 
     const handleSubmit = async (e) => {
@@ -303,10 +336,19 @@ const ProductMaster = () => {
         }
     };
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const matchesSearch =
+            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.code && p.code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
+        const matchesBrand = selectedBrand === 'ALL' || (p.brand || 'No Brand') === selectedBrand;
+        const matchesFoodType = selectedFoodType === 'ALL' || p.food_type === selectedFoodType;
+
+        return matchesSearch && matchesCategory && matchesBrand && matchesFoodType;
+    });
 
     return (
         <div className="dashboard-layout">
@@ -317,127 +359,192 @@ const ProductMaster = () => {
             )}
 
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Activity className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Global Item Registry</span>
-                            </div>
-                            <h2>Item Creation</h2>
-                            <p>Configure SKU details, pricing matrix, and replenishment rules.</p>
-                        </div>
-                        <div className="flex gap-3">
-                            <label className="btn-premium-outline cursor-pointer border-dashed">
-                                <Upload size={18} />
-                                <span className="text-xs uppercase font-black">Bulk Deployment</span>
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Item Creation"
+                    actions={
+                        <>
+                            <label className="btn-premium-outline cursor-pointer border-dashed !py-2 !px-4">
+                                <Upload size={16} />
+                                <span className="text-[10px] uppercase font-black">Bulk Deployment</span>
                                 <input type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
                             </label>
-                            <button className="btn-premium-outline" onClick={exportCSV}>
-                                <Download size={18} />
-                                <span className="text-xs uppercase font-black">Archive Export</span>
+                            <button className="btn-premium-outline !py-2 !px-4" onClick={exportCSV}>
+                                <Download size={16} />
+                                <span className="text-[10px] uppercase font-black">Archive Export</span>
                             </button>
-                            <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                                <PlusCircle size={20} /> Add New Item
+                            <button className="btn-premium-primary !py-2 !px-6" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                                <PlusCircle size={18} /> 
+                                <span className="text-[10px] uppercase font-black">Add New Item</span>
                             </button>
-                        </div>
-                    </div>
+                        </>
+                    }
+                />
+                <div className="master-content-layout fade-in">
+                    {/* Header moved to global Header component */}
+
 
                     <div className="toolbar-premium">
-                        <div className="search-premium">
-                            <Search size={20} />
-                            <input
-                                type="text"
-                                placeholder="Search inventory repository..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Registry</span>
-                                <span className="text-xl font-black text-slate-800">{filteredProducts.length} <span className="text-xs text-slate-300">Units</span></span>
+                        <div className="flex flex-row items-center gap-4 flex-1">
+                            <div className="search-premium" style={{ width: '400px', flexShrink: 0 }}>
+                                <Search size={20} />
+                                <input
+                                    type="text"
+                                    placeholder="Search by Name, Code, Barcode..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
+
+                            <div className="flex flex-row gap-2">
+                                <select
+                                    className="filter-select-premium"
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    <option value="ALL">ALL CATEGORIES</option>
+                                    {categories.map(cat => (
+                                        <option key={cat._id} value={cat.name}>{cat.name}</option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    className="filter-select-premium"
+                                    value={selectedBrand}
+                                    onChange={(e) => setSelectedBrand(e.target.value)}
+                                >
+                                    <option value="ALL">ALL BRANDS</option>
+                                    {brands.map(brand => (
+                                        <option key={brand._id} value={brand.name}>{brand.name}</option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    className="filter-select-premium"
+                                    value={selectedFoodType}
+                                    onChange={(e) => setSelectedFoodType(e.target.value)}
+                                >
+                                    <option value="ALL">ANY FOOD TYPE</option>
+                                    <option value="VEG">VEG</option>
+                                    <option value="NON_VEG">NON-VEG</option>
+                                    <option value="NONE">NONE</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col items-end flex-shrink-0">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Registry</span>
+                            <span className="text-xl font-black text-slate-800">{filteredProducts.length} <span className="text-xs text-slate-300">Units</span></span>
                         </div>
                     </div>
 
-                    <div className="table-container-premium">
-                        <table className="table-premium">
+                    <div className="table-container-premium" style={{ overflowX: 'auto', maxWidth: '100%', borderRadius: '1rem', background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                        <table className="modern-table-premium" style={{ minWidth: '4500px', width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                             <thead>
-                                <tr>
-                                    <th>Inventory Essence</th>
-                                    <th>Classification</th>
-                                    <th>Pricing Matrix</th>
-                                    <th>Stock Delta</th>
-                                    <th>Food Meta</th>
-                                    <th>Status</th>
-                                    <th style={{ textAlign: 'right' }}>Management</th>
+                                <tr style={{ background: '#f8fafc' }}>
+                                    <th className="sticky-col left-0" style={{ background: '#f8fafc', zIndex: 20 }}>Item Name</th>
+                                    <th>Item Code</th>
+                                    <th>Barcode</th>
+                                    <th>Category</th>
+                                    <th>Brand</th>
+                                    <th>Food Type</th>
+                                    <th>Unit</th>
+                                    <th>Purchase Rate</th>
+                                    <th>Cost Rate</th>
+                                    <th>MRP</th>
+                                    <th>Sales Rate</th>
+                                    <th>GST Purchase (%)</th>
+                                    <th>GST Sales (%)</th>
+                                    <th>Dine In</th>
+                                    <th>Pickup</th>
+                                    <th>Delivery</th>
+                                    <th>Party Order</th>
+                                    <th>Opening Stock</th>
+                                    <th>Stock Value</th>
+                                    <th>Maximum</th>
+                                    <th>Minimum</th>
+                                    <th>Re-order</th>
+                                    <th>Urgent</th>
+                                    <th>Variations (e.g. Small, Medium, Large)</th>
+                                    <th>Addons (Extras like Cheese)</th>
+                                    <th>Morning (Begin)</th>
+                                    <th>Morning (Terminate)</th>
+                                    <th>Afternoon (Begin)</th>
+                                    <th>Afternoon (Terminate)</th>
+                                    <th>Evening (Begin)</th>
+                                    <th>Evening (Terminate)</th>
+                                    <th>Status (Active/Halted)</th>
+                                    <th className="sticky-col right-0" style={{ background: '#f8fafc', zIndex: 20, textAlign: 'right' }}>Management</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="7" style={{ textAlign: 'center', padding: '100px 0' }}>
+                                        <td colSpan="33" style={{ textAlign: 'center', padding: '100px 0' }}>
                                             <Loader2 className="animate-spin text-indigo-600 mx-auto mb-4" size={48} />
                                             <p className="font-black text-slate-300 uppercase tracking-[0.2em] text-xs">Accessing Data Cluster...</p>
                                         </td>
                                     </tr>
                                 ) : filteredProducts.map(p => (
-                                    <tr key={p._id} className="group">
-                                        <td>
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative">
-                                                    {p.image ? (
-                                                        <img src={`${getBaseUrl()}${p.image}`} alt="" className="w-14 h-14 rounded-2xl object-cover shadow-sm group-hover:shadow-md transition-all group-hover:scale-105" />
-                                                    ) : (
-                                                        <div className="w-14 h-14 bg-slate-50 flex items-center justify-center rounded-2xl text-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-400 transition-all">
-                                                            <Package size={24} />
-                                                        </div>
-                                                    )}
-                                                    {p.current_stock <= p.reorder_level && (
-                                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-white animate-pulse"></div>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <div className="text-lg font-black text-slate-800 leading-[1.1] uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">{p.name}</div>
-                                                    <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5"><ChevronRight size={10} className="text-indigo-300" /> ID: {p.code || 'NULL'}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className="badge-premium active" style={{ backgroundColor: '#f1f5f9', color: '#475569' }}>{p.category}</span>
-                                        </td>
-                                        <td>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-slate-400">SALE</span>
-                                                <span className="text-lg font-black text-indigo-600 leading-none">₹{p.selling_price.toLocaleString()}</span>
-                                                <span className="text-[10px] font-bold text-rose-300 mt-1">COST: ₹{p.purchase_price}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className={`p-2 rounded-xl border flex flex-col items-center justify-center min-w-[70px] ${p.current_stock > p.reorder_level ? 'border-emerald-100 bg-emerald-50/50' : 'border-rose-100 bg-rose-50/50'}`}>
-                                                <span className={`text-xl font-black ${p.current_stock > p.reorder_level ? 'text-emerald-700' : 'text-rose-700'}`}>{p.current_stock}</span>
-                                                <span className="text-[8px] font-black uppercase text-slate-400">In Reserve</span>
-                                            </div>
-                                        </td>
+                                    <tr key={p._id} className={`group hover:bg-slate-50 transition-all ${!p.is_active ? 'opacity-60 grayscale-[0.8] bg-slate-50/50' : ''}`}>
+                                        <td className="sticky-col left-0 group-hover:bg-slate-50 font-black text-slate-800 uppercase tracking-tighter text-sm" style={{ background: !p.is_active ? '#f8fafc' : 'white', zIndex: 10 }}>{p.name}</td>
+                                        <td className="text-[10px] font-black text-slate-400 tracking-tighter uppercase">{p.code || 'Auto'}</td>
+                                        <td className="text-slate-400 text-[10px] font-bold">{p.barcode || '-'}</td>
+                                        <td><span className={`badge-premium ${p.is_active ? 'active' : 'disabled'} !text-[10px] uppercase font-black tracking-[0.15em]`}>{p.category}</span></td>
+                                        <td className="text-slate-600 text-xs font-black uppercase tracking-tighter">{p.brand || '-'}</td>
                                         <td>
                                             {p.food_type !== 'NONE' ? (
-                                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest ${p.food_type === 'VEG' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${p.food_type === 'VEG' ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.5)]' : 'bg-rose-400 shadow-[0_0_5px_rgba(251,113,133,0.5)]'}`}></div>
-                                                    {p.food_type.replace('_', ' ')}
-                                                </div>
-                                            ) : <span className="text-slate-200">N/A</span>}
+                                                <span className={`text-[10px] font-black py-1 px-2 rounded-lg border ${p.food_type === 'VEG' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                                    {p.food_type}
+                                                </span>
+                                            ) : <span className="text-slate-200">-</span>}
+                                        </td>
+                                        <td className="text-slate-600 font-black uppercase text-xs tracking-widest">{p.unit || '-'}</td>
+                                        <td className="font-black text-rose-500 text-sm">₹{p.purchase_price}</td>
+                                        <td className="font-black text-rose-500 text-sm">₹{p.cost_price}</td>
+                                        <td className="font-black text-slate-700 text-sm">₹{p.mrp}</td>
+                                        <td className="font-black text-indigo-600 text-sm">₹{p.selling_price}</td>
+                                        <td className="text-slate-600 font-bold text-xs">{p.gst_purchase}%</td>
+                                        <td className="text-slate-600 font-bold text-xs">{p.gst_sales}%</td>
+                                        <td className={`text-[10px] font-black uppercase ${p.serve_types?.dine_in ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.dine_in ? 'YES' : 'NO'}</td>
+                                        <td className={`text-[10px] font-black uppercase ${p.serve_types?.pickup ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.pickup ? 'YES' : 'NO'}</td>
+                                        <td className={`text-[10px] font-black uppercase ${p.serve_types?.delivery ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.delivery ? 'YES' : 'NO'}</td>
+                                        <td className={`text-[10px] font-black uppercase ${p.serve_types?.party_order ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.party_order ? 'YES' : 'NO'}</td>
+                                        <td className="text-slate-600 font-black text-xs text-center">{p.opening_stock}</td>
+                                        <td className="font-black text-emerald-600 text-xs text-center">₹{p.stock_value}</td>
+                                        <td className="text-slate-500 font-black text-xs text-center">{p.max_stock}</td>
+                                        <td className="text-slate-500 font-black text-xs text-center">{p.min_stock}</td>
+                                        <td className="text-rose-400 font-black text-xs text-center">{p.reorder_level}</td>
+                                        <td className="text-rose-600 font-black text-xs text-center">{p.urgent_order_level}</td>
+                                        <td>
+                                            <div className="flex flex-wrap gap-1 max-w-[300px]">
+                                                {p.variations?.map((v, i) => (
+                                                    <span key={i} className="text-[9px] font-black uppercase bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200">{v.name} (+₹{v.amount})</span>
+                                                )) || <span className="text-slate-200">No Variations</span>}
+                                            </div>
                                         </td>
                                         <td>
-                                            <span className={`badge-premium ${p.is_active ? 'active' : 'disabled'}`}>
-                                                {p.is_active ? 'Online' : 'Halted'}
+                                            <div className="flex flex-wrap gap-1 max-w-[300px]">
+                                                {p.addons?.map((a, i) => (
+                                                    <span key={i} className="text-[9px] font-black uppercase bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100">{a.name} (₹{a.rate})</span>
+                                                )) || <span className="text-slate-200">No Addons</span>}
+                                            </div>
+                                        </td>
+                                        <td className="text-[10px] font-black text-indigo-500 uppercase">{p.available_timings?.[0]?.enabled ? p.available_timings[0].start_time : '-'}</td>
+                                        <td className="text-[10px] font-black text-indigo-500 uppercase">{p.available_timings?.[0]?.enabled ? p.available_timings[0].end_time : '-'}</td>
+                                        <td className="text-[10px] font-black text-indigo-500 uppercase">{p.available_timings?.[1]?.enabled ? p.available_timings[1].start_time : '-'}</td>
+                                        <td className="text-[10px] font-black text-indigo-500 uppercase">{p.available_timings?.[1]?.enabled ? p.available_timings[1].end_time : '-'}</td>
+                                        <td className="text-[10px] font-black text-indigo-500 uppercase">{p.available_timings?.[2]?.enabled ? p.available_timings[2].start_time : '-'}</td>
+                                        <td className="text-[10px] font-black text-indigo-500 uppercase">{p.available_timings?.[2]?.enabled ? p.available_timings[2].end_time : '-'}</td>
+                                        <td>
+                                            <span className={`badge-premium ${p.is_active ? 'active' : 'disabled'} !text-[10px] font-black tracking-[0.2em]`}>
+                                                {p.is_active ? 'OPERATIONAL' : 'DEACTIVATED'}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td className="sticky-col right-0 group-hover:bg-slate-50" style={{ background: !p.is_active ? '#f8fafc' : 'white', zIndex: 10 }}>
                                             <div className="flex justify-end gap-2">
-                                                <button onClick={() => handleEdit(p)} className="action-icon-btn edit shadow-sm"><Edit size={18} /></button>
-                                                <button onClick={() => handleDelete(p._id)} className="action-icon-btn delete shadow-sm"><Trash size={18} /></button>
+                                                <button onClick={() => p.is_active && handleEdit(p)} className={`action-icon-btn edit shadow-sm scale-75 ${!p.is_active ? 'cursor-not-allowed opacity-30 shadow-none' : ''}`} disabled={!p.is_active}><Edit size={18} /></button>
+                                                <button onClick={() => handleDelete(p._id)} className={`action-icon-btn delete shadow-sm scale-75 ${!p.is_active ? 'cursor-not-allowed opacity-30 shadow-none' : ''}`} disabled={!p.is_active}><Trash size={18} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -459,7 +566,7 @@ const ProductMaster = () => {
                                         </div>
                                         <span className="text-xs font-semibold text-indigo-600 uppercase tracking-widest">Item Architect</span>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-slate-800">{isEditing ? 'Reconfigure Master' : 'Create New SKU'}</h3>
+                                    <h3 className="text-2xl font-bold text-slate-800">{isEditing ? 'Reconfigure Master' : 'Create New Item'}</h3>
                                 </div>
                                 <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-all">
                                     <XCircle size={24} />
@@ -522,59 +629,97 @@ const ProductMaster = () => {
 
                                             {/* Form Fields Column */}
                                             <div className="flex-1">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
                                                     <div className="form-group-premium">
-                                                        <label>Item Name *</label>
-                                                        <input type="text" name="name" required className="input-premium" placeholder="e.g. Traditional Margherita" value={formData.name} onChange={handleInputChange} />
+                                                        <label className="text-sm font-bold text-slate-700 mb-3 block flex items-center gap-2">
+                                                            <div className="w-1.5 h-4 bg-indigo-500 rounded-full"></div>
+                                                            Item Identity <span className="text-rose-500 font-bold">*</span>
+                                                        </label>
+                                                        <div className="relative group">
+                                                            <Package size={22} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                                            <input type="text" name="name" required className="input-premium-modern !pl-14 w-full text-lg font-bold" placeholder="Traditional Margherita" value={formData.name} onChange={handleInputChange} />
+                                                        </div>
                                                     </div>
-                                                    <div className="grid grid-cols-2 gap-4">
+                                                    <div className="grid grid-cols-2 gap-6">
                                                         <div className="form-group-premium">
-                                                            <label>Item Code</label>
-                                                            <input type="text" name="code" className="input-premium" placeholder="AUTO" value={formData.code} onChange={handleInputChange} />
+                                                            <label className="text-sm font-bold text-slate-700 mb-3 block">SKU / Code</label>
+                                                            <div className="relative group">
+                                                                <Layers size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                                                <input type="text" name="code" className="input-premium-modern !pl-12 w-full text-base font-semibold" placeholder="AUTO" value={formData.code} onChange={handleInputChange} />
+                                                            </div>
                                                         </div>
                                                         <div className="form-group-premium">
-                                                            <label>Barcode</label>
-                                                            <input type="text" name="barcode" className="input-premium" placeholder="SCAN" value={formData.barcode} onChange={handleInputChange} />
+                                                            <label className="text-sm font-bold text-slate-700 mb-3 block">Barcode Registry</label>
+                                                            <div className="relative group">
+                                                                <Activity size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                                                <input type="text" name="barcode" className="input-premium-modern !pl-12 w-full text-base font-semibold" placeholder="SCAN" value={formData.barcode} onChange={handleInputChange} />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                                                     <div className="form-group-premium">
-                                                        <label>Category *</label>
-                                                        <select name="category" required className="input-premium" value={formData.category} onChange={handleInputChange}>
-                                                            <option value="">Select</option>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Category Selection <span className="text-rose-500">*</span></label>
+                                                        <select name="category" required className="input-premium-modern w-full text-base font-bold text-slate-700" value={formData.category} onChange={handleInputChange}>
+                                                            <option value="">Choose Class</option>
                                                             {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
                                                         </select>
                                                     </div>
                                                     <div className="form-group-premium">
-                                                        <label>Brand</label>
-                                                        <select name="brand" className="input-premium" value={formData.brand} onChange={handleInputChange}>
-                                                            <option value="">Select</option>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Brand Lineage</label>
+                                                        <select name="brand" className="input-premium-modern w-full text-base font-bold text-slate-700" value={formData.brand} onChange={handleInputChange}>
+                                                            <option value="">Generic / Custom</option>
                                                             {brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}
                                                         </select>
                                                     </div>
                                                     <div className="form-group-premium">
-                                                        <label>Food Type</label>
-                                                        <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
-                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-black transition-all ${formData.food_type === 'VEG' ? 'bg-white text-emerald-600 shadow-sm border border-emerald-200' : 'text-slate-400 hover:text-emerald-600'}`}>
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> VEG
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Food Classification</label>
+                                                        <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
+                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'VEG' }))} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black transition-all ${formData.food_type === 'VEG' ? 'bg-white text-emerald-600 shadow-xl border border-emerald-100' : 'text-slate-400 hover:text-emerald-600'}`}>
+                                                                <div className={`w-2.5 h-2.5 rounded-full ${formData.food_type === 'VEG' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div> VEG
                                                             </button>
-                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'NON_VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-black transition-all ${formData.food_type === 'NON_VEG' ? 'bg-white text-rose-600 shadow-sm border border-rose-200' : 'text-slate-400 hover:text-rose-600'}`}>
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> NON
+                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'NON_VEG' }))} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black transition-all ${formData.food_type === 'NON_VEG' ? 'bg-white text-rose-600 shadow-xl border border-rose-100' : 'text-slate-400 hover:text-rose-600'}`}>
+                                                                <div className={`w-2.5 h-2.5 rounded-full ${formData.food_type === 'NON_VEG' ? 'bg-rose-500' : 'bg-slate-300'}`}></div> NON
                                                             </button>
                                                         </div>
                                                     </div>
                                                     <div className="form-group-premium">
-                                                        <label>Unit</label>
-                                                        <input type="text" name="unit" className="input-premium" placeholder="PCS / KG" value={formData.unit} onChange={handleInputChange} />
-                                                    </div>
-                                                    <div className="form-group-premium">
-                                                        <label>HSN</label>
-                                                        <input type="text" name="hsn_code" className="input-premium" placeholder="HSN" value={formData.hsn_code} onChange={handleInputChange} />
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Fiscal HSN</label>
+                                                        <input type="text" name="hsn_code" className="input-premium-modern w-full text-base font-bold" placeholder="HSN-8821" value={formData.hsn_code} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8">
+                                        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                                            <Activity className="text-indigo-600" size={20} />
+                                            <h4 className="text-lg font-bold text-slate-800">Service Accessibility</h4>
+                                        </div>
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                            {[
+                                                { id: 'dine_in', label: 'Dine In' },
+                                                { id: 'pickup', label: 'Pickup' },
+                                                { id: 'delivery', label: 'Delivery' },
+                                                { id: 'party_order', label: 'Party Order' }
+                                            ].map(type => (
+                                                <label key={type.id} className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl border border-slate-50 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all">
+                                                    <div className="relative flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="sr-only peer"
+                                                            checked={formData.serve_types?.[type.id]}
+                                                            onChange={() => handleServeTypeChange(type.id)}
+                                                        />
+                                                        <div className="w-5 h-5 border-2 border-slate-300 rounded-md group-hover:border-indigo-400 peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-all flex items-center justify-center">
+                                                            <Check size={14} className={`text-white transition-opacity ${formData.serve_types?.[type.id] ? 'opacity-100' : 'opacity-0'}`} />
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">{type.label}</span>
+                                                </label>
+                                            ))}
                                         </div>
                                     </div>
 
@@ -584,38 +729,47 @@ const ProductMaster = () => {
                                                 <Tag className="text-indigo-600" size={20} />
                                                 <h4 className="text-lg font-bold text-slate-800">Pricing Details</h4>
                                             </div>
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                                                 <div className="form-group-premium">
-                                                    <label>Purchase Rate</label>
-                                                    <input type="number" name="purchase_price" className="input-premium" value={formData.purchase_price} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Rate (Buy)</label>
+                                                    <div className="relative group">
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
+                                                        <input type="number" name="purchase_price" className="input-premium-modern !pl-10 w-full text-base font-black text-slate-700" value={formData.purchase_price} onChange={handleInputChange} />
+                                                    </div>
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Cost Rate</label>
-                                                    <input type="number" name="cost_price" className="input-premium" value={formData.cost_price} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Net Cost</label>
+                                                    <div className="relative group">
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
+                                                        <input type="number" name="cost_price" className="input-premium-modern !pl-10 w-full text-base font-black text-slate-700" value={formData.cost_price} onChange={handleInputChange} />
+                                                    </div>
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>MRP</label>
-                                                    <input type="number" name="mrp" className="input-premium" value={formData.mrp} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Maximum (MRP)</label>
+                                                    <div className="relative group">
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
+                                                        <input type="number" name="mrp" className="input-premium-modern !pl-10 w-full text-base font-black text-slate-700" value={formData.mrp} onChange={handleInputChange} />
+                                                    </div>
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Sales Rate *</label>
-                                                    <input type="number" name="selling_price" required className="input-premium font-bold text-indigo-700 bg-indigo-50/30" value={formData.selling_price} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Sale Price *</label>
+                                                    <div className="relative group">
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 font-black">₹</span>
+                                                        <input type="number" name="selling_price" required className="input-premium-modern !pl-10 w-full text-base font-black !text-indigo-600 !bg-indigo-50/20" value={formData.selling_price} onChange={handleInputChange} />
+                                                    </div>
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>GST Purchase (%)</label>
-                                                    <input type="number" name="gst_purchase" className="input-premium" value={formData.gst_purchase} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">TAX (P) %</label>
+                                                    <input type="number" name="gst_purchase" className="input-premium-modern w-full text-base font-bold text-slate-600" value={formData.gst_purchase} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>GST Sales (%)</label>
-                                                    <input type="number" name="gst_sales" className="input-premium" value={formData.gst_sales} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">TAX (S) %</label>
+                                                    <input type="number" name="gst_sales" className="input-premium-modern w-full text-base font-bold text-slate-600" value={formData.gst_sales} onChange={handleInputChange} />
                                                 </div>
+
                                                 <div className="form-group-premium">
-                                                    <label>HSN Code</label>
-                                                    <input type="text" name="hsn_code" className="input-premium" value={formData.hsn_code} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label>Unit</label>
-                                                    <input type="text" name="unit" className="input-premium" placeholder="e.g. PCS, KG" value={formData.unit} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">Measure (Unit)</label>
+                                                    <input type="text" name="unit" className="input-premium-modern w-full text-base font-bold uppercase" placeholder="PCS / KG" value={formData.unit} onChange={handleInputChange} />
                                                 </div>
                                             </div>
                                         </div>
@@ -625,34 +779,36 @@ const ProductMaster = () => {
                                                 <ShoppingCart className="text-indigo-600" size={20} />
                                                 <h4 className="text-lg font-bold text-slate-800">Stock Details & Level</h4>
                                             </div>
-
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6 pb-6 border-b border-slate-100">
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
                                                 <div className="form-group-premium">
-                                                    <label>Opening Stock</label>
-                                                    <input type="number" name="opening_stock" className="input-premium" value={formData.opening_stock} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-wide">Opening Vol.</label>
+                                                    <input type="number" name="opening_stock" className="input-premium-modern w-full text-base font-black" value={formData.opening_stock} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Stock Value</label>
-                                                    <input type="number" disabled className="input-premium bg-slate-50 text-emerald-700 font-bold" value={formData.stock_value} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-wide">Asset Value</label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">₹</span>
+                                                        <input type="number" disabled className="input-premium-modern w-full !bg-slate-50 !text-emerald-700 !border-dashed !pl-10 text-base font-black" value={formData.stock_value} />
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                                                 <div className="form-group-premium">
-                                                    <label>Maximum</label>
-                                                    <input type="number" name="max_stock" className="input-premium" value={formData.max_stock} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block">Maximum</label>
+                                                    <input type="number" name="max_stock" className="input-premium-modern w-full text-base font-semibold" value={formData.max_stock} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Minimum</label>
-                                                    <input type="number" name="min_stock" className="input-premium" value={formData.min_stock} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block">Minimum</label>
+                                                    <input type="number" name="min_stock" className="input-premium-modern w-full text-base font-semibold" value={formData.min_stock} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Re-order</label>
-                                                    <input type="number" name="reorder_level" className="input-premium" value={formData.reorder_level} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block font-black text-rose-500">Alert Re-order</label>
+                                                    <input type="number" name="reorder_level" className="input-premium-modern w-full text-base font-black bg-rose-50/20 text-rose-600 border-rose-100" value={formData.reorder_level} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label>Urgent</label>
-                                                    <input type="number" name="urgent_order_level" className="input-premium" value={formData.urgent_order_level} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block font-black text-rose-700">Crisis Alert</label>
+                                                    <input type="number" name="urgent_order_level" className="input-premium-modern w-full text-base font-black bg-rose-100/30 text-rose-800 border-rose-200" value={formData.urgent_order_level} onChange={handleInputChange} />
                                                 </div>
                                             </div>
                                         </div>
@@ -660,32 +816,69 @@ const ProductMaster = () => {
                                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
                                             <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
                                                 <div className="flex items-center gap-2">
-                                                    <Plus className="text-indigo-600" size={20} />
-                                                    <h4 className="text-lg font-bold text-slate-800">Addons (Example: Pizza)</h4>
+                                                    <Layers className="text-indigo-600" size={20} />
+                                                    <h4 className="text-lg font-bold text-slate-800">Variations (e.g. Small, Medium, Large)</h4>
                                                 </div>
-                                                <button type="button" onClick={handleAddAddon} className="btn-premium-outline !py-1 !px-3 !text-xs">
-                                                    <Plus size={14} /> Add row
+                                                <button type="button" onClick={handleAddVariation} className="btn-premium-outline !py-1 !px-3 !text-xs">
+                                                    <Plus size={14} /> Add Variation
                                                 </button>
                                             </div>
-                                            {formData.addons.length > 0 ? (
+                                            {formData.variations?.length > 0 ? (
                                                 <div className="space-y-3">
-                                                    {formData.addons.map((addon, idx) => (
-                                                        <div key={idx} className="flex gap-4 items-center">
-                                                            <div className="form-group-premium flex-1 !mb-0">
-                                                                <input type="text" placeholder="Item Name (e.g. Small)" className="input-premium" value={addon.name} onChange={(e) => handleAddonChange(idx, 'name', e.target.value)} />
+                                                    {formData.variations.map((v, idx) => (
+                                                        <div key={idx} className="flex gap-6 items-end group/item">
+                                                            <div className="form-group-premium flex-[2] !mb-0">
+                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Descriptor (e.g. XL-Size)</label>
+                                                                <input type="text" placeholder="Variation Name" className="input-premium-modern w-full text-base font-bold" value={v.name} onChange={(e) => handleVariationChange(idx, 'name', e.target.value)} />
                                                             </div>
                                                             <div className="form-group-premium flex-1 !mb-0">
-                                                                <input type="number" placeholder="Rate (e.g. 200)" className="input-premium" value={addon.rate} onChange={(e) => handleAddonChange(idx, 'rate', parseFloat(e.target.value) || 0)} />
+                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Delta (₹)</label>
+                                                                <input type="number" placeholder="+ Amt" className="input-premium-modern w-full text-base font-bold" value={v.amount} onChange={(e) => handleVariationChange(idx, 'amount', parseFloat(e.target.value) || 0)} />
                                                             </div>
-                                                            <button type="button" onClick={() => handleRemoveAddon(idx)} className="text-rose-500 hover:text-rose-700 bg-rose-50 p-2 rounded-lg mt-1 transition-colors">
-                                                                <Trash2 size={18} />
+                                                            <button type="button" onClick={() => handleRemoveVariation(idx)} className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-sm">
+                                                                <Trash2 size={20} />
                                                             </button>
                                                         </div>
                                                     ))}
                                                 </div>
                                             ) : (
                                                 <div className="text-center py-6 text-slate-400 text-sm border-2 border-dashed border-slate-100 rounded-xl">
-                                                    No addons configured. Click 'Add row' to create.
+                                                    No variations defined. Click 'Add Variation' for multiple sizes/types.
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
+                                            <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Plus className="text-indigo-600" size={20} />
+                                                    <h4 className="text-lg font-bold text-slate-800">Addons (Extras like Cheese)</h4>
+                                                </div>
+                                                <button type="button" onClick={handleAddAddon} className="btn-premium-outline !py-1 !px-3 !text-xs">
+                                                    <Plus size={14} /> Add addon
+                                                </button>
+                                            </div>
+                                            {formData.addons.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {formData.addons.map((addon, idx) => (
+                                                        <div key={idx} className="flex gap-6 items-end group/item">
+                                                            <div className="form-group-premium flex-[2] !mb-0">
+                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Addon Identity</label>
+                                                                <input type="text" placeholder="e.g. Extra Dip" className="input-premium-modern w-full text-base font-bold" value={addon.name} onChange={(e) => handleAddonChange(idx, 'name', e.target.value)} />
+                                                            </div>
+                                                            <div className="form-group-premium flex-1 !mb-0">
+                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Rate (₹)</label>
+                                                                <input type="number" placeholder="Rate" className="input-premium-modern w-full text-base font-bold" value={addon.rate} onChange={(e) => handleAddonChange(idx, 'rate', parseFloat(e.target.value) || 0)} />
+                                                            </div>
+                                                            <button type="button" onClick={() => handleRemoveAddon(idx)} className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-sm">
+                                                                <Trash2 size={20} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-6 text-slate-400 text-sm border-2 border-dashed border-slate-100 rounded-xl">
+                                                    No addons configured. Click 'Add addon' to create.
                                                 </div>
                                             )}
                                         </div>
@@ -697,31 +890,33 @@ const ProductMaster = () => {
                                                 <Clock className="text-indigo-600" size={20} />
                                                 <h4 className="text-lg font-bold text-slate-800">Temporal Availability</h4>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
                                                 {formData.available_timings.map((t, i) => (
-                                                    <div key={i} className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${t.enabled ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
-                                                        <div className="flex justify-between items-center mb-4">
-                                                            <span className={`text-sm font-bold ${t.enabled ? 'text-indigo-800' : 'text-slate-500'}`}>{t.label}</span>
+                                                    <div key={i} className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${t.enabled ? 'border-indigo-100 bg-white shadow-xl shadow-slate-100' : 'border-slate-100 bg-slate-50/50 grayscale opacity-60'}`}>
+                                                        <div className="flex justify-between items-center mb-6">
+                                                            <div>
+                                                                <span className={`text-xs font-bold uppercase tracking-wider ${t.enabled ? 'text-indigo-600' : 'text-slate-400'}`}>{t.label} Window</span>
+                                                            </div>
                                                             <button type="button" onClick={() => {
                                                                 const nt = [...formData.available_timings];
                                                                 nt[i].enabled = !nt[i].enabled;
                                                                 setFormData(p => ({ ...p, available_timings: nt }));
-                                                            }} className={`w-6 h-6 rounded flex items-center justify-center transition-all ${t.enabled ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400 hover:bg-slate-300'}`}>
-                                                                {t.enabled ? <Check size={14} /> : <XCircle size={14} />}
+                                                            }} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${t.enabled ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100' : 'bg-slate-200 text-slate-500'}`}>
+                                                                {t.enabled ? <Check size={22} /> : <XCircle size={22} />}
                                                             </button>
                                                         </div>
-                                                        <div className="space-y-2">
+                                                        <div className="grid grid-cols-2 gap-6">
                                                             <div>
-                                                                <span className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">Begin</span>
-                                                                <input type="time" className="w-full bg-white border border-slate-200 p-1.5 rounded text-xs font-medium" value={t.start_time} onChange={(e) => {
+                                                                <span className="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Activation</span>
+                                                                <input type="time" className="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-base font-black text-slate-700 focus:bg-white transition-colors" value={t.start_time} onChange={(e) => {
                                                                     const nt = [...formData.available_timings];
                                                                     nt[i].start_time = e.target.value;
                                                                     setFormData(p => ({ ...p, available_timings: nt }));
                                                                 }} />
                                                             </div>
                                                             <div>
-                                                                <span className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">Terminate</span>
-                                                                <input type="time" className="w-full bg-white border border-slate-200 p-1.5 rounded text-xs font-medium" value={t.end_time} onChange={(e) => {
+                                                                <span className="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Termination</span>
+                                                                <input type="time" className="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-base font-black text-slate-700 focus:bg-white transition-colors" value={t.end_time} onChange={(e) => {
                                                                     const nt = [...formData.available_timings];
                                                                     nt[i].end_time = e.target.value;
                                                                     setFormData(p => ({ ...p, available_timings: nt }));

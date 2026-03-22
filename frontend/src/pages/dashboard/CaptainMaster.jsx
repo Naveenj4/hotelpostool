@@ -228,22 +228,19 @@ const resetForm = () => {
             )}
 
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <ShieldCheck className="text-indigo-600" size={18} />
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full">Human Resource Core</span>
-                            </div>
-                            <h2>Captain Master</h2>
-                            <p>Operational personnel and service authority management.</p>
-                        </div>
-                        <button className="btn-premium-primary" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={20} /> Register New Captain
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Captain Master"
+                    actions={
+                        <button className="btn-premium-primary !py-2 !px-6" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={18} /> 
+                            <span className="text-[10px] uppercase font-black">Register New Captain</span>
                         </button>
-                    </div>
+                    }
+                />
+                <div className="master-content-layout fade-in">
+                    {/* Header relocated */}
+
 
                     <div className="toolbar-premium">
                         <div className="search-premium">

@@ -124,16 +124,18 @@ exports.deleteProduct = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
 
-        // Check if any bills have this product
-        const Bill = require('../models/Bill'); // Import here to avoid circular dependency
-        const billItems = await Bill.findOne({
+        // Soft Delete Logic: If biled, only deactivate.
+        const Bill = require('../models/Bill'); 
+        const billExists = await Bill.findOne({
             "items.product_id": req.params.id
         });
 
-        if (billItems) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cannot delete product because it has been used in bills'
+        if (billExists) {
+            product.is_active = false;
+            await product.save();
+            return res.status(200).json({
+                success: true,
+                message: 'Product preserved but deactivated because it has been used in bills'
             });
         }
 

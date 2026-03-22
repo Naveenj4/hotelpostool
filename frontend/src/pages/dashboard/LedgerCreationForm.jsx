@@ -26,6 +26,8 @@ export default function LedgerCreationForm() {
         pan_number: '',
         party_type: 'CUSTOMER', // CUSTOMER, SUPPLIER, AGENT
         party_category: '',
+        registration_type: 'Regular',
+        state: '',
         
         // 2. Address
         billing_address: '',
@@ -114,21 +116,24 @@ export default function LedgerCreationForm() {
             )}
             
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-                
-                <div className="ledg-container fade-in">
-                    <div className="ledg-topbar">
-                        <div className="flex items-center gap-3 cursor-pointer text-slate-500 hover:text-slate-800 transition-colors" onClick={() => navigate(-1)}>
-                            <ChevronLeft size={24} />
-                            <h2 className="ledg-title">Ledger Creation</h2>
-                        </div>
-                        <div className="flex gap-4">
-                            <button className="ledg-btn outline" onClick={() => navigate(-1)}><X size={18}/> CANCEL</button>
-                            <button className="ledg-btn primary" onClick={handleSave} disabled={saving}>
-                                <Save size={18}/> {saving ? 'SAVING...' : 'SAVE LEDGER'}
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Ledger / Party Creation"
+                    actions={
+                        <div className="flex items-center gap-3">
+                            <button className="btn-premium-primary !py-2 !px-6 !bg-slate-200 !text-slate-800" onClick={() => navigate(-1)}>
+                                <X size={16} /> 
+                                <span className="text-[10px] uppercase font-black">Cancel</span>
+                            </button>
+                            <button className="btn-premium-primary !py-2 !px-6" onClick={handleSave} disabled={saving}>
+                                <Save size={16} /> 
+                                <span className="text-[10px] uppercase font-black">{saving ? 'Saving...' : 'Save Ledger'}</span>
                             </button>
                         </div>
-                    </div>
+                    }
+                />
+                
+                <div className="ledg-container fade-in">
 
                     <form className="ledg-form" onSubmit={handleSave}>
                         <div className="ledg-grid">
@@ -197,6 +202,21 @@ export default function LedgerCreationForm() {
                                         <div className="ledg-f-group">
                                             <label>Party Category (+)</label>
                                             <input name="party_category" value={formData.party_category} onChange={handleChange} placeholder="Category" />
+                                        </div>
+                                    </div>
+                                    <div className="ledg-f-row">
+                                        <div className="ledg-f-group">
+                                            <label>Registration Type</label>
+                                            <select name="registration_type" value={formData.registration_type} onChange={handleChange} className="ledg-select">
+                                                <option value="Regular">Regular</option>
+                                                <option value="Composition">Composition</option>
+                                                <option value="Unregistered">Unregistered</option>
+                                                <option value="Consumer">Consumer</option>
+                                            </select>
+                                        </div>
+                                        <div className="ledg-f-group">
+                                            <label>State Name</label>
+                                            <input name="state" value={formData.state} onChange={handleChange} placeholder="e.g. Maharashtra" />
                                         </div>
                                     </div>
                                 </div>

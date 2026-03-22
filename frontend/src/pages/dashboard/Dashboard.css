@@ -1714,3 +1714,65 @@
         margin-bottom: 1.75rem;
     }
 }
+
+/* Sticky Columns for Wide Tables */
+.table-container-premium {
+    position: relative;
+    border-radius: 1rem;
+    background: white;
+}
+
+.sticky-col {
+    position: sticky !important;
+    z-index: 10;
+}
+
+.sticky-col.left-0 {
+    left: 0;
+    box-shadow: 4px 0 10px -5px rgba(0,0,0,0.1);
+}
+
+.sticky-col.right-0 {
+    right: 0;
+    box-shadow: -4px 0 10px -5px rgba(0,0,0,0.1);
+}
+
+/* Ensure sticky columns have background to hide content passing under */
+.table-premium th.sticky-col {
+    background-color: #f8fafc !important;
+}
+
+.table-premium tr td.sticky-col {
+    background-color: white !important;
+}
+
+.table-premium tr:hover td.sticky-col {
+    background-color: #f8fafc !important;
+}
+
+/* Filter Select Premium */
+.filter-select-premium {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.filter-select-premium:hover {
+    border-color: #7ea1c4;
+    background-color: #f8fafc;
+}
+
+.filter-select-premium:focus {
+    border-color: #7ea1c4;
+    box-shadow: 0 0 0 3px rgba(126, 161, 196, 0.1);
+}

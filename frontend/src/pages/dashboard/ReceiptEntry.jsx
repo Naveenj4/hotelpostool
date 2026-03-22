@@ -233,7 +233,23 @@ export default function ReceiptEntry() {
             )}
             
             <main className="dashboard-main min-h-screen">
-                <Header toggleSidebar={toggleSidebar} />
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Receipt Entry"
+                    actions={
+                        view === 'LIST' ? (
+                            <button className="btn-premium-primary !py-2 !px-6" onClick={() => setView('FORM')}>
+                                <Plus size={18} /> 
+                                <span className="text-[10px] uppercase font-black">Create Receipt</span>
+                            </button>
+                        ) : (
+                            <button className="btn-premium-primary !py-2 !px-6 !bg-slate-200 !text-slate-800" onClick={() => setView('LIST')}>
+                                <ChevronLeft size={18} /> 
+                                <span className="text-[10px] uppercase font-black">Back to List</span>
+                            </button>
+                        )
+                    }
+                />
                 
                 {view === 'LIST' ? (
                 <div className="re-wrapper fade-in">

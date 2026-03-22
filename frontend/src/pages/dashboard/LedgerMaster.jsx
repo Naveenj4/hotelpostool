@@ -204,24 +204,19 @@ const LedgerMaster = () => {
             )}
 
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
-
-                <div className="master-content-layout fade-in p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
-                    <div className="master-header-premium-refined flex-col md:flex-row mb-12">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2 bg-slate-900 rounded-xl text-white shadow-lg shadow-slate-100">
-                                    <Book size={20} />
-                                </div>
-                                <span className="metric-pill-modern">Accounting Infrastructure</span>
-                            </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Ledger </h2>Creation
-                            <p className="text-slate-500 font-bold mt-2 text-lg">Architectural accounting heads and strategic financial classifications.</p>
-                        </div>
-                        <button className="btn-glow bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.1em] hover:bg-indigo-600 transition-all shadow-2xl flex items-center gap-4 group" onClick={() => { resetForm(); setShowDrawer(true); }}>
-                            <PlusCircle size={22} className="group-hover:rotate-90 transition-transform duration-500" /> Provision Account
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    title="Ledger Creation"
+                    actions={
+                        <button className="btn-premium-primary !py-2 !px-6" onClick={() => { resetForm(); setShowDrawer(true); }}>
+                            <PlusCircle size={18} /> 
+                            <span className="text-[10px] uppercase font-black">Provision Account</span>
                         </button>
-                    </div>
+                    }
+                />
+                <div className="master-content-layout fade-in p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
+                    {/* Header relocated */}
+
 
                     <div className="flex flex-col md:flex-row items-center gap-6 mb-10 bento-card p-4">
                         <div className="relative flex-1 group">
