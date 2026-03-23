@@ -18,8 +18,8 @@
    SIDEBAR
    ============================================================ */
 .dashboard-sidebar {
-    width: 230px;
-    min-width: 230px;
+    width: 280px;
+    min-width: 280px;
     height: 100%;
     background-color: #0F172A;
     color: white;
@@ -32,8 +32,8 @@
 }
 
 .dashboard-sidebar.collapsed {
-    width: 72px;
-    min-width: 72px;
+    width: 90px;
+    min-width: 90px;
 }
 
 /* Brand */
@@ -61,7 +61,7 @@
 }
 
 .brand-name {
-    font-size: 1.1rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: #FFFFFF;
     white-space: nowrap;
@@ -88,8 +88,8 @@
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
-    padding: 0.72rem 0.875rem;
+    gap: 1.1rem;
+    padding: 0.9rem 1.15rem;
     text-decoration: none;
     color: #94A3B8;
     border-radius: 8px;
@@ -100,7 +100,7 @@
     width: 100%;
     white-space: nowrap;
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: 1.15rem;
     font-weight: 500;
 }
 
@@ -159,7 +159,7 @@
 }
 
 .nav-label {
-    font-size: 0.9rem;
+    font-size: 1.15rem;
     font-weight: 500;
     line-height: 1;
 }
@@ -174,7 +174,7 @@
 
 .dashboard-sidebar.collapsed .nav-item {
     justify-content: center;
-    padding: 0.72rem;
+    padding: 0.9rem;
 }
 
 /* Sub-menu */
@@ -187,8 +187,8 @@
 }
 
 .sub-nav-item {
-    font-size: 0.875rem;
-    padding: 0.6rem 0.875rem;
+    font-size: 1.05rem;
+    padding: 0.8rem 1.25rem;
     color: #64748B;
     background: transparent !important;
     border-radius: 7px;
@@ -197,7 +197,7 @@
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.875rem;
+    gap: 1.1rem;
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
@@ -242,9 +242,9 @@
 .logout-btn {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
+    gap: 1.1rem;
     width: 100%;
-    padding: 0.72rem 0.875rem;
+    padding: 0.9rem 1.15rem;
     background: transparent;
     border: none;
     color: #F87171;
@@ -253,7 +253,7 @@
     transition: all 0.2s;
     font-weight: 600;
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 1.15rem;
 }
 
 .logout-btn:hover {
@@ -262,7 +262,7 @@
 
 .dashboard-sidebar.collapsed .logout-btn {
     justify-content: center;
-    padding: 0.72rem;
+    padding: 0.9rem;
 }
 
 /* ============================================================
