@@ -36,10 +36,10 @@ const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
                 </button>
                 <div className="restaurant-badge">
                     {title ? (
-                         <div className="flex items-center gap-4">
-                             <div className="w-[1px] h-6 bg-slate-200/50 mx-2 hidden md:block"></div>
-                             <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">{title}</h2>
-                         </div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-[1px] h-6 bg-slate-200/50 mx-2 hidden md:block"></div>
+                            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">{title}</h2>
+                        </div>
                     ) : (
                         <span className="restaurant-name">{restaurantName || "RestoSaaS Partner"}</span>
                     )}
@@ -64,9 +64,9 @@ const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
 
             <div className="header-right">
                 {actions ? (
-                     <div className="flex items-center gap-3 mr-4">
-                         {actions}
-                     </div>
+                    <div className="flex items-center gap-3 mr-4">
+                        {actions}
+                    </div>
                 ) : (
                     <>
                         <button className="icon-btn" title="Notifications">

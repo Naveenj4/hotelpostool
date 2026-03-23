@@ -7,8 +7,9 @@ import {
     Loader2, Truck, Package, Users2, RefreshCw,
     Clock, Users, IndianRupee, Plus, X, Search,
     Phone, StickyNote, CalendarClock, XCircle, CheckCircle2, Printer,
-    ArrowRight, Save
+    ArrowRight, Save, Settings, LogOut, User as UserIcon
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 /* ─── helpers ─── */
 const getToken = () => {
@@ -43,8 +44,8 @@ const useLiveTimer = (since) => {
             const h = Math.floor(diff / 3600);
             const m = Math.floor((diff % 3600) / 60);
             const s = diff % 60;
-            if (h > 0) setDisplay(`${h}h ${String(m).padStart(2,'0')}m`);
-            else setDisplay(`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+            if (h > 0) setDisplay(`${h}h ${String(m).padStart(2, '0')}m`);
+            else setDisplay(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
         };
         calc();
         timerRef.current = setInterval(calc, 1000);
@@ -63,11 +64,11 @@ if (typeof document !== 'undefined' && !document.getElementById('readyPulseStyle
 
 /* ─── Single compact table card ─── */
 const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => {
-    const isAvail   = table.status === 'AVAILABLE';
+    const isAvail = table.status === 'AVAILABLE';
     const isOccupied = table.status === 'OCCUPIED';
-    const isPrinted  = table.status === 'PRINTED';
+    const isPrinted = table.status === 'PRINTED';
     const isReserved = table.status === 'RESERVED';
-    const isActive   = isOccupied || isPrinted; 
+    const isActive = isOccupied || isPrinted;
 
     // Minimal elegant colors
     const colorScheme = isOccupied
@@ -172,36 +173,36 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                 {isReserved && (
                     <>
                         <button onClick={() => onSelect(table)} style={{ flex: 1, fontSize: '11px', fontWeight: 800, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}>BILL</button>
+                            onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}>BILL</button>
                         <button onClick={() => onCancelReserve(table)} style={{ padding: '0 8px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}><X size={14} /></button>
+                            onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}><X size={14} /></button>
                     </>
                 )}
                 {isActive && !isPrinted && !isReserved && (
                     <>
                         <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1, fontSize: '10px', fontWeight: 800, background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#4f46e5'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#6366f1'}>VIEW</button>
+                            onMouseEnter={e => e.currentTarget.style.background = '#4f46e5'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#6366f1'}>VIEW</button>
                         <button onClick={(e) => { e.stopPropagation(); onSelect(table, true); }} style={{ flex: 1, fontSize: '10px', fontWeight: 800, background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#059669'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#10b981'}>PRINT</button>
+                            onMouseEnter={e => e.currentTarget.style.background = '#059669'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#10b981'}>PRINT</button>
                         <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ padding: '0 8px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
+                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
                     </>
                 )}
                 {isPrinted && !isReserved && (
                     <>
                         <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 2, fontSize: '11px', fontWeight: 800, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}>
+                            onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}>
                             <CheckCircle2 size={12} /> PAY
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ padding: '0 8px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                                onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
+                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
                     </>
                 )}
             </div>
@@ -341,6 +342,7 @@ const ReservationModal = ({ table, onClose, onConfirm, loading }) => {
 /* ─── Main Page ─── */
 const TableSelectionPage = () => {
     const navigate = useNavigate();
+    const { user, logout } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [tables, setTables] = useState([]);
@@ -497,7 +499,7 @@ const TableSelectionPage = () => {
         try {
             const savedUser = localStorage.getItem('user');
             const { token } = JSON.parse(savedUser);
-            
+
             // 1. Create Ledger for Customer (Party)
             const ledgerRes = await fetch(`${import.meta.env.VITE_API_URL}/ledgers`, {
                 method: 'POST',
@@ -515,8 +517,8 @@ const TableSelectionPage = () => {
 
             // 2. Navigate to billing with state
             navigate('/dashboard/self-service/billing', {
-                state: { 
-                    fromTable: false, 
+                state: {
+                    fromTable: false,
                     orderMode: 'PARTY_ORDER',
                     partyDetails: partyForm
                 }
@@ -533,8 +535,8 @@ const TableSelectionPage = () => {
     /* ── Group tables by type, preserving tableTypes order ── */
     const buildGroups = () => {
         const query = searchQuery.toLowerCase().trim();
-        const filtered = tables.filter(t => 
-            (t.table_number || '').toString().toLowerCase().includes(query) || 
+        const filtered = tables.filter(t =>
+            (t.table_number || '').toString().toLowerCase().includes(query) ||
             (t.table_type || '').toLowerCase().includes(query)
         );
 
@@ -570,7 +572,37 @@ const TableSelectionPage = () => {
             {isMobileSidebarOpen && <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)} />}
 
             <main className="dashboard-main" style={{ background: '#f8fafc' }}>
-                <Header toggleSidebar={toggleSidebar} />
+                <Header 
+                    toggleSidebar={toggleSidebar} 
+                    actions={
+                        <>
+                            <div className="user-profile">
+                                <div className="user-info">
+                                    <span className="user-name">{user?.name || 'OWNER'}</span>
+                                    <span className="user-role">{user?.role || 'Admin'}</span>
+                                </div>
+                                <div className="user-avatar">
+                                    <UserIcon size={17} />
+                                </div>
+                            </div>
+                            <div className="header-divider"></div>
+                            <button
+                                className="icon-btn"
+                                onClick={() => navigate('/dashboard/self-service/settings')}
+                                title="Settings"
+                            >
+                                <Settings size={18} />
+                            </button>
+                            <button
+                                className="icon-btn logout-header-btn"
+                                onClick={logout}
+                                title="Logout"
+                            >
+                                <LogOut size={18} />
+                            </button>
+                        </>
+                    }
+                />
 
                 <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 70px)', overflow: 'hidden' }}>
 
@@ -583,11 +615,11 @@ const TableSelectionPage = () => {
                             <button
                                 key={i}
                                 onClick={btn.action}
-                                style={{ 
-                                    padding: '0 24px', background: 'none', border: 'none', 
-                                    borderRight: '1px solid #f1f5f9', cursor: 'pointer', 
-                                    fontSize: '13px', fontWeight: 800, color: btn.color, 
-                                    display: 'flex', alignItems: 'center', gap: '8px', 
+                                style={{
+                                    padding: '0 24px', background: 'none', border: 'none',
+                                    borderRight: '1px solid #f1f5f9', cursor: 'pointer',
+                                    fontSize: '13px', fontWeight: 800, color: btn.color,
+                                    display: 'flex', alignItems: 'center', gap: '8px',
                                     whiteSpace: 'nowrap', transition: 'all 0.2s ease'
                                 }}
                                 onMouseEnter={e => { e.currentTarget.style.background = btn.bg; e.currentTarget.style.color = '#000'; }}
@@ -622,10 +654,10 @@ const TableSelectionPage = () => {
                             <button
                                 key={i}
                                 onClick={() => handleSpecialOrder(btn.mode)}
-                                style={{ 
-                                    padding: '0 24px', background: 'none', border: 'none', 
-                                    borderLeft: '1px solid #f1f5f9', cursor: 'pointer', 
-                                    fontSize: '13px', fontWeight: 800, color: '#64748b', 
+                                style={{
+                                    padding: '0 24px', background: 'none', border: 'none',
+                                    borderLeft: '1px solid #f1f5f9', cursor: 'pointer',
+                                    fontSize: '13px', fontWeight: 800, color: '#64748b',
                                     display: 'flex', alignItems: 'center', gap: '8px',
                                     transition: 'all 0.2s ease'
                                 }}
@@ -643,11 +675,11 @@ const TableSelectionPage = () => {
                     {/* ── Stats strip ── */}
                     <div style={{ background: '#fff', borderBottom: '2.5px solid #edf2f7', padding: '16px 28px', display: 'flex', gap: '40px', alignItems: 'center', flexShrink: 0 }}>
                         {[
-                            { label: 'Total',     value: stats.total,     color: '#4f46e5', bg: '#eef2ff' },
+                            { label: 'Total', value: stats.total, color: '#4f46e5', bg: '#eef2ff' },
                             { label: 'Available', value: stats.available, color: '#10b981', bg: '#ecfdf5' },
-                            { label: 'Running',   value: stats.occupied,  color: '#f59e0b', bg: '#fffbeb' },
-                            { label: 'Printed',   value: stats.printed,   color: '#16a34a', bg: '#f0fdf4' },
-                            { label: 'Reserved',  value: stats.reserved,  color: '#8b5cf6', bg: '#f5f3ff' },
+                            { label: 'Running', value: stats.occupied, color: '#f59e0b', bg: '#fffbeb' },
+                            { label: 'Printed', value: stats.printed, color: '#16a34a', bg: '#f0fdf4' },
+                            { label: 'Reserved', value: stats.reserved, color: '#8b5cf6', bg: '#f5f3ff' },
                         ].map(s => (
                             <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: s.bg, padding: '8px 16px', borderRadius: '16px', border: `1px solid ${s.color}22` }}>
                                 <span style={{ fontSize: '28px', fontWeight: 950, color: s.color, lineHeight: 1 }}>{s.value}</span>
@@ -659,14 +691,14 @@ const TableSelectionPage = () => {
                         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ position: 'relative', width: '280px' }}>
                                 <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search Table No / Type..." 
+                                <input
+                                    type="text"
+                                    placeholder="Search Table No / Type..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    style={{ 
-                                        width: '100%', padding: '10px 14px 10px 40px', 
-                                        border: '1.5px solid #e2e8f0', borderRadius: '14px', 
+                                    style={{
+                                        width: '100%', padding: '10px 14px 10px 40px',
+                                        border: '1.5px solid #e2e8f0', borderRadius: '14px',
                                         fontSize: '13px', fontWeight: 600, color: '#334155',
                                         outline: 'none', transition: 'all 0.2s',
                                         background: '#f8fafc'
@@ -782,8 +814,8 @@ const TableSelectionPage = () => {
                                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Delivery Date *</label>
                                     <div style={{ position: 'relative' }}>
                                         <CalendarClock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                        <input 
-                                            type="date" 
+                                        <input
+                                            type="date"
                                             value={partyForm.delivery_date}
                                             onChange={e => setPartyForm(f => ({ ...f, delivery_date: e.target.value }))}
                                             style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1.5px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
@@ -794,8 +826,8 @@ const TableSelectionPage = () => {
                                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Delivery Time *</label>
                                     <div style={{ position: 'relative' }}>
                                         <Clock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                        <input 
-                                            type="time" 
+                                        <input
+                                            type="time"
                                             value={partyForm.delivery_time}
                                             onChange={e => setPartyForm(f => ({ ...f, delivery_time: e.target.value }))}
                                             style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1.5px solid #e2e8f0', borderRadius: '14px', fontSize: '15px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
@@ -815,8 +847,8 @@ const TableSelectionPage = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
                                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Customer Name *</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         placeholder="Full Name"
                                         value={partyForm.customer_name}
                                         onChange={e => setPartyForm(f => ({ ...f, customer_name: e.target.value }))}
@@ -825,8 +857,8 @@ const TableSelectionPage = () => {
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Phone Number *</label>
-                                    <input 
-                                        type="tel" 
+                                    <input
+                                        type="tel"
                                         placeholder="10-digit mobile number"
                                         value={partyForm.customer_phone}
                                         onChange={e => setPartyForm(f => ({ ...f, customer_phone: e.target.value }))}
@@ -835,7 +867,7 @@ const TableSelectionPage = () => {
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>Delivery Address</label>
-                                    <textarea 
+                                    <textarea
                                         placeholder="Full address for delivery"
                                         value={partyForm.customer_address}
                                         onChange={e => setPartyForm(f => ({ ...f, customer_address: e.target.value }))}
