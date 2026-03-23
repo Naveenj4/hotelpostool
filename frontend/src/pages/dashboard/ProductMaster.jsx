@@ -137,47 +137,208 @@ const ProductMaster = () => {
 
     const exportCSV = () => {
         if (!products.length) return;
-        const headers = Object.keys(products[0]).filter(k => typeof products[0][k] !== 'object').join(',');
-        const rows = products.map(p => Object.keys(p).filter(k => typeof p[k] !== 'object').map(k => p[k]).join(',')).join('\n');
-        const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
-        const encodedUri = encodeURI(csvContent);
+        
+        // Define columns matching the creation form precisely
+        const columns = [
+            { header: 'Item Name', key: 'name' },
+            { header: 'Item Code', key: 'code' },
+            { header: 'Barcode', key: 'barcode' },
+            { header: 'Short Name', key: 'short_name' },
+            { header: 'Print Name', key: 'print_name' },
+            { header: 'Category', key: 'category' },
+            { header: 'Brand', key: 'brand' },
+            { header: 'Food Type', key: 'food_type' },
+            { header: 'Item Nature', key: 'item_nature' },
+            { header: 'Product Type', key: 'product_type' },
+            { header: 'Unit', key: 'unit' },
+            { header: 'Purchase Rate', key: 'purchase_price' },
+            { header: 'Cost Rate', key: 'cost_price' },
+            { header: 'Selling Price', key: 'selling_price' },
+            { header: 'MRP', key: 'mrp' },
+            { header: 'GST Purchase %', key: 'gst_purchase' },
+            { header: 'GST Sales %', key: 'gst_sales' },
+            { header: 'HSN Code', key: 'hsn_code' },
+            { header: 'Opening Stock', key: 'opening_stock' },
+            { header: 'Stock Value', key: 'stock_value' },
+            { header: 'Max Stock', key: 'max_stock' },
+            { header: 'Min Stock', key: 'min_stock' },
+            { header: 'Reorder Level', key: 'reorder_level' },
+            { header: 'Urgent Level', key: 'urgent_order_level' },
+            { header: 'Dine In', get: (p) => p.serve_types?.dine_in ? 'YES' : 'NO' },
+            { header: 'Delivery', get: (p) => p.serve_types?.delivery ? 'YES' : 'NO' },
+            { header: 'Pickup', get: (p) => p.serve_types?.pickup ? 'YES' : 'NO' },
+            { header: 'Party Order', get: (p) => p.serve_types?.party_order ? 'YES' : 'NO' },
+            { header: 'Variations', get: (p) => p.variations?.map(v => `${v.name}(${v.amount})`).join(' | ') || '' },
+            { header: 'Addons', get: (p) => p.addons?.map(a => `${a.name}(${a.rate})`).join(' | ') || '' },
+            { header: 'Online Order', get: (p) => p.online_order ? 'YES' : 'NO' },
+            { header: 'Active Status', get: (p) => p.is_active ? 'ACTIVE' : 'INACTIVE' }
+        ];
+
+        let csvContent = "\uFEFF"; // Add BOM for Excel UTF-8 support
+        
+        // Add Headers row
+        csvContent += columns.map(c => `"${c.header}"`).join(',') + '\n';
+        
+        // Add Data rows
+        products.forEach(p => {
+            const row = columns.map(col => {
+                let cellData = col.get ? col.get(p) : (p[col.key] || '');
+                // Escape quotes and wrap in quotes to handle commas and newlines
+                cellData = String(cellData).replace(/"/g, '""');
+                return `"${cellData}"`;
+            });
+            csvContent += row.join(',') + '\n';
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
+        link.setAttribute("href", url);
         link.setAttribute("download", "Enterprise_Product_Master.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const handleCSVImport = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         setLoading(true);
+
+        const parseCSVLine = (text) => {
+            const result = [];
+            let cur = '', inQuote = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (c === '"') {
+                    if (inQuote && text[i + 1] === '"') { cur += '"'; i++; }
+                    else { inQuote = !inQuote; }
+                } else if (c === ',' && !inQuote) {
+                    result.push(cur);
+                    cur = '';
+                } else {
+                    cur += c;
+                }
+            }
+            result.push(cur);
+            return result;
+        };
+
         const reader = new FileReader();
         reader.onload = async (event) => {
-            const text = event.target.result;
-            const lines = text.split('\n');
-            const headers = lines[0].split(',');
+            let text = event.target.result;
+            if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1); // Remove BOM
+            
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) {
+                alert("File is empty or invalid format");
+                setLoading(false);
+                return;
+            }
+
+            const headers = parseCSVLine(lines[0]).map(h => h.trim());
+            
+            const colMap = {
+                'Item Name': 'name', 'Item Code': 'code', 'Barcode': 'barcode',
+                'Short Name': 'short_name', 'Print Name': 'print_name',
+                'Category': 'category', 'Brand': 'brand', 'Food Type': 'food_type',
+                'Item Nature': 'item_nature', 'Product Type': 'product_type',
+                'Unit': 'unit', 'Purchase Rate': 'purchase_price', 'Cost Rate': 'cost_price',
+                'Selling Price': 'selling_price', 'MRP': 'mrp', 'GST Purchase %': 'gst_purchase',
+                'GST Sales %': 'gst_sales', 'HSN Code': 'hsn_code', 'Opening Stock': 'opening_stock',
+                'Stock Value': 'stock_value', 'Max Stock': 'max_stock', 'Min Stock': 'min_stock',
+                'Reorder Level': 'reorder_level', 'Urgent Level': 'urgent_order_level'
+            };
+
+            const parseExtras = (str) => {
+                if (!str || !str.trim()) return [];
+                return str.split('|').map(s => {
+                    let name = s.trim();
+                    let amount = 0;
+                    const match = name.match(/^(.*?)\(([\d.]+)\)$/);
+                    if (match) {
+                        name = match[1].trim();
+                        amount = parseFloat(match[2]) || 0;
+                    }
+                    return { name, amount, rate: amount };
+                }).filter(x => x.name);
+            };
+
+            const parseBool = (str) => /^(YES|ACTIVE|TRUE|1)$/i.test((str||'').trim());
+
             const items = lines.slice(1).map(line => {
-                const values = line.split(',');
-                const obj = {};
-                headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim());
+                const values = parseCSVLine(line);
+                const obj = JSON.parse(JSON.stringify(initialFormState)); // Deep copy 
+
+                headers.forEach((h, i) => {
+                    let val = (values[i] || '').trim();
+                    if (colMap[h]) {
+                        const key = colMap[h];
+                        // Convert numeric fields
+                        const numFields = ['purchase_price', 'cost_price', 'selling_price', 'mrp', 'gst_purchase', 'gst_sales', 'opening_stock', 'stock_value', 'max_stock', 'min_stock', 'reorder_level', 'urgent_order_level'];
+                        if (numFields.includes(key)) {
+                            obj[key] = parseFloat(val) || 0;
+                        } else {
+                            obj[key] = val;
+                        }
+                    } else {
+                        // Custom Handlers
+                        if (h === 'Dine In') obj.serve_types.dine_in = parseBool(val);
+                        if (h === 'Delivery') obj.serve_types.delivery = parseBool(val);
+                        if (h === 'Pickup') obj.serve_types.pickup = parseBool(val);
+                        if (h === 'Party Order') obj.serve_types.party_order = parseBool(val);
+                        if (h === 'Online Order') obj.online_order = parseBool(val);
+                        if (h === 'Active Status') obj.is_active = parseBool(val);
+                        
+                        if (h === 'Variations') {
+                            obj.variations = parseExtras(val).map(v => ({ name: v.name, amount: v.amount }));
+                        }
+                        if (h === 'Addons') {
+                            obj.addons = parseExtras(val).map(a => ({ name: a.name, rate: a.rate }));
+                        }
+                    }
+                });
                 return obj;
             }).filter(i => i.name);
+
+            if (items.length === 0) {
+                alert("No valid items found to import. Make sure Item Name is provided.");
+                setLoading(false);
+                return;
+            }
 
             try {
                 const savedUser = localStorage.getItem('user');
                 const { token } = JSON.parse(savedUser);
-                await Promise.all(items.map(item =>
-                    fetch(`${import.meta.env.VITE_API_URL}/products`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ ...initialFormState, ...item })
-                    })
-                ));
+
+                let successCount = 0;
+                let failCount = 0;
+                
+                // Process sequentially or chunks to avoid overwhelming the server
+                for (const item of items) {
+                    try {
+                        const res = await fetch(`${import.meta.env.VITE_API_URL}/products`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify(item)
+                        });
+                        if (res.ok) successCount++;
+                        else failCount++;
+                    } catch(err) {
+                        failCount++;
+                    }
+                }
+                
+                alert(`Import Complete:\nSuccessfully Imported: ${successCount}\nFailed: ${failCount}`);
                 fetchData();
-            } catch (err) { alert("Import failed: " + err.message); }
-            finally { setLoading(false); }
+            } catch (err) {
+                alert("Import process failed: " + err.message);
+            } finally {
+                setLoading(false);
+                // Reset file input
+                if (e.target) e.target.value = '';
+            }
         };
         reader.readAsText(file);
     };
