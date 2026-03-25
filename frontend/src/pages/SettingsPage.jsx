@@ -7,7 +7,7 @@ import {
     User, Key, Printer, FileText, Eye, EyeOff,
     Save, CheckCircle, Palette, AlertCircle, Loader2,
     Building2, Phone, Mail, Lock, Settings, TestTube,
-    LayoutTemplate, Shield, ChevronRight, Sliders
+    LayoutTemplate, Shield, ChevronRight, Sliders, Ticket, Plus, Trash2, Edit
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -29,6 +29,18 @@ const SettingsPage = () => {
     const [saving, setSaving] = useState({});
     const [success, setSuccess] = useState({});
     const [errors, setErrors] = useState({});
+    const [loyaltyForm, setLoyaltyForm] = useState({
+        enabled: false,
+        points_per_100: 1,
+        target_points: 0,
+        point_value: 1
+    });
+    const [coupons, setCoupons] = useState([]);
+    const [couponForm, setCouponForm] = useState({
+        coupon_name: '', num_from: '', num_to: '', start_date: '', end_date: '',
+        type: 'DISCOUNT', discount_type: 'PERCENT', discount_value: 0
+    });
+    const [editingCouponId, setEditingCouponId] = useState(null);
 
     const fetchSettings = async () => {
         try {
@@ -54,7 +66,15 @@ const SettingsPage = () => {
                 }));
                 if (result.data.printer) setPrinterForm(result.data.printer);
                 if (result.data.billFormat) setBillForm(result.data.billFormat);
+                if (result.data.loyalty) setLoyaltyForm(result.data.loyalty);
             }
+
+            // Fetch Coupons
+            const couponResponse = await fetch(`${import.meta.env.VITE_API_URL}/coupons`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const couponResult = await couponResponse.json();
+            if (couponResult.success) setCoupons(couponResult.data);
         } catch (err) { console.error("Failed to fetch settings", err); }
         finally { setLoading(false); }
     };
@@ -164,11 +184,29 @@ const SettingsPage = () => {
         finally { setSaving(prev => ({ ...prev, bill: false })); }
     };
 
+    const saveLoyaltySettings = async () => {
+        setSaving(prev => ({ ...prev, loyalty: true }));
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/settings/loyalty`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(loyaltyForm)
+            });
+            const result = await response.json();
+            if (result.success) { setSuccess(prev => ({ ...prev, loyalty: true })); setTimeout(() => setSuccess(prev => ({ ...prev, loyalty: false })), 3000); }
+            else { setErrors(prev => ({ ...prev, loyalty: result.message })); }
+        } catch (err) { setErrors(prev => ({ ...prev, loyalty: 'Failed to update loyalty settings' })); }
+        finally { setSaving(prev => ({ ...prev, loyalty: false })); }
+    };
+
     const TABS = [
         { id: 'profile', icon: <User size={18} />, label: 'Profile', sub: 'Account info' },
         { id: 'password', icon: <Key size={18} />, label: 'Security', sub: 'Access control' },
         { id: 'printer', icon: <Printer size={18} />, label: 'Printer', sub: 'Thermal setup' },
         { id: 'bill', icon: <FileText size={18} />, label: 'Bill Format', sub: 'Receipt style' },
+        { id: 'coupons', icon: <Ticket size={18} />, label: 'Coupons', sub: 'Offers & BOGO' },
+        { id: 'loyalty', icon: <Gift size={18} />, label: 'Loyalty', sub: 'Points & Rewards' },
         { id: 'appearance', icon: <Palette size={18} />, label: 'Appearance', sub: 'UI & layout' },
     ];
 
@@ -466,6 +504,208 @@ const SettingsPage = () => {
                                         <button onClick={saveLayout} disabled={saving.profile} className="btn-premium-primary !py-4 !px-10">
                                             {saving.profile ? <><Loader2 className="animate-spin" /> Applying...</> : <><Palette size={18} /> Apply Layout</>}
                                         </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Coupon Management */}
+                            {activeTab === 'coupons' && (
+                                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-10 fade-in">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div className="flex items-center gap-3">
+                                            <Ticket size={20} className="text-indigo-600" />
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Coupon Management</h3>
+                                                <p className="text-xs font-bold text-slate-400 mt-0.5">Manage promotional codes and BOGO offers</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        {/* Coupon Form */}
+                                        <div className="space-y-6">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/50 px-3 py-1.5 rounded-lg w-fit">
+                                                {editingCouponId ? 'Update Existing Coupon' : 'Create New Coupon Master'}
+                                            </p>
+                                            <div className="form-group-premium">
+                                                <label>Coupon Name *</label>
+                                                <input type="text" className="input-premium" value={couponForm.coupon_name} onChange={(e) => setCouponForm({ ...couponForm, coupon_name: e.target.value })} placeholder="e.g. Summer Festival" />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="form-group-premium">
+                                                    <label>Number From *</label>
+                                                    <input type="number" className="input-premium" value={couponForm.num_from} onChange={(e) => setCouponForm({ ...couponForm, num_from: e.target.value })} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>Number To *</label>
+                                                    <input type="number" className="input-premium" value={couponForm.num_to} onChange={(e) => setCouponForm({ ...couponForm, num_to: e.target.value })} />
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="form-group-premium">
+                                                    <label>Start Date *</label>
+                                                    <input type="date" className="input-premium" value={couponForm.start_date ? couponForm.start_date.split('T')[0] : ''} onChange={(e) => setCouponForm({ ...couponForm, start_date: e.target.value })} />
+                                                </div>
+                                                <div className="form-group-premium">
+                                                    <label>End Date *</label>
+                                                    <input type="date" className="input-premium" value={couponForm.end_date ? couponForm.end_date.split('T')[0] : ''} onChange={(e) => setCouponForm({ ...couponForm, end_date: e.target.value })} />
+                                                </div>
+                                            </div>
+                                            <div className="form-group-premium">
+                                                <label>Coupon Type</label>
+                                                <select className="input-premium" value={couponForm.type} onChange={(e) => setCouponForm({ ...couponForm, type: e.target.value })}>
+                                                    <option value="DISCOUNT">Fixed / Percentage Discount</option>
+                                                    <option value="BOGO">Buy 1 Get 1 Free (BOGO)</option>
+                                                </select>
+                                            </div>
+                                            {couponForm.type === 'DISCOUNT' && (
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="form-group-premium">
+                                                        <label>Disc. Mode</label>
+                                                        <select className="input-premium" value={couponForm.discount_type} onChange={(e) => setCouponForm({ ...couponForm, discount_type: e.target.value })}>
+                                                            <option value="PERCENT">Percentage (%)</option>
+                                                            <option value="FIXED">Fixed Amount (₹)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Amount / %</label>
+                                                        <input type="number" className="input-premium" value={couponForm.discount_value} onChange={(e) => setCouponForm({ ...couponForm, discount_value: e.target.value })} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="flex gap-2 pt-4">
+                                                {editingCouponId && (
+                                                    <button onClick={() => { setEditingCouponId(null); setCouponForm({ coupon_name: '', num_from: '', num_to: '', start_date: '', end_date: '', type: 'DISCOUNT', discount_type: 'PERCENT', discount_value: 0 }); }} className="btn-premium-outline !py-3 flex-1">CANCEL</button>
+                                                )}
+                                                <button onClick={async () => {
+                                                    const savedUser = localStorage.getItem('user');
+                                                    const { token } = JSON.parse(savedUser);
+                                                    const method = editingCouponId ? 'PUT' : 'POST';
+                                                    const url = editingCouponId ? `${import.meta.env.VITE_API_URL}/coupons/${editingCouponId}` : `${import.meta.env.VITE_API_URL}/coupons`;
+                                                    const res = await fetch(url, {
+                                                        method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                                        body: JSON.stringify(couponForm)
+                                                    });
+                                                    const data = await res.json();
+                                                    if (data.success) {
+                                                        alert('Coupon saved!');
+                                                        setEditingCouponId(null);
+                                                        setCouponForm({ coupon_name: '', num_from: '', num_to: '', start_date: '', end_date: '', type: 'DISCOUNT', discount_type: 'PERCENT', discount_value: 0 });
+                                                        // Refresh list
+                                                        const fresh = await fetch(`${import.meta.env.VITE_API_URL}/coupons`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json());
+                                                        if (fresh.success) setCoupons(fresh.data);
+                                                    }
+                                                }} className="btn-premium-primary !py-3 flex-[2]">
+                                                    {editingCouponId ? 'UPDATE COUPON' : 'CREATE COUPON'}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Coupon List */}
+                                        <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100 flex flex-col min-h-[500px]">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Existing Coupon Ranges</p>
+                                            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                                                {coupons.map(c => (
+                                                    <div key={c._id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:border-indigo-200 transition-all">
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div>
+                                                                <h4 className="font-black text-slate-800 tracking-tight">{c.coupon_name}</h4>
+                                                                <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-widest">{c.type}</span>
+                                                            </div>
+                                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                                <button onClick={() => { setEditingCouponId(c._id); setCouponForm(c); }} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600"><Edit size={14} /></button>
+                                                                <button onClick={async () => {
+                                                                    if (!window.confirm('Delete this coupon range?')) return;
+                                                                    const savedUser = localStorage.getItem('user');
+                                                                    const { token } = JSON.parse(savedUser);
+                                                                    await fetch(`${import.meta.env.VITE_API_URL}/coupons/${c._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                                                                    setCoupons(prev => prev.filter(x => x._id !== c._id));
+                                                                }} className="p-2 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600"><Trash2 size={14} /></button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-1">
+                                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Range</p>
+                                                                <p className="text-xs font-black text-slate-700">{c.num_from} — {c.num_to}</p>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Value</p>
+                                                                <p className="text-xs font-black text-slate-700">{c.type === 'DISCOUNT' ? (c.discount_type === 'PERCENT' ? `${c.discount_value}%` : `₹${c.discount_value}`) : 'BOGO'}</p>
+                                                            </div>
+                                                            <div className="col-span-2 space-y-1 mt-1 border-t border-slate-50 pt-3">
+                                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Validity Period</p>
+                                                                <p className="text-[11px] font-bold text-slate-500">{new Date(c.start_date).toLocaleDateString()} to {new Date(c.end_date).toLocaleDateString()}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {coupons.length === 0 && (
+                                                    <div className="text-center py-20">
+                                                        <Ticket size={40} className="text-slate-200 mx-auto mb-3" />
+                                                        <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No active coupons</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Loyalty Settings */}
+                            {activeTab === 'loyalty' && (
+                                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-10 fade-in">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div className="flex items-center gap-3">
+                                            <Gift size={20} className="text-indigo-600" />
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Loyalty Rewards</h3>
+                                                <p className="text-xs font-bold text-slate-400 mt-0.5">Configure point-based customer rewards</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-8">
+                                        <div className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                                            <div>
+                                                <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Enable Loyalty Program</p>
+                                                <p className="text-[10px] font-bold text-slate-400 mt-0.5">Activate points accumulation for all customers</p>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" className="sr-only peer" checked={loyaltyForm.enabled} 
+                                                    onChange={e => setLoyaltyForm({ ...loyaltyForm, enabled: e.target.checked })} />
+                                                <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                                            </label>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="form-group-premium">
+                                                <label>Points Earned Per ₹100 Spent</label>
+                                                <input type="number" className="input-premium" value={loyaltyForm.points_per_100} 
+                                                    onChange={e => setLoyaltyForm({ ...loyaltyForm, points_per_100: e.target.value })} 
+                                                    placeholder="e.g. 1" />
+                                                <p className="text-[10px] font-bold text-slate-400 mt-2">1 Point per ₹100 is standard.</p>
+                                            </div>
+                                            <div className="form-group-premium">
+                                                <label>Target Points for Redemption</label>
+                                                <input type="number" className="input-premium" value={loyaltyForm.target_points} 
+                                                    onChange={e => setLoyaltyForm({ ...loyaltyForm, target_points: e.target.value })} 
+                                                    placeholder="e.g. 500" />
+                                                <p className="text-[10px] font-bold text-slate-400 mt-2">Minimum points required in wallet to redeem.</p>
+                                            </div>
+                                            <div className="form-group-premium">
+                                                <label>Redemption Value per Point (₹)</label>
+                                                <input type="number" className="input-premium" value={loyaltyForm.point_value} 
+                                                    onChange={e => setLoyaltyForm({ ...loyaltyForm, point_value: e.target.value })} 
+                                                    placeholder="e.g. 1" />
+                                                <p className="text-[10px] font-bold text-slate-400 mt-2">How many Rupees is each point worth?</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end pt-8 border-t border-slate-50 mt-8">
+                                            <button onClick={saveLoyaltySettings} disabled={saving.loyalty} className="btn-premium-primary !py-4 !px-10">
+                                                {saving.loyalty ? <><Loader2 className="animate-spin" /> Saving...</> : <><Save size={18} /> Update Rewards</>}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}

@@ -50,7 +50,8 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                     pageKey: "vouchers",
                     subItems: [
                         { label: "Receipt Entry", route: "/dashboard/self-service/receipts", icon: <FileText size={18} /> },
-                        { label: "Voucher Master", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
+                        { label: "Payment Entry", route: "/dashboard/self-service/payments", icon: <CreditCard size={18} /> },
+                            { label: "Voucher Master", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
                     ]
                 }
             ]

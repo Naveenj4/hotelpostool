@@ -1867,8 +1867,8 @@ input:checked+.slider:before {
     border: 1px solid var(--border-light);
     background: #fff;
     border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 700;
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s;

@@ -31,6 +31,7 @@ import {
     Gift,
     MoreHorizontal,
     ArrowRight,
+    Ticket,
     CheckSquare,
     UserCheck,
     Package,
@@ -133,8 +134,16 @@ const BillingPage = () => {
     const [showReturnForm, setShowReturnForm] = useState(false);
     const [showSplitForm, setShowSplitForm] = useState(false);
     const [showLoyaltyForm, setShowLoyaltyForm] = useState(false);
+    const [showCouponForm, setShowCouponForm] = useState(false);
     const [showMoreForm, setShowMoreForm] = useState(false);
-    const [showComplementaryForm, setShowComplementaryForm] = useState(false);
+    const [couponNumber, setCouponNumber] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [availableCoupons, setAvailableCoupons] = useState([]);
+    const [couponSearchName, setCouponSearchName] = useState('');
+    const [customerPoints, setCustomerPoints] = useState(0);
+    const [redeemPointsInput, setRedeemPointsInput] = useState('');
+    const [loyaltyRedeemedPoints, setLoyaltyRedeemedPoints] = useState(0);
+    const [loyaltySettings, setLoyaltySettings] = useState({ enabled: false, target_points: 0, point_value: 1 });
     const [partyData, setPartyData] = useState(null);
 
     // Prevent auto-create from firing while we are fetching an existing bill for a table
@@ -159,7 +168,7 @@ const BillingPage = () => {
         setShowCaptainForm(formName === 'CAPTAIN' ? !showCaptainForm : false);
         setShowWaiterForm(formName === 'WAITER' ? !showWaiterForm : false);
         setShowMoreForm(formName === 'MORE' ? !showMoreForm : false);
-        setShowComplementaryForm(formName === 'COMPLEMENTARY' ? !showComplementaryForm : false);
+        setShowCouponForm(formName === 'COUPON' ? !showCouponForm : false);
         setStepProceeded(formName === 'PAYMODE' ? !stepProceeded : false);
         setCheckoutActive(formName === 'PAYMODE' ? !checkoutActive : false);
 
@@ -176,6 +185,7 @@ const BillingPage = () => {
     const [billSearchKots, setBillSearchKots] = useState([]);
 
     // -- LATEST CALCULATION HOOK --
+    // -- LATEST CALCULATION HOOK --
     const billCalculations = useMemo(() => {
         const sub = billItems.reduce((acc, item) => acc + (item.is_complementary ? 0 : item.total_price), 0);
         let discAmt = 0;
@@ -185,7 +195,30 @@ const BillingPage = () => {
             discAmt = parseFloat(discount);
         }
 
-        const taxable = Math.max(0, sub - discAmt);
+        // Coupon Discount
+        let couponDisc = 0;
+        if (appliedCoupon) {
+            if (appliedCoupon.type === 'DISCOUNT') {
+                if (appliedCoupon.discount_type === 'PERCENT') {
+                    couponDisc = (sub - discAmt) * (parseFloat(appliedCoupon.discount_value) / 100);
+                } else {
+                    couponDisc = parseFloat(appliedCoupon.discount_value);
+                }
+            } else if (appliedCoupon.type === 'BOGO') {
+                // BOGO: Every 2nd unit of an item is free
+                billItems.forEach(item => {
+                    if (!item.is_complementary && item.quantity >= 2) {
+                        const freeQty = Math.floor(item.quantity / 2);
+                        couponDisc += freeQty * item.unit_price;
+                    }
+                });
+            }
+        }
+
+        // Loyalty Discount
+        let loyaltyDisc = loyaltyRedeemedPoints * (loyaltySettings.point_value || 1);
+
+                const taxable = Math.max(0, sub - discAmt - couponDisc - loyaltyDisc);
         const gstAmt = taxable * (parseFloat(gstPercentage) / 100);
         const delivery = parseFloat(deliveryCharge) || 0;
         const container = parseFloat(containerCharge) || 0;
@@ -197,15 +230,44 @@ const BillingPage = () => {
         return {
             subTotal: sub,
             discountAmount: discAmt,
+            couponDiscount: couponDisc,
+            loyaltyDiscount: loyaltyDisc,
             taxAmount: gstAmt,
             deliveryCharge: delivery,
             containerCharge: container,
             roundOff: rOff,
             grandTotal: roundedTotal
         };
-    }, [billItems, discount, gstPercentage, discountType, deliveryCharge, containerCharge]);
+    }, [billItems, discount, gstPercentage, discountType, deliveryCharge, containerCharge, appliedCoupon, loyaltyRedeemedPoints, loyaltySettings]);
 
-    const { subTotal, taxAmount, discountAmount, roundOff, grandTotal } = billCalculations;
+    const { subTotal, taxAmount, discountAmount, couponDiscount, loyaltyDiscount, roundOff, grandTotal } = billCalculations;
+
+    // Fetch customer points when phone changes
+    useEffect(() => {
+        const fetchCustomerData = async () => {
+            if (customerPhone && customerPhone.length >= 10) {
+                try {
+                    const savedUser = localStorage.getItem('user');
+                    const { token } = JSON.parse(savedUser);
+                    const res = await fetch(`${import.meta.env.VITE_API_URL}/customers?phone=${customerPhone}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    if (data.success && data.data.length > 0) {
+                        setCustomerPoints(data.data[0].loyalty_points || 0);
+                        if (!customerName) setCustomerName(data.data[0].name);
+                    } else {
+                        setCustomerPoints(0);
+                    }
+                } catch (err) { console.error("Error fetching customer points", err); }
+            } else {
+                setCustomerPoints(0);
+            }
+        };
+
+        const debounce = setTimeout(fetchCustomerData, 500);
+        return () => clearTimeout(debounce);
+    }, [customerPhone]);
 
     const [billingLayout, setBillingLayout] = useState(() => localStorage.getItem('cachedBillingLayout') || 'SIDEBAR');
 
@@ -242,10 +304,22 @@ const BillingPage = () => {
                 const { token } = JSON.parse(savedUser);
                 const headers = { 'Authorization': `Bearer ${token}` };
 
-                // 1. Fetch Categories
                 const catRes = await fetch(`${import.meta.env.VITE_API_URL}/categories`, { headers });
                 const catData = await catRes.json();
                 if (catData.success) setCategories(catData.data);
+
+                // 2. Fetch Active Coupons
+                const coupRes = await fetch(`${import.meta.env.VITE_API_URL}/coupons/active`, { headers });
+                const coupData = await coupRes.json();
+                if (coupData.success) setAvailableCoupons(coupData.data);
+
+                // 3. Fetch Loyalty settings
+                const settingsRes = await fetch(`${import.meta.env.VITE_API_URL}/settings/loyalty`, { headers });
+                const settingsData = await settingsRes.json();
+                if (settingsData.success) {
+                    setLoyaltySettings(settingsData.data.loyalty);
+                    setLoyaltyEnabled(settingsData.data.loyalty.enabled);
+                }
 
                 // 2. Fetch Products
                 const prodRes = await fetch(`${import.meta.env.VITE_API_URL}/products`, { headers });
@@ -990,7 +1064,8 @@ const BillingPage = () => {
                     captain_name: captainName,
                     waiter_name: waiterName,
                     type: orderMode,
-                    is_partial: isPartial
+                    is_partial: isPartial,
+                    redeem_loyalty_points: loyaltyRedeemedPoints
                 })
             });
             const data = await res.json();
@@ -1061,7 +1136,8 @@ const BillingPage = () => {
                     customer_name: customerName,
                     customer_phone: customerPhone,
                     captain_name: captainName,
-                    waiter_name: waiterName
+                    waiter_name: waiterName,
+                    redeem_loyalty_points: loyaltyRedeemedPoints
                 })
             });
             const data = await res.json();
@@ -1266,8 +1342,9 @@ const BillingPage = () => {
         setShowSplitForm(false);
         setShowLoyaltyForm(false);
         setShowMoreForm(false);
-        setShowComplementaryForm(false);
-        setCustomerPhone("");
+        setShowCouponForm(false);
+        setAppliedCoupon(null);
+        setCouponNumber('');        setCustomerPhone("");
         setCustomerAddress("");
         setCustomerGst("");
         setCaptainName("");
@@ -1275,6 +1352,8 @@ const BillingPage = () => {
         setDiscount(0);
         setDeliveryCharge(0);
         setContainerCharge(0);
+        setLoyaltyRedeemedPoints(0);
+        setRedeemPointsInput('');
         setBillItems([]);
         setStepProceeded(false);
         setPromoCode('');
@@ -1367,6 +1446,29 @@ const BillingPage = () => {
         setHeldBills(updated);
         localStorage.setItem('pos_held_bills', JSON.stringify(updated));
         setIsHoldPanelOpen(false);
+    };
+
+    const handleApplyCoupon = async () => {
+        if (!couponSearchName || !couponNumber) return alert('Please select a coupon and enter the coupon number.');
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/coupons/validate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ coupon_name: couponSearchName, coupon_number: couponNumber })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAppliedCoupon(data.data);
+                alert(`Coupon applied: ${data.data.coupon_name}`);
+            } else {
+                alert(data.message || 'Invalid Coupon');
+            }
+        } catch (err) {
+            console.error('Coupon validation error', err);
+            alert('Failed to validate coupon.');
+        }
     };
 
     const applyPromoCode = () => {
@@ -2034,9 +2136,6 @@ const BillingPage = () => {
                         <span className="col-qty">QTY</span>
                         {showRateColumn && <span className="col-rate">RATE</span>}
                         <span className="col-amt">AMT</span>
-                        <button className="collapse-toggle-btn" onClick={() => setIsOrderListCollapsed(!isOrderListCollapsed)}>
-                            {isOrderListCollapsed ? <ChevronDown size={14} /> : <ArrowLeft className="rotate-90" size={14} />}
-                        </button>
                     </div>
 
                     {/* Scrollable area: items list + bill footer together */}
@@ -2090,6 +2189,14 @@ const BillingPage = () => {
                                             <div className="extra-actions-layer">
                                                 <button className="row-action-btn" onClick={() => handleTransferItem(idx)} title="Transfer Item"><ArrowLeftRight size={14} /></button>
                                                 <button className="row-action-btn" onClick={() => handleReturnItem(idx)} title="Return Item"><Undo2 size={14} /></button>
+                                                <button
+                                                    className={`comp-toggle-sm ${item.is_complementary ? 'active' : ''}`}
+                                                    onClick={() => toggleComplementary(idx)}
+                                                    title="Complementary"
+                                                >
+                                                    <Gift size={14} />
+                                                </button>
+                                                <button className="remove-btn" onClick={() => removeFromBill(idx)} title="Remove Item"><Trash2 size={14} /></button>
                                             </div>
                                         )}
                                         <button
@@ -2099,14 +2206,6 @@ const BillingPage = () => {
                                         >
                                             <MoreHorizontal size={14} />
                                         </button>
-                                        <button
-                                            className={`comp-toggle-sm ${item.is_complementary ? 'active' : ''}`}
-                                            onClick={() => toggleComplementary(idx)}
-                                            title="Complementary"
-                                        >
-                                            <Gift size={14} />
-                                        </button>
-                                        <button className="remove-btn" onClick={() => removeFromBill(idx)} title="Remove Item"><Trash2 size={14} /></button>
                                     </div>
                                 </div>
                             ))}
@@ -2125,11 +2224,25 @@ const BillingPage = () => {
                                         <div className="summary-details-grid">
                                             <div className="sum-detail-row">
                                                 <label>Discount</label>
-                                                <div className="input-with-toggle">
-                                                    <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
-                                                    <button onClick={() => setDiscountType(discountType === 'PERCENT' ? 'FIXED' : 'PERCENT')}>
-                                                        {discountType === 'PERCENT' ? '%' : '₹'}
-                                                    </button>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
+                                                    <div className="input-with-toggle" style={{ flex: 1 }}>
+                                                        <span style={{ padding: '4px 8px', background: '#f1f5f9', fontSize: '11px', fontWeight: 'bold', color: '#64748b', borderRight: '1px solid #e2e8f0' }}>₹</span>
+                                                        <input 
+                                                            type="number" 
+                                                            value={discountType === 'FIXED' ? discount : (subTotal > 0 ? (discount * subTotal / 100).toFixed(2) : 0)} 
+                                                            onChange={(e) => { setDiscount(e.target.value); setDiscountType('FIXED'); }}
+                                                            style={{ border: 'none', width: '100%', padding: '4px 8px', outline: 'none', background: 'transparent' }} 
+                                                        />
+                                                    </div>
+                                                    <div className="input-with-toggle" style={{ flex: 1 }}>
+                                                        <span style={{ padding: '4px 8px', background: '#f1f5f9', fontSize: '11px', fontWeight: 'bold', color: '#64748b', borderRight: '1px solid #e2e8f0' }}>%</span>
+                                                        <input 
+                                                            type="number" 
+                                                            value={discountType === 'PERCENT' ? discount : (subTotal > 0 ? (discount / subTotal * 100).toFixed(2) : 0)} 
+                                                            onChange={(e) => { setDiscount(e.target.value); setDiscountType('PERCENT'); }} 
+                                                            style={{ border: 'none', width: '100%', padding: '4px 8px', outline: 'none', background: 'transparent' }}
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <span className="calc-val">- ₹{billCalculations.discountAmount.toFixed(2)}</span>
                                             </div>
@@ -2152,6 +2265,20 @@ const BillingPage = () => {
                                                 <span className="calc-val">+ ₹{taxAmount.toFixed(2)}</span>
                                             </div>
 
+                                            {loyaltyRedeemedPoints > 0 && (
+                                                <div className="sum-detail-row">
+                                                    <label>Loyalty ({loyaltyRedeemedPoints} Pts)</label>
+                                                    <div className="empty-input"></div>
+                                                    <span className="calc-val">- ₹{loyaltyDiscount.toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                            {appliedCoupon && (
+                                                <div className="sum-detail-row">
+                                                    <label>Coupon ({appliedCoupon.coupon_name})</label>
+                                                    <div className="empty-input"></div>
+                                                    <span className="calc-val">- ₹{couponDiscount.toFixed(2)}</span>
+                                                </div>
+                                            )}
                                             <div className="sum-detail-row">
                                                 <label>Round Off</label>
                                                 <div className="empty-input"></div>
@@ -2163,26 +2290,106 @@ const BillingPage = () => {
 
                                 {showLoyaltyForm && loyaltyEnabled && (
                                     <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
-                                        <div className="loyalty-promo-compact" style={{ padding: '15px' }}>
-                                            <div className="loyalty-input">
-                                                <Gift size={14} />
-                                                <input type="text" placeholder="Loyalty / Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} />
-                                                <button onClick={() => { applyPromoCode(); toggleExpandableForm('LOYALTY'); }}>Apply</button>
+                                        <div className="loyalty-form-internal" style={{ padding: '15px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                <div>
+                                                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', display: 'block' }}>CUSTOMER WALLET</span>
+                                                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#4f46e5' }}>{customerPoints} Points</span>
+                                                </div>
+                                                {loyaltySettings.target_points > 0 && (
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8', display: 'block' }}>TARGET FOR REDEEM</span>
+                                                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: customerPoints >= loyaltySettings.target_points ? '#166534' : '#94a3b8' }}>
+                                                            {loyaltySettings.target_points} PTS
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input 
+                                                    type="number" 
+                                                    placeholder="Points to redeem" 
+                                                    value={redeemPointsInput} 
+                                                    onChange={(e) => setRedeemPointsInput(e.target.value)}
+                                                    className="input-premium"
+                                                    style={{ flex: 1, height: '38px', fontSize: '12px' }}
+                                                    disabled={customerPoints < (loyaltySettings.target_points || 0)}
+                                                />
+                                                <button 
+                                                    onClick={() => {
+                                                        const pts = parseInt(redeemPointsInput);
+                                                        if (isNaN(pts) || pts <= 0) return alert('Enter valid points');
+                                                        if (pts > customerPoints) return alert('Insufficient points');
+                                                        if (pts < (loyaltySettings.target_points || 0)) return alert(`Minimum ${loyaltySettings.target_points} points required to redeem`);
+                                                        
+                                                        setLoyaltyRedeemedPoints(pts);
+                                                        setRedeemPointsInput('');
+                                                        alert(`${pts} Points applied for redemption!`);
+                                                    }}
+                                                    className="btn-premium-primary"
+                                                    style={{ height: '38px', padding: '0 15px', fontSize: '11px', fontWeight: '900' }}
+                                                    disabled={customerPoints < (loyaltySettings.target_points || 0)}
+                                                >
+                                                    REDEEM
+                                                </button>
+                                            </div>
+
+                                            {loyaltyRedeemedPoints > 0 && (
+                                                <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#eef2ff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #c7d2fe' }}>
+                                                    <span style={{ fontSize: '11px', color: '#3730a3', fontWeight: 'bold' }}>
+                                                        Redeeming: {loyaltyRedeemedPoints} Pts (Value: ₹{loyaltyRedeemedPoints * loyaltySettings.point_value})
+                                                    </span>
+                                                    <button onClick={() => setLoyaltyRedeemedPoints(0)} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer' }}>REMOVE</button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
 
-                                {showComplementaryForm && (
+                                {showCouponForm && (
                                     <div className="customer-expandable-form animate-in slide-in-from-bottom-2 duration-300">
-                                        <div className="comp-form-internal" style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Mark All Items as Complementary?</span>
-                                            <button
-                                                onClick={() => { toggleFullBillComplimentary(); toggleExpandableForm('COMPLEMENTARY'); }}
-                                                style={{ background: '#ea580c', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '900', fontSize: '0.75rem' }}
-                                            >
-                                                TOGGLE ALL
-                                            </button>
+                                        <div className="coupon-form-internal" style={{ padding: '15px' }}>
+                                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <select 
+                                                        value={couponSearchName} 
+                                                        onChange={(e) => setCouponSearchName(e.target.value)}
+                                                        className="input-premium"
+                                                        style={{ width: '100%', height: '38px', fontSize: '12px' }}
+                                                    >
+                                                        <option value="">Select Coupon</option>
+                                                        {availableCoupons.map(c => (
+                                                            <option key={c._id} value={c.coupon_name}>{c.coupon_name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <input 
+                                                        type="number" 
+                                                        placeholder="Coupon Number" 
+                                                        value={couponNumber} 
+                                                        onChange={(e) => setCouponNumber(e.target.value)}
+                                                        className="input-premium"
+                                                        style={{ width: '100%', height: '38px', fontSize: '12px' }}
+                                                    />
+                                                </div>
+                                                <button 
+                                                    onClick={handleApplyCoupon}
+                                                    style={{ background: '#4f46e5', color: 'white', border: 'none', padding: '0 16px', borderRadius: '8px', height: '38px', fontWeight: '900', fontSize: '0.75rem' }}
+                                                >
+                                                    APPLY
+                                                </button>
+                                            </div>
+                                            {appliedCoupon && (
+                                                <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                                                    <span style={{ fontSize: '11px', color: '#166534', fontWeight: 'bold' }}>
+                                                        Applied: {appliedCoupon.coupon_name} 
+                                                        ({appliedCoupon.type === 'DISCOUNT' ? (appliedCoupon.discount_type === 'PERCENT' ? `${appliedCoupon.discount_value}%` : `₹${appliedCoupon.discount_value}`) : 'BOGO'})
+                                                    </span>
+                                                    <button onClick={() => setAppliedCoupon(null)} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer' }}>REMOVE</button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -2208,8 +2415,8 @@ const BillingPage = () => {
                                             <Gift size={15} /> Loyalty
                                         </button>
                                     )}
-                                    <button className={`control-btn ${showComplementaryForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COMPLEMENTARY')}>
-                                        <Gift size={15} /> COMPLEMENTARY
+                                    <button className={`control-btn ${showCouponForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COUPON')}>
+                                        <Ticket size={15} /> COUPON
                                     </button>
                                     <button className={`control-btn ${showMoreForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('MORE')}>
                                         <MoreHorizontal size={15} /> More

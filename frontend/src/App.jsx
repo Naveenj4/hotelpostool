@@ -28,6 +28,7 @@ import AdvancedReports from './pages/dashboard/AdvancedReports.jsx';
 import LedgerStatement from './pages/dashboard/LedgerStatement.jsx';
 import VoucherManagement from './pages/dashboard/VoucherManagement.jsx';
 import ReceiptEntry from './pages/dashboard/ReceiptEntry.jsx';
+import PaymentEntry from './pages/dashboard/PaymentEntry.jsx';
 import LedgerCreationForm from './pages/dashboard/LedgerCreationForm.jsx';
 import CounterMaster from './pages/dashboard/CounterMaster.jsx';
 import BillingPage from './pages/dashboard/BillingPage.jsx';
@@ -173,6 +174,9 @@ function AppRoutes() {
                             } />
                             <Route path="receipts" element={
                                 <PermissionRoute pageKey="vouchers"><ReceiptEntry /></PermissionRoute>
+                            } />
+                            <Route path="payments" element={
+                                <PermissionRoute pageKey="vouchers"><PaymentEntry /></PermissionRoute>
                             } />
                             <Route path="counters" element={
                                 <PermissionRoute pageKey="counters"><CounterMaster /></PermissionRoute>

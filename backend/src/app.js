@@ -54,6 +54,8 @@ app.use('/api/reports', require('./routes/reportsRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/roles', require('./routes/roleRoutes'));
 app.use('/api/receipts', require('./routes/receiptRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/coupons', require('./routes/couponRoutes'));
 
 // Basic health check
 app.get('/', (req, res) => {

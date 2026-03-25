@@ -83,7 +83,11 @@ const restaurantSchema = new mongoose.Schema({
     }],
     zomato_api_key: { type: String, default: '' },
     swiggy_api_key: { type: String, default: '' },
-    order_integration_enabled: { type: Boolean, default: false }
+    order_integration_enabled: { type: Boolean, default: false },
+    loyalty_enabled: { type: Boolean, default: false },
+    loyalty_points_per_100: { type: Number, default: 1 },
+    loyalty_target_points: { type: Number, default: 0 },
+    loyalty_point_value: { type: Number, default: 1 }
 }, {
     timestamps: true
 });

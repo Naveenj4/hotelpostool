@@ -1,6 +1,8 @@
 const Bill = require('../models/Bill');
 const Counter = require('../models/Counter');
 const Product = require('../models/Product');
+const Restaurant = require('../models/Restaurant');
+const Customer = require('../models/Customer');
 
 // Helper to generate next Bill Number
 const generateBillNumber = async (companyId) => {
@@ -169,7 +171,13 @@ exports.removeItemFromBill = async (req, res) => {
 };
 exports.processPayment = async (req, res) => {
     try {
-        const { payment_modes, sub_total, tax_amount, discount_amount, grand_total, table_no, persons, customer_name, customer_phone, customer_address, captain_name, waiter_name, is_partial, delivery_date, delivery_time, delivery_address, type } = req.body;
+        const { 
+            payment_modes, sub_total, tax_amount, discount_amount, grand_total, 
+            table_no, persons, customer_name, customer_phone, customer_address, 
+            captain_name, waiter_name, is_partial, delivery_date, delivery_time, 
+            delivery_address, type,
+            redeem_loyalty_points
+        } = req.body;
         const bill = await Bill.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
 
         if (!bill) return res.status(404).json({ success: false, error: 'Bill not found' });
@@ -307,6 +315,57 @@ exports.processPayment = async (req, res) => {
             }
         } catch (accErr) {
             console.error("Accounting Integration Error:", accErr);
+        }
+
+        // LOYALTY INTEGRATION
+        try {
+            const Restaurant = require('../models/Restaurant'); // Assuming Restaurant model is available
+            const Customer = require('../models/Customer'); // Assuming Customer model is available
+
+            const restaurant = await Restaurant.findById(req.user.restaurant_id);
+            if (restaurant && restaurant.loyalty_enabled && bill.customer_phone) {
+                let customer = await Customer.findOne({ 
+                    company_id: req.user.restaurant_id, 
+                    phone: bill.customer_phone 
+                });
+
+                if (!customer && bill.customer_name) {
+                    customer = await Customer.create({
+                        company_id: req.user.restaurant_id,
+                        name: bill.customer_name,
+                        phone: bill.customer_phone,
+                        address: bill.customer_address || ''
+                    });
+                }
+
+                if (customer) {
+                    // Calculate earned points (e.g. 1 point per 100 spent)
+                    // Based on final grand total
+                    const rate = restaurant.loyalty_points_per_100 || 1;
+                    const earned = Math.floor((bill.grand_total / 100) * rate);
+                    
+                    if (earned > 0) {
+                        customer.loyalty_points += earned;
+                        bill.loyalty_earned_points = earned;
+                    }
+
+                    // Handle Redemption if requested
+                    if (redeem_loyalty_points && redeem_loyalty_points > 0) {
+                        // Validate target points
+                        if (customer.loyalty_points >= (restaurant.loyalty_target_points || 0)) {
+                            const actualToRedeem = Math.min(redeem_loyalty_points, customer.loyalty_points);
+                            customer.loyalty_points -= actualToRedeem;
+                            bill.loyalty_redeemed_points = actualToRedeem;
+                            bill.loyalty_redeemed_amount = actualToRedeem * (restaurant.loyalty_point_value || 1);
+                        }
+                    }
+
+                    await customer.save();
+                    await bill.save(); // Save loyalty info back to bill
+                }
+            }
+        } catch (loyaltyErr) {
+            console.error("Loyalty Integration Error:", loyaltyErr);
         }
 
         res.status(200).json({ success: true, data: bill });

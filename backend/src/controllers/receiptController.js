@@ -122,11 +122,12 @@ exports.createReceipt = async (req, res) => {
     session.startTransaction();
     try {
         const { 
-            party_id, receipt_no, date, amount, paymode_ledger_id, 
+            party_id, receipt_no, date, amount, received_amount, paymode_ledger_id, 
             narration, settled_bills // [{ bill_id, amount_settled }]
         } = req.body;
         
         const company_id = req.user.restaurant_id;
+        const amt = parseFloat(received_amount || amount) || 0;
 
         // 1. Verify Customer
         const customer = await Customer.findOne({ _id: party_id, company_id }).session(session);
@@ -165,7 +166,6 @@ exports.createReceipt = async (req, res) => {
         }
 
         // 4. Update Customer Balance
-        const amt = parseFloat(amount) || 0;
         customer.opening_balance = Math.max(0, (customer.opening_balance || 0) - amt);
         await customer.save({ session });
 

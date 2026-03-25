@@ -45,6 +45,14 @@ const voucherSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Customer'
     },
+    party_ledger_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Ledger'
+    },
+    reference_no: {
+        type: String,
+        trim: true
+    },
     settled_bills: [{
         bill_id: {
             type: mongoose.Schema.Types.ObjectId,

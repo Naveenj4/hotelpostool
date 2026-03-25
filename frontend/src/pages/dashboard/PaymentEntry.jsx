@@ -13,23 +13,23 @@ const fmt = (n) => parseFloat(n || 0).toLocaleString('en-IN', { minimumFractionD
 const fmtD = (d) => d ? new Date(d).toLocaleDateString('en-GB') : '';
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-export default function ReceiptEntry() {
+export default function PaymentEntry() {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [view, setView] = useState('LIST');
 
     /* ── LIST STATE ── */
-    const [receipts, setReceipts] = useState([]);
-    const [stats, setStats] = useState({ total_receivable: 0, total_paid: 0, unpaid: 0 });
+    const [payments, setPayments] = useState([]);
+    const [stats, setStats] = useState({ total_payable: 0, total_paid: 0, unpaid: 0 });
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [fromDate, setFromDate] = useState(todayStr());
     const [toDate, setToDate] = useState(todayStr());
 
     /* ── FORM STATE ── */
-    const [allLedgers, setAllLedgers] = useState([]);     // All ledgers from server
-    const [partyLedgers, setPartyLedgers] = useState([]);  // Sundry Debtors
-    const [paymodeLedgers, setPaymodeLedgers] = useState([]); // Cash/Bank
+    const [allLedgers, setAllLedgers] = useState([]);
+    const [partyLedgers, setPartyLedgers] = useState([]);
+    const [paymodeLedgers, setPaymodeLedgers] = useState([]);
     const [bills, setBills] = useState([]);
     const [saving, setSaving] = useState(false);
 
@@ -41,9 +41,9 @@ export default function ReceiptEntry() {
     const [formData, setFormData] = useState({
         party_ledger_id: '',
         party_name: '',
-        receipt_no: '',
+        payment_no: '',
         date: todayStr(),
-        received_amount: '',
+        paid_amount: '',
         paymode_ledger_id: '',
         reference_no: '',
         narration: ''
@@ -63,13 +63,13 @@ export default function ReceiptEntry() {
             if (search) q.append('search', search);
             if (fromDate) q.append('startDate', fromDate);
             if (toDate) q.append('endDate', toDate);
-            const [recRes, statRes] = await Promise.all([
-                fetch(`${API}/receipts?${q}`, { headers: { Authorization: `Bearer ${token}` } }),
-                fetch(`${API}/receipts/stats`, { headers: { Authorization: `Bearer ${token}` } })
+            const [payRes, statRes] = await Promise.all([
+                fetch(`${API}/payments?${q}`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API}/payments/stats`, { headers: { Authorization: `Bearer ${token}` } })
             ]);
-            const recData = await recRes.json();
+            const payData = await payRes.json();
             const statData = await statRes.json();
-            if (recData.success) setReceipts(recData.data);
+            if (payData.success) setPayments(payData.data);
             if (statData.success) setStats(statData.data);
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
@@ -87,8 +87,10 @@ export default function ReceiptEntry() {
             if (data.success) {
                 const all = data.data;
                 setAllLedgers(all);
-                const partyGroups = ['Sundry Debtors', 'Sundry Creditors'];
-                setPartyLedgers(all.filter(l => partyGroups.some(g => l.group?.toLowerCase().includes(g.toLowerCase()))));
+                // Suppliers/party = Sundry Creditors group
+                const supplierGroups = ['Sundry Creditors'];
+                setPartyLedgers(all.filter(l => supplierGroups.some(g => l.group?.toLowerCase().includes(g.toLowerCase()))));
+                // Paymode = Cash / Bank
                 const paymodeGroups = ['Bank Accounts', 'Cash-in-Hand', 'Cash in Hand', 'Bank OD A/c'];
                 setPaymodeLedgers(all.filter(l =>
                     paymodeGroups.some(g => l.group?.toLowerCase() === g.toLowerCase()) ||
@@ -104,8 +106,8 @@ export default function ReceiptEntry() {
     const resetForm = () => {
         setFormData({
             party_ledger_id: '', party_name: '',
-            receipt_no: `REC-${Date.now().toString().slice(-5)}`,
-            date: todayStr(), received_amount: '',
+            payment_no: `PAY-${Date.now().toString().slice(-5)}`,
+            date: todayStr(), paid_amount: '',
             paymode_ledger_id: '', reference_no: '', narration: ''
         });
         setPartySearch('');
@@ -113,6 +115,7 @@ export default function ReceiptEntry() {
     };
 
     /* ─────────────── PARTY SEARCH ─────────────── */
+    // All ledgers can be party (supplier type)
     const filteredParties = partySearch.length > 0
         ? allLedgers.filter(l => l.name.toLowerCase().startsWith(partySearch.toLowerCase())).slice(0, 10)
         : partyLedgers.slice(0, 10);
@@ -123,44 +126,26 @@ export default function ReceiptEntry() {
         setShowPartyDropdown(false);
     };
 
-    // Close dropdown on outside click
     useEffect(() => {
         const handler = (e) => { if (partyRef.current && !partyRef.current.contains(e.target)) setShowPartyDropdown(false); };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    /* ─────────────── UNPAID BILLS ─────────────── */
+    /* ─────────────── UNPAID PURCHASE BILLS ─────────────── */
     useEffect(() => {
         if (!formData.party_ledger_id || view !== 'FORM') { setBills([]); return; }
-        // For receipts, try fetching unpaid bills by customer matching ledger name
-        const partyLedger = allLedgers.find(l => l._id === formData.party_ledger_id);
-        if (!partyLedger) return;
         const token = getToken();
-        // We use customer-based unpaid bills; find customer by name matching ledger name
-        fetch(`${API}/customers?search=${encodeURIComponent(partyLedger.name)}`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API}/payments/party/${formData.party_ledger_id}/unpaid`, { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.json())
             .then(d => {
-                if (d.success && d.data.length > 0) {
-                    const cust = d.data.find(c => c.name.toLowerCase() === partyLedger.name.toLowerCase());
-                    if (cust) {
-                        return fetch(`${API}/receipts/party/${cust._id}/unpaid`, { headers: { Authorization: `Bearer ${token}` } });
-                    }
-                }
-                return null;
-            })
-            .then(r => r ? r.json() : null)
-            .then(d => {
-                if (d?.success) {
-                    setBills(d.data.map(b => ({ ...b, amount_settled: '', is_selected: false })));
-                } else {
-                    setBills([]);
-                }
+                if (d?.success) setBills(d.data.map(b => ({ ...b, amount_settled: '', is_selected: false })));
+                else setBills([]);
             })
             .catch(() => setBills([]));
-    }, [formData.party_ledger_id, view, allLedgers]);
+    }, [formData.party_ledger_id, view]);
 
-    /* ─────────────── PAYMODE SELECTION - show reference for bank ─────────────── */
+    /* ─────────────── PAYMODE ─────────────── */
     const selectedPaymode = paymodeLedgers.find(l => l._id === formData.paymode_ledger_id);
     const isBank = selectedPaymode && (
         selectedPaymode.group?.toLowerCase().includes('bank') ||
@@ -168,8 +153,8 @@ export default function ReceiptEntry() {
     );
 
     /* ─────────────── BILL LOGIC ─────────────── */
-    const handleReceivedAmountChange = (val) => {
-        setFormData(fd => ({ ...fd, received_amount: val }));
+    const handlePaidAmountChange = (val) => {
+        setFormData(fd => ({ ...fd, paid_amount: val }));
         let remaining = parseFloat(val) || 0;
         const newBills = bills.map(b => {
             if (remaining > 0) {
@@ -187,7 +172,7 @@ export default function ReceiptEntry() {
         newBills[idx].amount_settled = val;
         newBills[idx].is_selected = parseFloat(val) > 0;
         const sum = newBills.reduce((acc, b) => acc + (parseFloat(b.amount_settled) || 0), 0);
-        setFormData(fd => ({ ...fd, received_amount: sum > 0 ? (Math.round(sum * 100) / 100).toString() : '' }));
+        setFormData(fd => ({ ...fd, paid_amount: sum > 0 ? (Math.round(sum * 100) / 100).toString() : '' }));
         setBills(newBills);
     };
 
@@ -196,7 +181,7 @@ export default function ReceiptEntry() {
         newBills[idx].is_selected = checked;
         newBills[idx].amount_settled = checked ? newBills[idx].due_amount : '';
         const sum = newBills.reduce((acc, b) => acc + (parseFloat(b.amount_settled) || 0), 0);
-        setFormData(fd => ({ ...fd, received_amount: sum > 0 ? (Math.round(sum * 100) / 100).toString() : '' }));
+        setFormData(fd => ({ ...fd, paid_amount: sum > 0 ? (Math.round(sum * 100) / 100).toString() : '' }));
         setBills(newBills);
     };
 
@@ -204,60 +189,55 @@ export default function ReceiptEntry() {
         const checked = e.target.checked;
         const newBills = bills.map(b => ({ ...b, is_selected: checked, amount_settled: checked ? b.due_amount : '' }));
         const sum = newBills.reduce((acc, b) => acc + (parseFloat(b.amount_settled) || 0), 0);
-        setFormData(fd => ({ ...fd, received_amount: sum > 0 ? (Math.round(sum * 100) / 100).toString() : '' }));
+        setFormData(fd => ({ ...fd, paid_amount: sum > 0 ? (Math.round(sum * 100) / 100).toString() : '' }));
         setBills(newBills);
     };
 
     /* ─────────────── SAVE ─────────────── */
     const handleSave = async () => {
-        if (!formData.party_ledger_id || !formData.received_amount || !formData.paymode_ledger_id) {
-            return alert('Please fill Party, Received Amount, and Paymode.');
+        if (!formData.party_ledger_id || !formData.paid_amount || !formData.paymode_ledger_id) {
+            return alert('Please fill Party, Paid Amount, and Paymode.');
         }
         setSaving(true);
         try {
             const token = getToken();
-            // Find customer_id from party name to match old API
-            const partyLedger = allLedgers.find(l => l._id === formData.party_ledger_id);
-            const custRes = await fetch(`${API}/customers?search=${encodeURIComponent(partyLedger?.name || '')}`, { headers: { Authorization: `Bearer ${token}` } });
-            const custData = await custRes.json();
-            const cust = custData.success ? custData.data.find(c => c.name.toLowerCase() === (partyLedger?.name || '').toLowerCase()) : null;
-
             const settled = bills.filter(b => parseFloat(b.amount_settled) > 0)
                 .map(b => ({ bill_id: b._id, amount_settled: parseFloat(b.amount_settled) }));
 
             const payload = {
-                party_id: cust?._id || '',
-                receipt_no: formData.receipt_no,
+                party_ledger_id: formData.party_ledger_id,
+                payment_no: formData.payment_no,
                 date: formData.date,
-                received_amount: formData.received_amount,
+                paid_amount: formData.paid_amount,
                 paymode_ledger_id: formData.paymode_ledger_id,
+                reference_no: formData.reference_no,
                 narration: formData.narration,
                 settled_bills: settled
             };
 
-            const res = await fetch(`${API}/receipts`, {
+            const res = await fetch(`${API}/payments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            if (data.success) { alert('Receipt saved successfully.'); setView('LIST'); }
-            else alert(data.error || 'Failed to save receipt');
-        } catch (err) { alert('Failed to save receipt'); }
+            if (data.success) { alert('Payment saved successfully.'); setView('LIST'); }
+            else alert(data.error || 'Failed to save payment');
+        } catch { alert('Failed to save payment'); }
         finally { setSaving(false); }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Delete this receipt and revert balances?')) return;
+        if (!window.confirm('Delete this payment and revert balances?')) return;
         try {
-            const res = await fetch(`${API}/receipts/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
+            const res = await fetch(`${API}/payments/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
             const data = await res.json();
             if (data.success) fetchList();
             else alert(data.error);
         } catch { alert('Error deleting.'); }
     };
 
-    const totalAmountList = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+    const totalAmountList = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const selectedLedgerBalance = formData.party_ledger_id
         ? (allLedgers.find(l => l._id === formData.party_ledger_id)?.opening_balance || 0)
         : 0;
@@ -271,10 +251,10 @@ export default function ReceiptEntry() {
             <main className="dashboard-main min-h-screen">
                 <Header
                     toggleSidebar={toggleSidebar}
-                    title="Receipt Entry"
+                    title="Payment Entry"
                     actions={view === 'LIST' ? (
-                        <button className="re-header-create-btn" onClick={() => setView('FORM')}>
-                            <Plus size={16} /> Create Receipt
+                        <button className="re-header-create-btn re-payment-btn" onClick={() => setView('FORM')}>
+                            <Plus size={16} /> Create Payment
                         </button>
                     ) : (
                         <button className="re-header-back-btn" onClick={() => setView('LIST')}>
@@ -287,7 +267,7 @@ export default function ReceiptEntry() {
                 {view === 'LIST' && (
                     <div className="re-wrapper fade-in">
                         <div className="re-page-header">
-                            <div className="re-page-title">Receipt Entry</div>
+                            <div className="re-page-title re-payment-title">Payment Entry</div>
                             <div className="re-topbar-actions">
                                 <button className="re-icon-btn" title="Print" onClick={() => window.print()}><Printer size={16} /></button>
                                 <button className="re-icon-btn" title="Download"><Download size={16} /></button>
@@ -296,12 +276,12 @@ export default function ReceiptEntry() {
 
                         {/* STATS */}
                         <div className="re-stats-row">
-                            <div className="re-stat-card receivable">
-                                <div className="re-stat-label">Total Receivable</div>
-                                <div className="re-stat-value">₹{fmt(stats.total_receivable)}</div>
+                            <div className="re-stat-card payable">
+                                <div className="re-stat-label">Total Payable</div>
+                                <div className="re-stat-value">₹{fmt(stats.total_payable)}</div>
                             </div>
                             <div className="re-stat-card paid">
-                                <div className="re-stat-label">Total Received</div>
+                                <div className="re-stat-label">Total Paid</div>
                                 <div className="re-stat-value">₹{fmt(stats.total_paid)}</div>
                             </div>
                             <div className="re-stat-card unpaid">
@@ -316,7 +296,7 @@ export default function ReceiptEntry() {
                                 <Search size={15} className="re-search-icon" />
                                 <input
                                     className="re-search-input"
-                                    placeholder="Search by receipt no or party..."
+                                    placeholder="Search by payment no or party..."
                                     value={search} onChange={e => setSearch(e.target.value)}
                                 />
                             </div>
@@ -326,8 +306,8 @@ export default function ReceiptEntry() {
                                 <label>To</label>
                                 <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
                             </div>
-                            <button className="re-create-btn-list" onClick={() => setView('FORM')}>
-                                <Plus size={15} /> Create Receipt
+                            <button className="re-create-btn-list re-payment-create-btn" onClick={() => setView('FORM')}>
+                                <Plus size={15} /> Create Payment
                             </button>
                         </div>
 
@@ -337,7 +317,7 @@ export default function ReceiptEntry() {
                                 <thead>
                                     <tr>
                                         <th>S.No</th>
-                                        <th>Receipt No</th>
+                                        <th>Payment No</th>
                                         <th>Date</th>
                                         <th>Party Name</th>
                                         <th>Narration</th>
@@ -347,17 +327,17 @@ export default function ReceiptEntry() {
                                 </thead>
                                 <tbody>
                                     {loading && <tr><td colSpan={7} className="re-empty"><Loader2 className="spin" size={20} /></td></tr>}
-                                    {!loading && receipts.length === 0 && <tr><td colSpan={7} className="re-empty">No receipts found for today</td></tr>}
-                                    {!loading && receipts.map((r, i) => (
-                                        <tr key={r._id} className="re-tr">
+                                    {!loading && payments.length === 0 && <tr><td colSpan={7} className="re-empty">No payments found for today</td></tr>}
+                                    {!loading && payments.map((p, i) => (
+                                        <tr key={p._id} className="re-tr">
                                             <td>{i + 1}</td>
-                                            <td className="re-voucher-no">{r.voucher_number}</td>
-                                            <td>{fmtD(r.date)}</td>
-                                            <td className="re-party-name">{r.party_id?.name || r.party_ledger_id?.name || '—'}</td>
-                                            <td className="re-narration-cell">{r.narration || '—'}</td>
-                                            <td className="text-right re-amount-cell">₹{fmt(r.amount)}</td>
+                                            <td className="re-voucher-no">{p.voucher_number}</td>
+                                            <td>{fmtD(p.date)}</td>
+                                            <td className="re-party-name">{p.party_ledger_id?.name || '—'}</td>
+                                            <td className="re-narration-cell">{p.narration || '—'}</td>
+                                            <td className="text-right re-pay-amount-cell">₹{fmt(p.amount)}</td>
                                             <td>
-                                                <button onClick={() => handleDelete(r._id)} className="re-del-btn" title="Delete">
+                                                <button onClick={() => handleDelete(p._id)} className="re-del-btn" title="Delete">
                                                     <Trash2 size={14} />
                                                 </button>
                                             </td>
@@ -369,8 +349,8 @@ export default function ReceiptEntry() {
 
                         {/* FOOTER */}
                         <div className="re-list-footer">
-                            <span>Total Vouchers: <strong>{receipts.length}</strong></span>
-                            <span>Total Amount: <strong className="re-total-amount">₹{fmt(totalAmountList)}</strong></span>
+                            <span>Total Vouchers: <strong>{payments.length}</strong></span>
+                            <span>Total Amount: <strong className="re-pay-total">₹{fmt(totalAmountList)}</strong></span>
                         </div>
                     </div>
                 )}
@@ -380,12 +360,12 @@ export default function ReceiptEntry() {
                     <div className="re-wrapper re-form-wrapper fade-in">
                         <div className="re-form-topbar">
                             <button className="re-back-link" onClick={() => setView('LIST')}>
-                                <ChevronLeft size={18} /> Receipt Entry
+                                <ChevronLeft size={18} /> Payment Entry
                             </button>
-                            <div className="re-form-title">Create Receipt</div>
+                            <div className="re-form-title re-payment-title">Create Payment</div>
                         </div>
 
-                        {/* FORM HEADER FIELDS */}
+                        {/* FORM FIELDS */}
                         <div className="re-form-grid">
                             {/* PARTY NAME - autocomplete */}
                             <div className="re-field-group re-party-field" ref={partyRef}>
@@ -393,7 +373,7 @@ export default function ReceiptEntry() {
                                 <div className="re-autocomplete-wrap">
                                     <input
                                         className="re-input"
-                                        placeholder="Type to search party..."
+                                        placeholder="Type to search supplier..."
                                         value={partySearch}
                                         onChange={e => {
                                             setPartySearch(e.target.value);
@@ -422,10 +402,10 @@ export default function ReceiptEntry() {
                                 <input className="re-input re-readonly" readOnly value={formData.party_ledger_id ? `₹${fmt(selectedLedgerBalance)}` : '—'} />
                             </div>
 
-                            {/* RECEIPT NO */}
+                            {/* PAYMENT NO */}
                             <div className="re-field-group">
-                                <label className="re-field-label">Receipt No</label>
-                                <input className="re-input" value={formData.receipt_no} onChange={e => setFormData(fd => ({ ...fd, receipt_no: e.target.value }))} />
+                                <label className="re-field-label">Payment No</label>
+                                <input className="re-input" value={formData.payment_no} onChange={e => setFormData(fd => ({ ...fd, payment_no: e.target.value }))} />
                             </div>
 
                             {/* DATE */}
@@ -434,14 +414,14 @@ export default function ReceiptEntry() {
                                 <input type="date" className="re-input" value={formData.date} onChange={e => setFormData(fd => ({ ...fd, date: e.target.value }))} />
                             </div>
 
-                            {/* RECEIVED AMOUNT */}
+                            {/* PAID AMOUNT */}
                             <div className="re-field-group">
-                                <label className="re-field-label">Received Amount *</label>
+                                <label className="re-field-label">Paid Amount *</label>
                                 <input
-                                    type="number" className="re-input re-amt-input"
+                                    type="number" className="re-input re-pay-amt-input"
                                     placeholder="0.00"
-                                    value={formData.received_amount}
-                                    onChange={e => handleReceivedAmountChange(e.target.value)}
+                                    value={formData.paid_amount}
+                                    onChange={e => handlePaidAmountChange(e.target.value)}
                                 />
                             </div>
 
@@ -484,12 +464,12 @@ export default function ReceiptEntry() {
                             </div>
                         </div>
 
-                        {/* PENDING BILLS */}
+                        {/* PENDING PURCHASE BILLS */}
                         {formData.party_ledger_id && bills.length > 0 && (
-                            <div className="re-bills-section">
+                            <div className="re-bills-section re-payment-bills">
                                 <div className="re-bills-header">
                                     <CheckSquare size={16} />
-                                    <span>Pending Bills — {bills.length} bill(s)</span>
+                                    <span>Pending Purchase Bills — {bills.length} bill(s)</span>
                                     <AlertCircle size={14} className="re-bills-hint-icon" />
                                     <span className="re-bills-hint">Select bills to settle or enter amount above to auto-distribute</span>
                                 </div>
@@ -507,7 +487,7 @@ export default function ReceiptEntry() {
                                                 <th>Inv Date</th>
                                                 <th>Due Date</th>
                                                 <th className="text-right">Invoice Amt</th>
-                                                <th className="text-right">Received</th>
+                                                <th className="text-right">Paid</th>
                                                 <th className="text-right">Pending</th>
                                                 <th className="text-right" style={{ width: 160 }}>Settle Amount</th>
                                             </tr>
@@ -526,11 +506,11 @@ export default function ReceiptEntry() {
                                                     <td>{fmtD(b.due_date) || '—'}</td>
                                                     <td className="text-right">₹{fmt(b.grand_total)}</td>
                                                     <td className="text-right re-paid-cell">₹{fmt(b.total_paid)}</td>
-                                                    <td className="text-right re-pending-cell">₹{fmt(b.due_amount)}</td>
+                                                    <td className="text-right re-pay-pending-cell">₹{fmt(b.due_amount)}</td>
                                                     <td className="text-right">
                                                         <input
                                                             type="number"
-                                                            className="re-settle-input"
+                                                            className="re-settle-input re-pay-settle-input"
                                                             placeholder="0.00"
                                                             value={b.amount_settled}
                                                             max={b.due_amount}
@@ -544,7 +524,7 @@ export default function ReceiptEntry() {
                                 </div>
                                 <div className="re-bills-summary">
                                     <span>Selected: <strong>{bills.filter(b => b.is_selected).length}</strong> bills</span>
-                                    <span>Total Settling: <strong className="re-total-amount">₹{fmt(bills.reduce((a, b) => a + (parseFloat(b.amount_settled) || 0), 0))}</strong></span>
+                                    <span>Total Settling: <strong className="re-pay-total">₹{fmt(bills.reduce((a, b) => a + (parseFloat(b.amount_settled) || 0), 0))}</strong></span>
                                 </div>
                             </div>
                         )}
@@ -555,8 +535,8 @@ export default function ReceiptEntry() {
                             <button className="re-btn-print" onClick={() => { }} disabled={saving}>
                                 <Printer size={15} /> Save & Print
                             </button>
-                            <button className="re-btn-save" onClick={handleSave} disabled={saving}>
-                                {saving ? <Loader2 className="spin" size={16} /> : 'Save Receipt'}
+                            <button className="re-btn-save re-btn-payment" onClick={handleSave} disabled={saving}>
+                                {saving ? <Loader2 className="spin" size={16} /> : 'Save Payment'}
                             </button>
                         </div>
                     </div>

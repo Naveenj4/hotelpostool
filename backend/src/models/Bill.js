@@ -169,7 +169,10 @@ const billSchema = new mongoose.Schema({
         kot_number: String,
         created_at: { type: Date, default: Date.now },
         items: [mongoose.Schema.Types.Mixed]
-    }]
+    }],
+    loyalty_earned_points: { type: Number, default: 0 },
+    loyalty_redeemed_points: { type: Number, default: 0 },
+    loyalty_redeemed_amount: { type: Number, default: 0 }
 }, {
     timestamps: true
 });

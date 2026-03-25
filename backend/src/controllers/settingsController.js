@@ -50,6 +50,12 @@ exports.getUserSettings = async (req, res) => {
                     footer: restaurant.bill_footer || '',
                     gstNo: restaurant.gst_no || '',
                     autoPrint: restaurant.auto_print || false
+                },
+                loyalty: {
+                    enabled: restaurant.loyalty_enabled || false,
+                    points_per_100: restaurant.loyalty_points_per_100 || 1,
+                    target_points: restaurant.loyalty_target_points || 0,
+                    point_value: restaurant.loyalty_point_value || 1
                 }
             }
         });
@@ -311,6 +317,46 @@ exports.updateBillFormat = async (req, res) => {
         });
     } catch (error) {
         console.error('Update bill format error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Update loyalty settings
+// @route   PUT /api/settings/loyalty
+// @access  Private (Admin, Owner)
+exports.updateLoyaltySettings = async (req, res) => {
+    try {
+        const { enabled, points_per_100, target_points, point_value } = req.body;
+
+        const restaurant = await Restaurant.findByIdAndUpdate(
+            req.user.restaurant_id,
+            {
+                loyalty_enabled: enabled,
+                loyalty_points_per_100: points_per_100,
+                loyalty_target_points: target_points,
+                loyalty_point_value: point_value
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: 'Restaurant not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Loyalty settings updated successfully',
+            data: {
+                loyalty: {
+                    enabled: restaurant.loyalty_enabled,
+                    points_per_100: restaurant.loyalty_points_per_100,
+                    target_points: restaurant.loyalty_target_points,
+                    point_value: restaurant.loyalty_point_value
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Update loyalty settings error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };

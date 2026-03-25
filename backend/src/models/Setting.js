@@ -31,6 +31,12 @@ const settingSchema = new mongoose.Schema({
         zomato_api_key: String,
         swiggy_api_key: String,
         enabled: { type: Boolean, default: false }
+    },
+    loyalty: {
+        enabled: { type: Boolean, default: false },
+        points_per_100_spent: { type: Number, default: 1 },
+        target_points: { type: Number, default: 0 },
+        point_value_rupees: { type: Number, default: 1 }
     }
 }, {
     timestamps: true

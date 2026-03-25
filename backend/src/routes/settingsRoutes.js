@@ -7,7 +7,8 @@ const {
     updatePrinterSettings,
     updateBillFormat,
     updateBillingLayout,
-    updateAdvancedSettings
+    updateAdvancedSettings,
+    updateLoyaltySettings
 } = require('../controllers/settingsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -32,6 +33,9 @@ router.put('/printer', updatePrinterSettings);
 
 // Update bill format
 router.put('/bill-format', updateBillFormat);
+
+// Update loyalty settings
+router.put('/loyalty', updateLoyaltySettings);
 
 // Update billing layout only (Appearance tab)
 router.put('/layout', updateBillingLayout);
