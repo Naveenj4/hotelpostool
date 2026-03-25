@@ -19,6 +19,7 @@ import StaffMaster from './pages/dashboard/StaffMaster.jsx';
 import SupplierMaster from './pages/dashboard/SupplierMaster.jsx';
 import CustomerMaster from './pages/dashboard/CustomerMaster.jsx';
 import LedgerMaster from './pages/dashboard/LedgerMaster.jsx';
+import GroupMaster from './pages/dashboard/GroupMaster.jsx';
 import PurchaseEntry from './pages/dashboard/PurchaseEntry.jsx';
 import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement.jsx';
 import PurchaseInvoices from './pages/dashboard/PurchaseInvoices.jsx';
@@ -148,6 +149,9 @@ function AppRoutes() {
                             } />
                             <Route path="ledgers/create" element={
                                 <PermissionRoute pageKey="ledgers"><LedgerCreationForm /></PermissionRoute>
+                            } />
+                            <Route path="group-master" element={
+                                <PermissionRoute pageKey="ledgers"><GroupMaster /></PermissionRoute>
                             } />
                             <Route path="purchase" element={
                                 <PermissionRoute pageKey="purchase"><PurchaseEntryForm /></PermissionRoute>

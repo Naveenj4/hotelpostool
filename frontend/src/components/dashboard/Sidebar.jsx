@@ -68,6 +68,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 { label: "Captain/Waiter", route: "/dashboard/self-service/staff", icon: <Users size={18} /> },
                 { label: "Party/Ledger", route: "/dashboard/self-service/ledgers/create", icon: <User size={18} /> },
                 { label: "Ledger Master", route: "/dashboard/self-service/ledgers", icon: <Book size={18} /> },
+                { label: "Group Master", route: "/dashboard/self-service/group-master", icon: <Layers size={18} /> },
                 { label: "Stock Master", route: "/dashboard/self-service/stock", icon: <Package size={18} /> }
             ]
         },

@@ -89,7 +89,13 @@ export default function ReceiptEntry() {
                 if (custData.success) setCustomers(custData.data);
                 // Filter ledgers internally if API didn't perfectly filter
                 if (ledgData.success) {
-                    const paymodes = ledgData.data.filter(l => l.group === 'Bank_Accounts' || l.group === 'Cash_in_Hand' || l.name?.toLowerCase().includes('cash') || l.name?.toLowerCase().includes('bank'));
+                    const paymodes = ledgData.data.filter(l => 
+                        l.group === 'Bank Accounts' || 
+                        l.group === 'Cash-in-Hand' ||
+                        l.group === 'Bank OD A/c' ||
+                        l.name?.toLowerCase().includes('cash') || 
+                        l.name?.toLowerCase().includes('bank')
+                    );
                     setLedgers(paymodes);
                 }
             };

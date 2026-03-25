@@ -136,11 +136,11 @@ exports.getDashboardSummary = async (req, res) => {
             dailySalesPromise, dailyReceiptsPromise, dailyPaymentsPromise
         ]);
 
-        const sumCash = ledgers.filter(l => l.group === 'CASH_IN_HAND').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
-        const sumBank = ledgers.filter(l => l.group === 'BANK_ACCOUNTS').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+        const sumCash = ledgers.filter(l => l.group === 'Cash-in-Hand').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+        const sumBank = ledgers.filter(l => l.group === 'Bank Accounts').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
         
-        const receivableAmount = ledgers.filter(l => l.group === 'SUNDRY_DEBTORS').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
-        const payableAmount = ledgers.filter(l => l.group === 'SUNDRY_CREDITORS').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+        const receivableAmount = ledgers.filter(l => l.group === 'Sundry Debtors').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
+        const payableAmount = ledgers.filter(l => l.group === 'Sundry Creditors').reduce((acc, l) => acc + (l.opening_balance || 0), 0);
 
         // Normalize graph dates
         const graphLabelsMap = new Set();

@@ -42,6 +42,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/captains', require('./routes/captainRoutes'));
 app.use('/api/waiters', require('./routes/waiterRoutes'));
 app.use('/api/ledgers', require('./routes/ledgerRoutes'));
+app.use('/api/ledger-groups', require('./routes/ledgerGroupRoutes'));
 app.use('/api/kitchens', require('./routes/kitchenRoutes'));
 app.use('/api/printers', require('./routes/printerRoutes'));
 app.use('/api/purchases', require('./routes/purchaseRoutes'));

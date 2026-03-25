@@ -49,7 +49,7 @@ exports.createCustomer = async (req, res) => {
         await Ledger.create([{
             company_id,
             name: `${name} (Customer)`,
-            group: 'SUNDRY_DEBTORS',
+            group: 'Sundry Debtors',
             opening_balance: opening_balance || 0,
             balance_type: (opening_balance || 0) >= 0 ? 'DR' : 'CR',
             description: `Auto-generated ledger for customer ${name}`

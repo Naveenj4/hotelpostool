@@ -21,6 +21,7 @@ const VoucherManagement = () => {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [vouchers, setVouchers] = useState([]);
     const [ledgers, setLedgers] = useState([]);
+    const [ledgerGroups, setLedgerGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showDrawer, setShowDrawer] = useState(false);
@@ -47,14 +48,17 @@ const VoucherManagement = () => {
             const savedUser = localStorage.getItem('user');
             if (!savedUser) return;
             const { token } = JSON.parse(savedUser);
-            const [vouchRes, ledgRes] = await Promise.all([
+            const [vouchRes, ledgRes, grpRes] = await Promise.all([
                 fetch(`${import.meta.env.VITE_API_URL}/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`${import.meta.env.VITE_API_URL}/ledgers`, { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${import.meta.env.VITE_API_URL}/ledgers`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${import.meta.env.VITE_API_URL}/ledger-groups`, { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
             const vouchData = await vouchRes.json();
             const ledgData = await ledgRes.json();
+            const grpData = await grpRes.json();
             if (vouchData.success) setVouchers(vouchData.data);
             if (ledgData.success) setLedgers(ledgData.data);
+            if (grpData.success) setLedgerGroups(grpData.data);
         } catch (err) { console.error("Failed to fetch data", err); }
         finally { setLoading(false); }
     };
@@ -298,7 +302,15 @@ const VoucherManagement = () => {
                                             <div className="relative">
                                                 <select required className="input-premium-modern appearance-none cursor-pointer w-full !text-indigo-600 border-indigo-100 bg-indigo-50/10" value={formData.debit_ledger} onChange={e => setFormData({ ...formData, debit_ledger: e.target.value })}>
                                                     <option value="">Select receiver...</option>
-                                                    {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} — {l.group?.replace(/_/g, ' ')}</option>)}
+                                                    {(() => {
+                                                        const grouped = {};
+                                                        ledgers.forEach(l => { if(!grouped[l.group]) grouped[l.group]=[]; grouped[l.group].push(l); });
+                                                        return Object.entries(grouped).map(([grp, items]) => (
+                                                            <optgroup key={grp} label={grp}>
+                                                                {items.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                                            </optgroup>
+                                                        ));
+                                                    })()}
                                                 </select>
                                                 <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-200 pointer-events-none" />
                                             </div>
@@ -309,7 +321,15 @@ const VoucherManagement = () => {
                                             <div className="relative">
                                                 <select required className="input-premium-modern appearance-none cursor-pointer w-full !text-rose-600 border-rose-100 bg-rose-50/10" value={formData.credit_ledger} onChange={e => setFormData({ ...formData, credit_ledger: e.target.value })}>
                                                     <option value="">Select originator...</option>
-                                                    {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} — {l.group?.replace(/_/g, ' ')}</option>)}
+                                                    {(() => {
+                                                        const grouped = {};
+                                                        ledgers.forEach(l => { if(!grouped[l.group]) grouped[l.group]=[]; grouped[l.group].push(l); });
+                                                        return Object.entries(grouped).map(([grp, items]) => (
+                                                            <optgroup key={grp} label={grp}>
+                                                                 {items.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                                            </optgroup>
+                                                        ));
+                                                    })()}
                                                 </select>
                                                 <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-200 pointer-events-none" />
                                             </div>

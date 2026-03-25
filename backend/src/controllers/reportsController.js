@@ -344,7 +344,7 @@ exports.getSupplierOutstanding = async (req, res) => {
     try {
         const ledgers = await Ledger.find({ 
             company_id: req.user.restaurant_id, 
-            group: 'SUNDRY_CREDITORS' 
+            group: 'Sundry Creditors' 
         });
         const outstanding = ledgers.map(l => ({
             name: l.name,
@@ -365,7 +365,7 @@ exports.getCustomerOutstanding = async (req, res) => {
     try {
         const ledgers = await Ledger.find({ 
             company_id: req.user.restaurant_id, 
-            group: 'SUNDRY_DEBTORS' 
+            group: 'Sundry Debtors' 
         });
         const outstanding = ledgers.map(l => ({
             name: l.name,
@@ -574,7 +574,7 @@ exports.getAgingReport = async (req, res) => {
             // Map supplier names to ledger IDs
             const ledgerMapping = await Ledger.find({ 
                 company_id: req.user.restaurant_id, 
-                group: 'SUNDRY_CREDITORS' 
+                group: 'Sundry Creditors' 
             }).select('name _id');
             const ledgerMap = {};
             ledgerMapping.forEach(l => {
@@ -611,7 +611,7 @@ exports.getAgingReport = async (req, res) => {
             // Map customer names to ledger IDs
             const ledgerMapping = await Ledger.find({ 
                 company_id: req.user.restaurant_id, 
-                group: 'SUNDRY_DEBTORS' 
+                group: 'Sundry Debtors' 
             }).select('name _id');
             const ledgerMap = {};
             ledgerMapping.forEach(l => {
@@ -654,8 +654,8 @@ exports.getAccountBalances = async (req, res) => {
         const { type } = req.query; // 'CASH' or 'BANK'
 
         const filter = { company_id: req.user.restaurant_id };
-        if (type === 'CASH') filter.group = 'CASH_IN_HAND';
-        else if (type === 'BANK') filter.group = 'BANK_ACCOUNTS';
+        if (type === 'CASH') filter.group = 'Cash-in-Hand';
+        else if (type === 'BANK') filter.group = 'Bank Accounts';
         else return res.status(400).json({ success: false, error: 'Valid type (CASH or BANK) required' });
 
         const ledgers = await Ledger.find(filter);
@@ -689,7 +689,7 @@ exports.getProfitLoss = async (req, res) => {
         const [bills, purchases, expenseVouchers] = await Promise.all([
             Bill.find({ company_id, status: 'PAID', createdAt: { $gte: start, $lte: end } }),
             Purchase.find({ company_id, purchase_date: { $gte: start, $lte: end } }),
-            require('../models/Voucher').find({ company_id, voucher_type: 'PAYMENT', date: { $gte: start, $lte: end } }).populate({ path: 'debit_ledger', match: { group: 'EXPENSE' } })
+            require('../models/Voucher').find({ company_id, voucher_type: 'PAYMENT', date: { $gte: start, $lte: end } }).populate({ path: 'debit_ledger', match: { group: { $in: ['Direct Expenses', 'Indirect Expenses'] } } })
         ]);
 
         const totalSales = bills.reduce((sum, b) => sum + b.grand_total, 0);

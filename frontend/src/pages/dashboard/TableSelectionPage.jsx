@@ -508,7 +508,7 @@ const TableSelectionPage = () => {
                     name: partyForm.customer_name,
                     phone: partyForm.customer_phone,
                     billing_address: partyForm.customer_address,
-                    group: 'SUNDRY_DEBTORS',
+                    group: 'Sundry Debtors',
                     party_type: 'CUSTOMER'
                 })
             });

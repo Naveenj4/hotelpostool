@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/dashboard/Header';
 import Sidebar from '../../components/dashboard/Sidebar';
 import {
     Save, X, Calendar, User, Phone, Mail, Hash,
-    CreditCard, MapPin, Building, Briefcase, ChevronLeft
+    CreditCard, MapPin, Building, Briefcase, ChevronLeft, Layers, ChevronDown
 } from 'lucide-react';
 import './LedgerCreationForm.css';
 
@@ -15,6 +15,7 @@ export default function LedgerCreationForm() {
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+    const [groups, setGroups] = useState([]);
     
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
@@ -51,9 +52,17 @@ export default function LedgerCreationForm() {
         branch: '',
         account_holder_name: '',
         
-        // Hidden Ledger Default
-        group: 'SUNDRY_DEBTORS'
+        // Ledger Group
+        group: 'Sundry Debtors'
     });
+
+    // Load groups from API
+    useEffect(() => {
+        fetch(`${API}/ledger-groups`, { headers: { Authorization: `Bearer ${getToken()}` } })
+            .then(r => r.json())
+            .then(d => { if (d.success) setGroups(d.data); })
+            .catch(console.error);
+    }, []);
 
     const toggleSidebar = () => {
         if (window.innerWidth <= 768) { setIsMobileSidebarOpen(!isMobileSidebarOpen); }
@@ -67,9 +76,9 @@ export default function LedgerCreationForm() {
             
             // Auto map Party Type to Ledger Group
             if (name === 'party_type') {
-                if (value === 'CUSTOMER') upd.group = 'SUNDRY_DEBTORS';
-                if (value === 'SUPPLIER') upd.group = 'SUNDRY_CREDITORS';
-                if (value === 'AGENT') upd.group = 'SUNDRY_CREDITORS'; // Defaulting agents to payables
+                if (value === 'CUSTOMER') upd.group = 'Sundry Debtors';
+                if (value === 'SUPPLIER') upd.group = 'Sundry Creditors';
+                if (value === 'AGENT')    upd.group = 'Sundry Creditors';
             }
 
             // Sync shipping address
@@ -97,7 +106,7 @@ export default function LedgerCreationForm() {
             const data = await res.json();
             if (data.success) {
                 alert('Ledger / Party created successfully!');
-                navigate('/dashboard/self-service/vouchers'); // Adjust routing back if needed
+                navigate('/dashboard/self-service/ledgers');
             } else {
                 alert(data.error || 'Failed to create ledger');
             }
@@ -253,6 +262,48 @@ export default function LedgerCreationForm() {
                             <div className="ledg-section">
                                 <h3 className="ledg-sec-title">3. Accounts Details</h3>
                                 <div className="ledg-fields">
+                                    {/* Ledger Group */}
+                                    <div className="ledg-f-group w-full">
+                                        <label>Ledger Group <span className="req">*</span></label>
+                                        <div className="ledg-input-wrap relative">
+                                            <Layers className="ledg-ico" />
+                                            <select
+                                                name="group"
+                                                value={formData.group}
+                                                onChange={handleChange}
+                                                className="ledg-select !pl-10"
+                                                required
+                                            >
+                                                {['ASSETS', 'LIABILITIES', 'INCOME', 'EXPENSES'].map(nature => {
+                                                    const grpsForNature = groups.filter(g => g.nature === nature);
+                                                    if (grpsForNature.length === 0) return null;
+                                                    const labels = { ASSETS:'Assets', LIABILITIES:'Liabilities', INCOME:'Income', EXPENSES:'Expenses' };
+                                                    return (
+                                                        <optgroup key={nature} label={`── ${labels[nature]} ──`}>
+                                                            {grpsForNature.map(g => (
+                                                                <option key={g._id} value={g.name}>{g.parent ? `  └ ${g.name}` : g.name}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    );
+                                                })}
+                                                {/* Fallback if groups not loaded yet */}
+                                                {groups.length === 0 && (
+                                                    <>
+                                                        <option value="Sundry Debtors">Sundry Debtors</option>
+                                                        <option value="Sundry Creditors">Sundry Creditors</option>
+                                                        <option value="Cash-in-Hand">Cash-in-Hand</option>
+                                                        <option value="Bank Accounts">Bank Accounts</option>
+                                                        <option value="Sales Accounts">Sales Accounts</option>
+                                                        <option value="Purchase Accounts">Purchase Accounts</option>
+                                                        <option value="Direct Expenses">Direct Expenses</option>
+                                                        <option value="Indirect Expenses">Indirect Expenses</option>
+                                                        <option value="Duties & Taxes">Duties & Taxes</option>
+                                                    </>
+                                                )}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
+                                        </div>
+                                    </div>
                                     <div className="ledg-f-row">
                                         <div className="ledg-f-group flex-1">
                                             <label>Opening Balance</label>

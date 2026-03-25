@@ -47,7 +47,7 @@ exports.createSupplier = async (req, res) => {
         await Ledger.create([{
             company_id,
             name: `${name} (Supplier)`,
-            group: 'SUNDRY_CREDITORS',
+            group: 'Sundry Creditors',
             opening_balance: opening_balance || 0,
             balance_type: (opening_balance || 0) >= 0 ? 'CR' : 'DR',
             description: `Auto-generated ledger for supplier ${name}`
