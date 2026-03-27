@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+    import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SidebarPaymentFlow from './SidebarPaymentFlow';
 import './BillingPage.css';
@@ -45,7 +45,9 @@ import {
     Edit,
     Layers,
     X,
-    CalendarClock
+    CalendarClock,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -98,6 +100,7 @@ const BillingPage = () => {
     const [loyaltyEnabled, setLoyaltyEnabled] = useState(() => localStorage.getItem('pos_loyalty_enabled') === 'true');
     const [showRateColumn, setShowRateColumn] = useState(() => localStorage.getItem('pos_show_rate') !== 'false');
     const [showProductPrice, setShowProductPrice] = useState(() => localStorage.getItem('pos_show_prod_price') !== 'false');
+    const [showBillNumber, setShowBillNumber] = useState(true);
 
     const [billSearchQuery, setBillSearchQuery] = useState("");
     const [dailySearchQuery, setDailySearchQuery] = useState("");
@@ -1539,6 +1542,26 @@ const BillingPage = () => {
                     </div>
                 </div>
 
+                <div className="nav-center">
+                    <div className="bill-no-display-wrapper">
+                        <button 
+                            type="button" 
+                            className="bill-no-toggle-btn" 
+                            onClick={() => setShowBillNumber(!showBillNumber)}
+                            title={showBillNumber ? "Hide Bill Number" : "Show Bill Number"}
+                        >
+                            {showBillNumber ? <EyeOff size={16} /> : <Eye size={16} />}
+                            <span>{showBillNumber ? 'HIDE' : 'SHOW'} BILL</span>
+                        </button>
+                        {showBillNumber && (
+                            <div className="bill-no-badge animate-in fade-in zoom-in duration-300">
+                                <span className="label">BILL NO:</span>
+                                <span className="number">{billNumber}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="nav-right">
                     {showTimer && (
                         <div className="pos-timer-enhanced">
@@ -2138,7 +2161,7 @@ const BillingPage = () => {
                         <span className="col-amt">AMT</span>
                     </div>
 
-                    {/* Scrollable area: items list + bill footer together */}
+                    {/* Scrollable area: items list + scrollable summary details */}
                     <div className="bill-scroll-area">
                         <div className={`order-items-list ${isOrderListCollapsed ? 'hidden' : ''}`}>
                             {billItems.length === 0 ? (
@@ -2211,8 +2234,8 @@ const BillingPage = () => {
                             ))}
                         </div>
 
-                        {/* Bill Footer */}
-                        <div className="order-footer">
+                        {/* Scrollable Summary Section */}
+                        <div className="order-summary-scrollable">
                             <div className="summary-section">
                                 {showMoreForm && (
                                     <div className={`collapsible-summary-area animate-in fade-in slide-in-from-top-2 duration-300`}>
@@ -2393,68 +2416,72 @@ const BillingPage = () => {
                                         </div>
                                     </div>
                                 )}
-
-
-
-                                <div className="sum-total-enhanced">
-                                    <div className="total-label">
-                                        <span className="main-total">TOTAL PAYABLE</span>
-                                    </div>
-                                    <span className="items-count" style={{ fontSize: '0.9rem', fontWeight: '900', opacity: 1 }}>
-                                        {billItems.reduce((sum, item) => sum + item.quantity, 0)} QTY
-                                    </span>
-                                    <span className="total-value">₹{grandTotal.toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            {/* Top Control Buttons */}
-                            <div className="billing-actions-panel">
-                                <div className="panel-controls">
-                                    {loyaltyEnabled && (
-                                        <button className={`control-btn ${showLoyaltyForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('LOYALTY')}>
-                                            <Gift size={15} /> Loyalty
-                                        </button>
-                                    )}
-                                    <button className={`control-btn ${showCouponForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COUPON')}>
-                                        <Ticket size={15} /> COUPON
-                                    </button>
-                                    <button className={`control-btn ${showMoreForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('MORE')}>
-                                        <MoreHorizontal size={15} /> More
-                                    </button>
-                                    <button className={`control-btn paymode-btn ${stepProceeded ? 'active' : ''}`} onClick={() => toggleExpandableForm('PAYMODE')} disabled={billItems.length === 0}>
-                                        <CreditCard size={15} /> PAYMODE
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Integrated Sidebar Payment Flow */}
-                            {stepProceeded && (
-                                <SidebarPaymentFlow
-                                    grandTotal={grandTotal}
-                                    onPaymentSubmit={handlePaymentSubmit}
-                                    onCancel={() => setStepProceeded(false)}
-                                    loading={paymentLoading}
-                                    partialAllowed={orderMode === 'PARTY_ORDER'}
-                                />
-                            )}
-
-                            <div className="footer-actions-grid">
-                                <button type="button" className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
-                                    <Save size={18} /> SAVE
-                                </button>
-                                <button type="button" className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
-                                    <Printer size={18} /> SAVE & PRINT
-                                </button>
-                                <button type="button" className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
-                                    <Printer size={18} /> KOT PRINT
-                                </button>
-                                <button type="button" className="action-btn hold-bill" onClick={holdCurrentBill} title="Hold this bill for later">
-                                    <Pause size={18} /> HOLD
-                                </button>
                             </div>
                         </div>
                     </div>
+
+                    {/* Fixed Footer for TOTAL and ACTIONS */}
+                    <div className="order-footer-fixed">
+                        <div className="summary-section">
+                            <div className="sum-total-enhanced">
+                                <div className="total-label">
+                                    <span className="main-total">TOTAL PAYABLE</span>
+                                </div>
+                                <span className="items-count" style={{ fontSize: '0.9rem', fontWeight: '900', opacity: 1 }}>
+                                    {billItems.reduce((sum, item) => sum + item.quantity, 0)} QTY
+                                </span>
+                                <span className="total-value">₹{grandTotal.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        {/* Top Control Buttons */}
+                        <div className="billing-actions-panel">
+                            <div className="panel-controls">
+                                {loyaltyEnabled && (
+                                    <button className={`control-btn ${showLoyaltyForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('LOYALTY')}>
+                                        <Gift size={15} /> Loyalty
+                                    </button>
+                                )}
+                                <button className={`control-btn ${showCouponForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COUPON')}>
+                                    <Ticket size={15} /> COUPON
+                                </button>
+                                <button className={`control-btn ${showMoreForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('MORE')}>
+                                    <MoreHorizontal size={15} /> More
+                                </button>
+                                <button className={`control-btn paymode-btn ${stepProceeded ? 'active' : ''}`} onClick={() => toggleExpandableForm('PAYMODE')} disabled={billItems.length === 0}>
+                                    <CreditCard size={15} /> PAYMODE
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Integrated Sidebar Payment Flow */}
+                        {stepProceeded && (
+                            <SidebarPaymentFlow
+                                grandTotal={grandTotal}
+                                onPaymentSubmit={handlePaymentSubmit}
+                                onCancel={() => setStepProceeded(false)}
+                                loading={paymentLoading}
+                                partialAllowed={orderMode === 'PARTY_ORDER'}
+                            />
+                        )}
+
+                        <div className="footer-actions-grid">
+                            <button type="button" className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
+                                <Save size={18} /> SAVE
+                            </button>
+                            <button type="button" className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
+                                <Printer size={18} /> SAVE & PRINT
+                            </button>
+                            <button type="button" className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
+                                <Printer size={18} /> KOT PRINT
+                            </button>
+                            <button type="button" className="action-btn hold-bill" onClick={holdCurrentBill} title="Hold this bill for later">
+                                <Pause size={18} /> HOLD
+                            </button>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
                 {/* Modals */}
                 {variationModalProduct && (
@@ -2514,7 +2541,6 @@ const BillingPage = () => {
                     )
                 }
             </div>
-        </div>
 
     );
 };

@@ -84,20 +84,20 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
     const handleClick = () => onSelect(table);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, width: '130px' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', flexShrink: 0, width: '124px', height: '86px' }}>
             {/* Main Interactive Card */}
             <div
                 onClick={handleClick}
                 style={{
-                    width: '100%',
-                    height: '130px',
+                    flex: 1,
+                    height: '100%',
                     border: `1px solid ${border}`,
-                    borderRadius: '16px',
+                    borderRadius: '12px',
                     background: bg,
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
-                    padding: '14px',
+                    padding: '8px',
                     position: 'relative',
                     boxShadow: isActive || isReserved ? `0 4px 16px ${glow}` : '0 2px 4px rgba(0,0,0,0.02)',
                     transition: 'all 0.2s ease',
@@ -114,56 +114,56 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                 }}
             >
                 {/* Header: Table No & Seats */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 800, color: text }}>{table.table_number}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#94a3b8' }}>
-                        <Users size={12} /> {table.seating_capacity || '-'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 900, color: text, lineHeight: 1 }}>{table.table_number}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '10px', fontWeight: 800, color: '#94a3b8' }}>
+                        <Users size={10} strokeWidth={3} /> {table.seating_capacity || '-'}
                     </span>
                 </div>
 
                 {/* Center Content: Amount or State Text */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                     {isAvail ? (
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#cbd5e1' }}>Available</span>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#94a3b8' }}>FREE</span>
                     ) : isReserved ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>Reserved</span>
-                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#7c3aed', textAlign: 'center', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                            <span style={{ fontSize: '9px', fontWeight: 800, color: '#a78bfa' }}>RSV</span>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#7c3aed', textAlign: 'center', maxWidth: '65px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {table.reservation_name || 'Guest'}
                             </span>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ fontSize: '20px', fontWeight: 900, color: text }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                            <span style={{ fontSize: '15px', fontWeight: 900, color: text, lineHeight: 1 }}>
                                 ₹{Math.round(table.running_amount || 0)}
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
-                                <Clock size={12} /> {liveTimer || '00:00'}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 800, color: '#64748b' }}>
+                                <Clock size={10} strokeWidth={3} /> {liveTimer || '00:00'}
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Footer Badges */}
-                <div style={{ height: '16px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', width: '100%' }}>
+                <div style={{ height: '12px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', width: '100%' }}>
                     {isPrinted && (
-                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Printer size={11} /> PRINTED
+                        <span style={{ fontSize: '9px', fontWeight: 900, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <Printer size={9} strokeWidth={3} /> PRNT
                         </span>
                     )}
                     {isActive && !isPrinted && table.kot_status === 'KOT_SENT' && (
-                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#3b82f6', letterSpacing: '0.02em' }}>KOT SENT</span>
+                        <span style={{ fontSize: '8px', fontWeight: 900, color: '#3b82f6', letterSpacing: '0.02em' }}>KOT SENT</span>
                     )}
                     {isActive && !isPrinted && table.kot_status === 'READY' && (
-                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#ea580c', animation: 'readyPulse 1s infinite alternate', letterSpacing: '0.02em' }}>✅ READY</span>
+                        <span style={{ fontSize: '8px', fontWeight: 900, color: '#ea580c', animation: 'readyPulse 1s infinite alternate', letterSpacing: '0.02em' }}>✅ READY</span>
                     )}
                 </div>
             </div>
 
-            {/* Actions Row */}
-            <div style={{ display: 'flex', gap: '6px', height: '28px' }}>
+            {/* Actions Column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '36px', height: '100%' }}>
                 {isAvail && (
-                    <button onClick={() => onReserve(table)} style={{ flex: 1, fontSize: '11px', fontWeight: 700, background: 'none', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
+                    <button onClick={() => onReserve(table)} style={{ flex: 1, fontSize: '9px', fontWeight: 800, background: 'none', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', writingMode: 'vertical-rl', transform: 'rotate(180deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#334155'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; }}
                     >
@@ -172,37 +172,40 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                 )}
                 {isReserved && (
                     <>
-                        <button onClick={() => onSelect(table)} style={{ flex: 1, fontSize: '11px', fontWeight: 800, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                        <button onClick={() => onCancelReserve(table)} style={{ height: '26px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}><X size={14} strokeWidth={3} /></button>
+                        <button onClick={() => onSelect(table)} style={{ flex: 1, fontSize: '9px', fontWeight: 900, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#6d28d9'}
                             onMouseLeave={e => e.currentTarget.style.background = '#7c3aed'}>BILL</button>
-                        <button onClick={() => onCancelReserve(table)} style={{ padding: '0 8px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.2s' }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}><X size={14} /></button>
                     </>
                 )}
                 {isActive && !isPrinted && !isReserved && (
                     <>
-                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1, fontSize: '10px', fontWeight: 800, background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1.5, fontSize: '8.5px', fontWeight: 900, background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                            title="VIEW TABLE"
                             onMouseEnter={e => e.currentTarget.style.background = '#4f46e5'}
                             onMouseLeave={e => e.currentTarget.style.background = '#6366f1'}>VIEW</button>
-                        <button onClick={(e) => { e.stopPropagation(); onSelect(table, true); }} style={{ flex: 1, fontSize: '10px', fontWeight: 800, background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table, true); }} style={{ flex: 1.5, fontSize: '8.5px', fontWeight: 900, background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                            title="PRINT BILL"
                             onMouseEnter={e => e.currentTarget.style.background = '#059669'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#10b981'}>PRINT</button>
-                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ padding: '0 8px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
+                            onMouseLeave={e => e.currentTarget.style.background = '#10b981'}>PRNT</button>
+                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ height: '24px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                            title="RESET/FREE TABLE"
                             onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
+                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} strokeWidth={2.5} /></button>
                     </>
                 )}
                 {isPrinted && !isReserved && (
                     <>
-                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 2, fontSize: '11px', fontWeight: 800, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1, fontSize: '9px', fontWeight: 900, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', transition: 'background 0.2s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
                             onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}>
-                            <CheckCircle2 size={12} /> PAY
+                            <CheckCircle2 size={12} strokeWidth={3} /> PAY
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ padding: '0 8px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ height: '26px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} /></button>
+                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} strokeWidth={3} /></button>
                     </>
                 )}
             </div>
@@ -673,7 +676,7 @@ const TableSelectionPage = () => {
 
 
                     {/* ── Stats strip ── */}
-                    <div style={{ background: '#fff', borderBottom: '2.5px solid #edf2f7', padding: '16px 28px', display: 'flex', gap: '40px', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ background: '#fff', borderBottom: '2px solid #edf2f7', padding: '8px 24px', display: 'flex', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
                         {[
                             { label: 'Total', value: stats.total, color: '#4f46e5', bg: '#eef2ff' },
                             { label: 'Available', value: stats.available, color: '#10b981', bg: '#ecfdf5' },
@@ -681,23 +684,23 @@ const TableSelectionPage = () => {
                             { label: 'Printed', value: stats.printed, color: '#16a34a', bg: '#f0fdf4' },
                             { label: 'Reserved', value: stats.reserved, color: '#8b5cf6', bg: '#f5f3ff' },
                         ].map(s => (
-                            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: s.bg, padding: '8px 16px', borderRadius: '16px', border: `1px solid ${s.color}22` }}>
-                                <span style={{ fontSize: '28px', fontWeight: 950, color: s.color, lineHeight: 1 }}>{s.value}</span>
-                                <span style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</span>
+                            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: s.bg, padding: '4px 12px', borderRadius: '10px', border: `1px solid ${s.color}22` }}>
+                                <span style={{ fontSize: '18px', fontWeight: 950, color: s.color, lineHeight: 1 }}>{s.value}</span>
+                                <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</span>
                             </div>
                         ))}
 
                         {/* Search & Refresh Section */}
                         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ position: 'relative', width: '280px' }}>
-                                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                            <div style={{ position: 'relative', width: '250px' }}>
+                                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                                 <input
                                     type="text"
                                     placeholder="Search Table No / Type..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     style={{
-                                        width: '100%', padding: '10px 14px 10px 40px',
+                                        width: '100%', padding: '6px 14px 6px 36px',
                                         border: '1.5px solid #e2e8f0', borderRadius: '14px',
                                         fontSize: '13px', fontWeight: 600, color: '#334155',
                                         outline: 'none', transition: 'all 0.2s',

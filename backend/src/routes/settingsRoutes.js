@@ -8,7 +8,8 @@ const {
     updateBillFormat,
     updateBillingLayout,
     updateAdvancedSettings,
-    updateLoyaltySettings
+    updateLoyaltySettings,
+    updateBillSeries
 } = require('../controllers/settingsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -39,5 +40,8 @@ router.put('/loyalty', updateLoyaltySettings);
 
 // Update billing layout only (Appearance tab)
 router.put('/layout', updateBillingLayout);
+
+// Update bill series settings
+router.put('/bill-series', updateBillSeries);
 
 module.exports = router;

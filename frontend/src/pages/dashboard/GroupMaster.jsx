@@ -2,11 +2,8 @@ import { useState, useEffect } from 'react';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import './Dashboard.css';
-import {
-    PlusCircle, Search, Edit, Trash2, Loader2, AlertCircle,
-    XCircle, CheckCircle2, Layers, ChevronDown, Info,
-    TrendingUp, TrendingDown, Package, Wallet, Triangle
-} from 'lucide-react';
+import { PlusCircle, Search, Edit, Trash2, Loader2, AlertCircle, XCircle, CheckCircle2, Layers, ChevronDown, Info, TrendingUp, TrendingDown, Package, Wallet, Triangle } from 'lucide-react';
+import { STANDARD_GROUPS, getNatureForGroup, ACCOUNT_NATURES } from '../../utils/standardGroups';
 
 const NATURE_CONFIG = {
     ASSETS:      { label: 'Assets',      color: '#6366f1', bg: '#eef2ff', icon: <Package size={14} /> },
@@ -60,13 +57,17 @@ const GroupMaster = () => {
         e.preventDefault();
         setSubmitting(true);
         setError('');
+        
+        // Auto-assign nature based on selected parent group
+        const groupNature = formData.parent ? getNatureForGroup(formData.parent) : 'ASSETS';
+        const payload = { ...formData, nature: groupNature };
         try {
             const url = isEditing ? `${API}/ledger-groups/${formData._id}` : `${API}/ledger-groups`;
             const method = isEditing ? 'PUT' : 'POST';
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
             const result = await res.json();
             if (!result.success) throw new Error(result.error || result.message);
@@ -298,53 +299,36 @@ const GroupMaster = () => {
                                         )}
                                     </div>
 
-                                    {/* Nature */}
-                                    <div className="form-group-premium">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-3 block">Nature *</label>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {Object.entries(NATURE_CONFIG).map(([key, cfg]) => (
-                                                <button key={key} type="button"
-                                                    onClick={() => setFormData({ ...formData, nature: key })}
-                                                    className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition-all ${formData.nature === key ? 'border-slate-900 bg-slate-50' : 'border-slate-100 hover:border-slate-200'}`}>
-                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: cfg.bg, color: cfg.color }}>
-                                                        {cfg.icon}
-                                                    </div>
-                                                    <span className="text-xs font-black uppercase text-slate-600">{cfg.label}</span>
-                                                    {formData.nature === key && <CheckCircle2 size={16} className="ml-auto text-slate-900" />}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
+
 
                                     {/* Parent Group */}
                                     <div className="form-group-premium">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-3 block">Parent Group (optional)</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-3 block">Parent Group *</label>
                                         <div className="relative">
                                             <select
+                                                required
                                                 className="input-premium-modern w-full appearance-none cursor-pointer"
                                                 value={formData.parent || ''}
-                                                onChange={e => setFormData({ ...formData, parent: e.target.value || null })}
+                                                onChange={e => setFormData({ ...formData, parent: e.target.value })}
                                             >
-                                                <option value="">-- Primary Group (no parent) --</option>
-                                                {primaryGroups
-                                                    .filter(g => g.nature === formData.nature)
-                                                    .map(g => <option key={g._id} value={g.name}>{g.name}</option>)}
+                                                <option value="" disabled>-- Select Standard Group --</option>
+                                                {Object.entries(STANDARD_GROUPS).map(([nature, groups]) => (
+                                                    <optgroup key={nature} label={`── ${nature} ──`}>
+                                                        {groups.map(g => <option key={g} value={g}>{g}</option>)}
+                                                    </optgroup>
+                                                ))}
+                                                {/* Allow selecting custom primary groups if any exist and aren't standard */}
+                                                {(primaryGroups && primaryGroups.length > 0) && (
+                                                    <optgroup label="── CUSTOM GROUPS ──">
+                                                        {primaryGroups.filter(g => !getNatureForGroup(g.name)).map(g => <option key={g._id} value={g.name}>{g.name}</option>)}
+                                                    </optgroup>
+                                                )}
                                             </select>
                                             <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                         </div>
-                                        <p className="text-[10px] text-slate-400 mt-2">Leave blank to create a primary (top-level) group</p>
                                     </div>
 
-                                    {/* Description */}
-                                    <div className="form-group-premium">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-3 block">Description</label>
-                                        <textarea
-                                            className="input-premium-modern w-full !h-24 !pt-4"
-                                            placeholder="Optional description..."
-                                            value={formData.description || ''}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                        />
-                                    </div>
+
                                 </form>
                             </div>
 

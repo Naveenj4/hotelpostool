@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
+import ReportNavigationDropdown from '@/components/dashboard/ReportNavigationDropdown';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -13,15 +14,15 @@ import {
     ArcElement
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { 
-    Download, 
-    Loader2, 
-    Calendar, 
-    Layers, 
-    Activity, 
-    Target, 
-    RefreshCw, 
-    ChevronRight, 
+import {
+    Download,
+    Loader2,
+    Calendar,
+    Layers,
+    Activity,
+    Target,
+    RefreshCw,
+    ChevronRight,
     Eye,
     Landmark,
     PieChart,
@@ -100,7 +101,7 @@ const CategoryWiseSales = () => {
         link.click();
     };
 
-    const chartRenderData = data.slice(0, 8); 
+    const chartRenderData = data.slice(0, 8);
     const industrialPalette = [
         '#4f46e5', '#1e1b4b', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff', '#f5f3ff'
     ];
@@ -137,7 +138,7 @@ const CategoryWiseSales = () => {
     return (
         <div className="dashboard-layout bg-white">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-            
+
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
@@ -146,7 +147,7 @@ const CategoryWiseSales = () => {
                 <Header toggleSidebar={toggleSidebar} />
 
                 <div className="dashboard-content fade-in p-6 lg:p-14 max-w-[2000px] mx-auto w-full">
-                    
+
                     {/* Industrial Header */}
                     <div className="flex flex-col xl:flex-row justify-between items-end xl:items-center mb-16 gap-8 border-b border-slate-100 pb-10">
                         <div>
@@ -159,12 +160,15 @@ const CategoryWiseSales = () => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4 p-2 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                            <div className="px-4 border-r border-slate-200">
+                                <ReportNavigationDropdown />
+                            </div>
                             <div className="flex items-center px-6 py-3 gap-6 border-r border-slate-200">
                                 <Calendar size={20} className="text-indigo-600" />
                                 <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
-                                    <input type="date" value={dateRange.start} onChange={e => setDateRange(p => ({...p, start: e.target.value}))} className="bg-transparent border-none outline-none w-[115px] p-0"/>
+                                    <input type="date" value={dateRange.start} onChange={e => setDateRange(p => ({ ...p, start: e.target.value }))} className="bg-transparent border-none outline-none w-[115px] p-0" />
                                     <span className="opacity-30">—</span>
-                                    <input type="date" value={dateRange.end} onChange={e => setDateRange(p => ({...p, end: e.target.value}))} className="bg-transparent border-none outline-none w-[115px] p-0"/>
+                                    <input type="date" value={dateRange.end} onChange={e => setDateRange(p => ({ ...p, end: e.target.value }))} className="bg-transparent border-none outline-none w-[115px] p-0" />
                                 </div>
                             </div>
                             <button className="h-12 px-8 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 shadow-lg shadow-slate-200" onClick={fetchData}>

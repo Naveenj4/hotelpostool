@@ -56,6 +56,13 @@ exports.getUserSettings = async (req, res) => {
                     points_per_100: restaurant.loyalty_points_per_100 || 1,
                     target_points: restaurant.loyalty_target_points || 0,
                     point_value: restaurant.loyalty_point_value || 1
+                },
+                billSeries: restaurant.bill_series || {
+                    dine_in: { prefix: 'DI', next_number: 1 },
+                    takeaway: { prefix: 'TA', next_number: 1 },
+                    delivery: { prefix: 'DE', next_number: 1 },
+                    parcel: { prefix: 'PA', next_number: 1 },
+                    party: { prefix: 'PT', next_number: 1 }
                 }
             }
         });
@@ -397,6 +404,38 @@ exports.updateBillingLayout = async (req, res) => {
         });
     } catch (error) {
         console.error('Update billing layout error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Update bill number series settings
+// @route   PUT /api/settings/bill-series
+// @access  Private (Admin, Owner)
+exports.updateBillSeries = async (req, res) => {
+    try {
+        const { billSeries } = req.body;
+
+        if (!billSeries) {
+            return res.status(400).json({ success: false, message: 'Bill series settings are required' });
+        }
+
+        const restaurant = await Restaurant.findByIdAndUpdate(
+            req.user.restaurant_id,
+            { bill_series: billSeries },
+            { new: true, runValidators: true }
+        );
+
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: 'Restaurant not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Bill series updated successfully',
+            data: restaurant.bill_series
+        });
+    } catch (error) {
+        console.error('Update bill series error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };

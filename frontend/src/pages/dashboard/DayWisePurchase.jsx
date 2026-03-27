@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
+import ReportNavigationDropdown from '../../components/dashboard/ReportNavigationDropdown';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -147,7 +148,9 @@ const DayWisePurchase = () => {
                     </div>
 
                     <div className="toolbar-premium">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <ReportNavigationDropdown />
+                            <div className="flex items-center gap-3">
                             <div className="relative">
                                 <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input
@@ -168,6 +171,7 @@ const DayWisePurchase = () => {
                                     className="input-premium pl-11"
                                     style={{ width: '180px' }}
                                 />
+                            </div>
                             </div>
                         </div>
                         <div className="flex gap-4 items-center">
@@ -214,7 +218,7 @@ const DayWisePurchase = () => {
                                                 <tr><td colSpan="3" className="text-center py-10 text-slate-400 font-bold">No procurement data found</td></tr>
                                             ) : (
                                                 data.map((day, ix) => (
-                                                    <tr key={ix} 
+                                                    <tr key={ix}
                                                         onClick={() => navigate('/dashboard/self-service/purchase-invoices', { state: { date: day.date } })}
                                                         style={{ cursor: 'pointer' }}
                                                         className="hover:bg-slate-50 transition-colors"

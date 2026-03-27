@@ -5,25 +5,36 @@ const Restaurant = require('../models/Restaurant');
 const Customer = require('../models/Customer');
 
 // Helper to generate next Bill Number
-const generateBillNumber = async (companyId) => {
-    // Format: YYYYMMDD-XXXX (e.g., 20240209-0001)
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-
-    // Find last bill for this company today
-    const lastBill = await Bill.findOne({
-        company_id: companyId,
-        bill_number: { $regex: `^${dateStr}` }
-    }).sort({ bill_number: -1 });
-
-    let nextNum = 1;
-    if (lastBill) {
-        const parts = lastBill.bill_number.split('-');
-        if (parts.length === 2) {
-            nextNum = parseInt(parts[1], 10) + 1;
+const generateBillNumber = async (companyId, type = 'SELF_SERVICE') => {
+    const restaurant = await Restaurant.findById(companyId);
+    if (!restaurant || !restaurant.bill_series) {
+        // Fallback to date-based if settings missing
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const lastBill = await Bill.findOne({ company_id: companyId, bill_number: { $regex: `^${dateStr}` } }).sort({ bill_number: -1 });
+        let nextNum = 1;
+        if (lastBill) {
+            const parts = lastBill.bill_number.split('-');
+            if (parts.length === 2) nextNum = parseInt(parts[1], 10) + 1;
         }
+        return `${dateStr}-${String(nextNum).padStart(4, '0')}`;
     }
 
-    return `${dateStr}-${String(nextNum).padStart(4, '0')}`;
+    // Map Bill type to series key
+    let seriesKey = 'takeaway';
+    if (type === 'DINE_IN') seriesKey = 'dine_in';
+    else if (type === 'DELIVERY') seriesKey = 'delivery';
+    else if (type === 'PARCEL') seriesKey = 'parcel';
+    else if (type === 'PARTY' || type === 'PARTY_ORDER') seriesKey = 'party';
+
+    const series = restaurant.bill_series[seriesKey] || { prefix: 'BILL', next_number: 1 };
+    const billNumber = `${series.prefix}-${series.next_number}`;
+
+    // Increment next_number in Restaurant
+    await Restaurant.findByIdAndUpdate(companyId, {
+        $inc: { [`bill_series.${seriesKey}.next_number`]: 1 }
+    });
+
+    return billNumber;
 };
 
 // @desc    Create a new OPEN bill
@@ -210,7 +221,7 @@ exports.processPayment = async (req, res) => {
 
         // Generate final sequential bill number if not already generated
         if (!bill.bill_number || bill.bill_number.startsWith('TEMP-')) {
-            bill.bill_number = await generateBillNumber(req.user.restaurant_id);
+            bill.bill_number = await generateBillNumber(req.user.restaurant_id, bill.type);
         }
 
         // Update bill status and final financial values
@@ -454,7 +465,7 @@ exports.updateBill = async (req, res) => {
         }
         
         if (action_type === 'GENERATE_BILL_NO' && (!bill.bill_number || bill.bill_number.startsWith('TEMP-'))) {
-            bill.bill_number = await generateBillNumber(req.user.restaurant_id);
+            bill.bill_number = await generateBillNumber(req.user.restaurant_id, bill.type);
         }
 
         if (status) bill.status = status;

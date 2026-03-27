@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
+import ReportNavigationDropdown from '../../components/dashboard/ReportNavigationDropdown';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -162,7 +163,9 @@ const SupplierWisePurchase = () => {
                     </div>
 
                     <div className="toolbar-premium">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <ReportNavigationDropdown />
+                            <div className="flex items-center gap-3">
                             <div className="relative">
                                 <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input
@@ -183,6 +186,7 @@ const SupplierWisePurchase = () => {
                                     className="input-premium pl-11"
                                     style={{ width: '180px' }}
                                 />
+                            </div>
                             </div>
                         </div>
                         <div className="flex gap-4 items-center">

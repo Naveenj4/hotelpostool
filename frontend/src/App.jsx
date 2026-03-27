@@ -18,7 +18,6 @@ import WaiterMaster from './pages/dashboard/WaiterMaster.jsx';
 import StaffMaster from './pages/dashboard/StaffMaster.jsx';
 import SupplierMaster from './pages/dashboard/SupplierMaster.jsx';
 import CustomerMaster from './pages/dashboard/CustomerMaster.jsx';
-import LedgerMaster from './pages/dashboard/LedgerMaster.jsx';
 import GroupMaster from './pages/dashboard/GroupMaster.jsx';
 import PurchaseEntry from './pages/dashboard/PurchaseEntry.jsx';
 import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement.jsx';
@@ -144,9 +143,6 @@ function AppRoutes() {
                             } />
                             <Route path="customers" element={
                                 <PermissionRoute pageKey="customers"><CustomerMaster /></PermissionRoute>
-                            } />
-                            <Route path="ledgers" element={
-                                <PermissionRoute pageKey="ledgers"><LedgerMaster /></PermissionRoute>
                             } />
                             <Route path="ledgers/create" element={
                                 <PermissionRoute pageKey="ledgers"><LedgerCreationForm /></PermissionRoute>

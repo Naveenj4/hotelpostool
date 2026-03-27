@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/dashboard/Header';
 import Sidebar from '../../components/dashboard/Sidebar';
-import {
-    Save, X, Calendar, User, Phone, Mail, Hash,
-    CreditCard, MapPin, Building, Briefcase, ChevronLeft, Layers, ChevronDown
-} from 'lucide-react';
+import { Save, X, Calendar, User, Phone, Mail, Hash, CreditCard, MapPin, Building, Briefcase, ChevronLeft, Layers, ChevronDown } from 'lucide-react';
 import './LedgerCreationForm.css';
+import { STANDARD_GROUPS, getNatureForGroup, ACCOUNT_NATURES } from '../../utils/standardGroups';
 
 const API = import.meta.env.VITE_API_URL;
 const getToken = () => JSON.parse(localStorage.getItem('user'))?.token;
@@ -16,20 +14,18 @@ export default function LedgerCreationForm() {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [groups, setGroups] = useState([]);
-    
+
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
-        // 1. Party Details
         name: '',
         phone: '',
         email: '',
         gstin: '',
         pan_number: '',
-        party_type: 'CUSTOMER', // CUSTOMER, SUPPLIER, AGENT
         party_category: '',
         registration_type: 'Regular',
         state: '',
-        
+
         // 2. Address
         billing_address: '',
         shipping_address: '',
@@ -51,7 +47,7 @@ export default function LedgerCreationForm() {
         bank_name: '',
         branch: '',
         account_holder_name: '',
-        
+
         // Ledger Group
         group: 'Sundry Debtors'
     });
@@ -73,13 +69,6 @@ export default function LedgerCreationForm() {
         const { name, value, type, checked } = e.target;
         setFormData(prev => {
             const upd = { ...prev, [name]: type === 'checkbox' ? checked : value };
-            
-            // Auto map Party Type to Ledger Group
-            if (name === 'party_type') {
-                if (value === 'CUSTOMER') upd.group = 'Sundry Debtors';
-                if (value === 'SUPPLIER') upd.group = 'Sundry Creditors';
-                if (value === 'AGENT')    upd.group = 'Sundry Creditors';
-            }
 
             // Sync shipping address
             if (name === 'same_as_billing') {
@@ -123,36 +112,36 @@ export default function LedgerCreationForm() {
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
-            
+
             <main className="dashboard-main">
-                <Header 
-                    toggleSidebar={toggleSidebar} 
+                <Header
+                    toggleSidebar={toggleSidebar}
                     title="Ledger / Party Creation"
                     actions={
                         <div className="flex items-center gap-3">
                             <button className="btn-premium-primary !py-2 !px-6 !bg-slate-200 !text-slate-800" onClick={() => navigate(-1)}>
-                                <X size={16} /> 
+                                <X size={16} />
                                 <span className="text-[10px] uppercase font-black">Cancel</span>
                             </button>
                             <button className="btn-premium-primary !py-2 !px-6" onClick={handleSave} disabled={saving}>
-                                <Save size={16} /> 
+                                <Save size={16} />
                                 <span className="text-[10px] uppercase font-black">{saving ? 'Saving...' : 'Save Ledger'}</span>
                             </button>
                         </div>
                     }
                 />
-                
+
                 <div className="ledg-container fade-in">
 
                     <form className="ledg-form" onSubmit={handleSave}>
                         <div className="ledg-grid">
-                            
-                            {/* 1. Party Details */}
+
+                            {/* 1. Ledger Details */}
                             <div className="ledg-section">
-                                <h3 className="ledg-sec-title">1. Party Details</h3>
+                                <h3 className="ledg-sec-title">1. Ledger Details</h3>
                                 <div className="ledg-fields">
                                     <div className="ledg-f-group w-full">
-                                        <label>Party Name <span className="req">*</span></label>
+                                        <label>Ledger Name <span className="req">*</span></label>
                                         <div className="ledg-input-wrap">
                                             <User className="ledg-ico" />
                                             <input required name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Acme Corp" />
@@ -192,24 +181,36 @@ export default function LedgerCreationForm() {
                                     </div>
                                     <div className="ledg-f-row">
                                         <div className="ledg-f-group">
-                                            <label>Party Type</label>
-                                            <div className="ledg-radio-group">
-                                                <label className={`ledg-radio ${formData.party_type === 'CUSTOMER' ? 'active' : ''}`}>
-                                                    <input type="radio" name="party_type" value="CUSTOMER" checked={formData.party_type === 'CUSTOMER'} onChange={handleChange} />
-                                                    Customer
-                                                </label>
-                                                <label className={`ledg-radio ${formData.party_type === 'SUPPLIER' ? 'active' : ''}`}>
-                                                    <input type="radio" name="party_type" value="SUPPLIER" checked={formData.party_type === 'SUPPLIER'} onChange={handleChange} />
-                                                    Supplier
-                                                </label>
-                                                <label className={`ledg-radio ${formData.party_type === 'AGENT' ? 'active' : ''}`}>
-                                                    <input type="radio" name="party_type" value="AGENT" checked={formData.party_type === 'AGENT'} onChange={handleChange} />
-                                                    Agent
-                                                </label>
+                                            <label>Under <span className="req">*</span></label>
+                                            <div className="ledg-input-wrap relative">
+                                                <Layers className="ledg-ico" />
+                                                <select
+                                                    name="group"
+                                                    value={formData.group}
+                                                    onChange={handleChange}
+                                                    className="ledg-select !pl-10"
+                                                    required
+                                                >
+                                                    <option value="" disabled>-- Select Group --</option>
+                                                    {Object.entries(STANDARD_GROUPS).map(([nature, groupsList]) => (
+                                                        <optgroup key={nature} label={`── ${nature} ──`}>
+                                                            {groupsList.map(g => <option key={g} value={g}>{g}</option>)}
+                                                        </optgroup>
+                                                    ))}
+                                                    {/* Custom groups */}
+                                                    {(groups && groups.length > 0) && (
+                                                        <optgroup label="── CUSTOM GROUPS ──">
+                                                            {groups.filter(g => !getNatureForGroup(g.name)).map(g => (
+                                                                <option key={g._id} value={g.name}>{g.name}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    )}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
                                             </div>
                                         </div>
                                         <div className="ledg-f-group">
-                                            <label>Party Category (+)</label>
+                                            <label>Ledger Category (+)</label>
                                             <input name="party_category" value={formData.party_category} onChange={handleChange} placeholder="Category" />
                                         </div>
                                     </div>
@@ -245,7 +246,7 @@ export default function LedgerCreationForm() {
                                     <div className="ledg-checkbox-row">
                                         <label className="ledg-checkbox">
                                             <input type="checkbox" name="same_as_billing" checked={formData.same_as_billing} onChange={handleChange} />
-                                            <span>&#x2611; Same as Billing</span> 
+                                            <span>&#x2611; Same as Billing</span>
                                         </label>
                                     </div>
                                     <div className="ledg-f-group w-full" style={{ opacity: formData.same_as_billing ? 0.5 : 1, pointerEvents: formData.same_as_billing ? 'none' : 'auto' }}>
@@ -262,48 +263,7 @@ export default function LedgerCreationForm() {
                             <div className="ledg-section">
                                 <h3 className="ledg-sec-title">3. Accounts Details</h3>
                                 <div className="ledg-fields">
-                                    {/* Ledger Group */}
-                                    <div className="ledg-f-group w-full">
-                                        <label>Ledger Group <span className="req">*</span></label>
-                                        <div className="ledg-input-wrap relative">
-                                            <Layers className="ledg-ico" />
-                                            <select
-                                                name="group"
-                                                value={formData.group}
-                                                onChange={handleChange}
-                                                className="ledg-select !pl-10"
-                                                required
-                                            >
-                                                {['ASSETS', 'LIABILITIES', 'INCOME', 'EXPENSES'].map(nature => {
-                                                    const grpsForNature = groups.filter(g => g.nature === nature);
-                                                    if (grpsForNature.length === 0) return null;
-                                                    const labels = { ASSETS:'Assets', LIABILITIES:'Liabilities', INCOME:'Income', EXPENSES:'Expenses' };
-                                                    return (
-                                                        <optgroup key={nature} label={`── ${labels[nature]} ──`}>
-                                                            {grpsForNature.map(g => (
-                                                                <option key={g._id} value={g.name}>{g.parent ? `  └ ${g.name}` : g.name}</option>
-                                                            ))}
-                                                        </optgroup>
-                                                    );
-                                                })}
-                                                {/* Fallback if groups not loaded yet */}
-                                                {groups.length === 0 && (
-                                                    <>
-                                                        <option value="Sundry Debtors">Sundry Debtors</option>
-                                                        <option value="Sundry Creditors">Sundry Creditors</option>
-                                                        <option value="Cash-in-Hand">Cash-in-Hand</option>
-                                                        <option value="Bank Accounts">Bank Accounts</option>
-                                                        <option value="Sales Accounts">Sales Accounts</option>
-                                                        <option value="Purchase Accounts">Purchase Accounts</option>
-                                                        <option value="Direct Expenses">Direct Expenses</option>
-                                                        <option value="Indirect Expenses">Indirect Expenses</option>
-                                                        <option value="Duties & Taxes">Duties & Taxes</option>
-                                                    </>
-                                                )}
-                                            </select>
-                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
-                                        </div>
-                                    </div>
+
                                     <div className="ledg-f-row">
                                         <div className="ledg-f-group flex-1">
                                             <label>Opening Balance</label>
@@ -359,9 +319,9 @@ export default function LedgerCreationForm() {
                                 </div>
                             </div>
 
-                            {/* 5. Party Bank Details */}
+                            {/* 5. Ledger Bank Details */}
                             <div className="ledg-section full-span">
-                                <h3 className="ledg-sec-title">5. Party Bank Details</h3>
+                                <h3 className="ledg-sec-title">5. Ledger Bank Details</h3>
                                 <div className="ledg-fields row-layout">
                                     <div className="ledg-f-group flex-1">
                                         <label>Bank A/C Number</label>

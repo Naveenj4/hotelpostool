@@ -38,11 +38,16 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             pageKey: "dashboard"
         },
         {
+            label: "Sales Bill",
+            icon: <PlusCircle size={20} />,
+            route: "/dashboard/self-service/table-select",
+            pageKey: "billing"
+        },
+        {
             label: "Entry",
             icon: <Shield size={20} />,
             pageKey: "admin_dashboard",
             subItems: [
-                { label: "Sales Bill", route: "/dashboard/self-service/table-select", icon: <PlusCircle size={18} /> },
                 { label: "Purchase Entry", route: "/dashboard/self-service/purchase", icon: <ShoppingCart size={18} /> },
                 {
                     label: "Voucher",
@@ -51,7 +56,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                     subItems: [
                         { label: "Receipt Entry", route: "/dashboard/self-service/receipts", icon: <FileText size={18} /> },
                         { label: "Payment Entry", route: "/dashboard/self-service/payments", icon: <CreditCard size={18} /> },
-                            { label: "Voucher Master", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
+                        { label: "Voucher Master", route: "/dashboard/self-service/vouchers", icon: <Wallet size={18} /> }
                     ]
                 }
             ]
@@ -67,10 +72,8 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 { label: "Table", route: "/dashboard/self-service/tables", icon: <Grid size={18} /> },
                 { label: "Table Type", route: "/dashboard/self-service/table-types", icon: <Layers size={18} /> },
                 { label: "Captain/Waiter", route: "/dashboard/self-service/staff", icon: <Users size={18} /> },
-                { label: "Party/Ledger", route: "/dashboard/self-service/ledgers/create", icon: <User size={18} /> },
-                { label: "Ledger Master", route: "/dashboard/self-service/ledgers", icon: <Book size={18} /> },
-                { label: "Group Master", route: "/dashboard/self-service/group-master", icon: <Layers size={18} /> },
-                { label: "Stock Master", route: "/dashboard/self-service/stock", icon: <Package size={18} /> }
+                { label: "Ledger", route: "/dashboard/self-service/ledgers/create", icon: <User size={18} /> },
+                { label: "Ledger Group", route: "/dashboard/self-service/group-master", icon: <Layers size={18} /> }
             ]
         },
         {
@@ -78,28 +81,6 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             icon: <BarChart size={20} />,
             route: "/dashboard/self-service/advanced-reports",
             pageKey: "advanced_reports"
-        },
-        {
-            label: "Sales Summary",
-            icon: <PieChart size={20} />,
-            pageKey: "sales_summary",
-            subItems: [
-                { label: "Day Wise", route: "/dashboard/self-service/reports/sales/day", icon: <List size={18} /> },
-                { label: "Month Wise", route: "/dashboard/self-service/reports/sales/month", icon: <List size={18} /> },
-                { label: "Item Wise", route: "/dashboard/self-service/reports/sales/item", icon: <Package size={18} /> },
-                { label: "Category Wise", route: "/dashboard/self-service/reports/sales/category", icon: <LayoutGrid size={18} /> },
-                { label: "Transaction Wise", route: "/dashboard/self-service/reports/sales/transaction", icon: <Receipt size={18} /> },
-                { label: "Sales Profit", route: "/dashboard/self-service/reports/sales/profit", icon: <TrendingUp size={18} /> }
-            ]
-        },
-        {
-            label: "Purchase Summary",
-            icon: <History size={20} />,
-            pageKey: "purchase_summary",
-            subItems: [
-                { label: "Day Wise", route: "/dashboard/self-service/reports/purchase/day", icon: <List size={18} /> },
-                { label: "Supplier Wise", route: "/dashboard/self-service/reports/purchase/supplier", icon: <Users size={18} /> }
-            ]
         },
         {
             label: "Outstanding",
@@ -123,16 +104,35 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             ]
         },
         {
+            label: "Counter",
+            icon: <Store size={20} />,
+            route: "/dashboard/self-service/counters",
+            pageKey: "counters"
+        },
+        {
+            label: "Printer",
+            icon: <Printer size={20} />,
+            pageKey: "settings",
+            subItems: [
+                { label: "Printer Management", route: "/dashboard/self-service/printer-management", icon: <Printer size={18} /> },
+                { label: "Printer Display", route: "/dashboard/self-service/printer-display", icon: <Monitor size={18} /> }
+            ]
+        },
+        {
+            label: "Kitchen",
+            icon: <ChefHat size={20} />,
+            pageKey: "settings",
+            subItems: [
+                { label: "Kitchen Management", route: "/dashboard/self-service/kitchen-management", icon: <ChefHat size={18} /> },
+                { label: "Kitchen Display", route: "/dashboard/self-service/kitchen-display", icon: <Monitor size={18} /> }
+            ]
+        },
+        {
             label: "Settings",
             icon: <Settings size={20} />,
             pageKey: "settings",
             subItems: [
                 { label: "General", route: "/dashboard/self-service/settings", icon: <Settings size={18} /> },
-                { label: "Printer Management", route: "/dashboard/self-service/printer-management", icon: <Printer size={18} /> },
-                { label: "Printer Display", route: "/dashboard/self-service/printer-display", icon: <Monitor size={18} /> },
-                { label: "Counter", route: "/dashboard/self-service/counters", icon: <Store size={18} /> },
-                { label: "Kitchen Management", route: "/dashboard/self-service/kitchen-management", icon: <ChefHat size={18} /> },
-                { label: "Kitchen Display", route: "/dashboard/self-service/kitchen-display", icon: <Monitor size={18} /> },
                 { label: "User Rights", route: "/dashboard/self-service/access-control", icon: <Lock size={18} /> },
                 { label: "Order Integration", route: "/dashboard/self-service/settings/integration", icon: <Globe size={18} /> }
             ]

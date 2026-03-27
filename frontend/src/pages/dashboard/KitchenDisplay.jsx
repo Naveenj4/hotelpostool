@@ -479,54 +479,54 @@ export default function KitchenDisplay() {
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 {/* ─── Category Filter Sidebar ─── */}
                 <div style={{ 
-                    width: '240px', 
+                    width: '300px', 
                     background: '#111', 
                     borderRight: '1px solid #1a1a2e', 
                     display: 'flex', 
                     flexDirection: 'column', 
-                    gap: '0.4rem', 
+                    gap: '0.6rem', 
                     padding: '1.25rem 1rem',
                     overflowY: 'auto'
                 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#555', letterSpacing: '0.12em', padding: '0 0.5rem 0.5rem 0.5rem' }}>FILTER BY CATEGORY</div>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#666', letterSpacing: '0.12em', padding: '0 0.5rem 0.5rem 0.5rem' }}>FILTER BY CATEGORY</div>
                     <button
                         onClick={() => setSelectedCategory('ALL')}
                         style={{
                             background: selectedCategory === 'ALL' ? kColor : 'transparent',
                             color: selectedCategory === 'ALL' ? '#fff' : '#aaa',
-                            border: 'none', borderRadius: 10, padding: '0.75rem 1rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                            border: 'none', borderRadius: 10, padding: '1rem 1.2rem', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                         }}
                     >
                         ALL ORDERS
                     </button>
                     {Object.entries(categorySummary).map(([cat, data]) => (
-                        <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginBottom: '0.2rem' }}>
+                        <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginBottom: '0.5rem' }}>
                             <button
                                 onClick={() => setSelectedCategory(cat)}
                                 style={{
                                     background: selectedCategory === cat ? kColor : 'transparent',
                                     color: selectedCategory === cat ? '#fff' : '#aaa',
-                                    border: 'none', borderRadius: 10, padding: '0.75rem 1rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
+                                    border: 'none', borderRadius: 10, padding: '1rem 1.2rem', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
                                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6
                                 }}
                             >
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.toUpperCase()}</span> 
                                 <span style={{ 
                                     background: selectedCategory === cat ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)', 
-                                    padding: '3px 8px', borderRadius: 12, fontSize: '0.7rem' 
+                                    padding: '4px 10px', borderRadius: 12, fontSize: '0.9rem' 
                                 }}>
                                     {data.total}
                                 </span>
                             </button>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '0 0.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 0.5rem' }}>
                                 {Object.entries(data.items).map(([itemName, itemCount]) => (
                                     <div key={itemName} style={{
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                        color: selectedCategory === cat ? 'rgba(255,255,255,0.9)' : '#777',
-                                        fontSize: '0.7rem', padding: '0.3rem 0.5rem', background: selectedCategory === cat ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)', borderRadius: 6
+                                        color: selectedCategory === cat ? 'rgba(255,255,255,0.9)' : '#888',
+                                        fontSize: '0.9rem', padding: '0.4rem 0.6rem', background: selectedCategory === cat ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)', borderRadius: 8
                                     }}>
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', fontWeight: 600 }}>{itemName}</span>
-                                        <span style={{ fontWeight: 800, background: 'rgba(0,0,0,0.2)', padding: '1px 5px', borderRadius: 6 }}>{itemCount}</span>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px', fontWeight: 600 }}>{itemName}</span>
+                                        <span style={{ fontWeight: 800, background: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: 8 }}>{itemCount}</span>
                                     </div>
                                 ))}
                             </div>

@@ -87,7 +87,14 @@ const restaurantSchema = new mongoose.Schema({
     loyalty_enabled: { type: Boolean, default: false },
     loyalty_points_per_100: { type: Number, default: 1 },
     loyalty_target_points: { type: Number, default: 0 },
-    loyalty_point_value: { type: Number, default: 1 }
+    loyalty_point_value: { type: Number, default: 1 },
+    bill_series: {
+        dine_in: { prefix: { type: String, default: 'DI' }, next_number: { type: Number, default: 1 } },
+        takeaway: { prefix: { type: String, default: 'TA' }, next_number: { type: Number, default: 1 } },
+        delivery: { prefix: { type: String, default: 'DE' }, next_number: { type: Number, default: 1 } },
+        parcel: { prefix: { type: String, default: 'PA' }, next_number: { type: Number, default: 1 } },
+        party: { prefix: { type: String, default: 'PT' }, next_number: { type: Number, default: 1 } }
+    }
 }, {
     timestamps: true
 });

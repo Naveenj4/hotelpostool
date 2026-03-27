@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
 import './ReportsPage.css';
@@ -41,6 +42,7 @@ ChartJS.register(
 );
 
 const ReportsPage = () => {
+    const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [dailyData, setDailyData] = useState(null);
@@ -244,11 +246,41 @@ const ReportsPage = () => {
         return (
             <div className="dashboard-layout">
                 <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-            {isMobileSidebarOpen && window.innerWidth <= 768 && (
-                <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
-            )}
+                {isMobileSidebarOpen && window.innerWidth <= 768 && (
+                    <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
+                )}
                 <main className="dashboard-main">
-                    <Header toggleSidebar={toggleSidebar} />
+                    <Header
+                        toggleSidebar={toggleSidebar}
+                        title="Sales Reports"
+                        actions={
+                            <div className="relative">
+                                <select
+                                    className="input-premium-modern text-xs font-bold appearance-none pr-8 cursor-pointer"
+                                    defaultValue=""
+                                    onChange={(e) => e.target.value && navigate(e.target.value)}
+                                >
+                                    <option value="" disabled>Go to Specific Report...</option>
+                                    <option value="/dashboard/self-service/stock">Stock Master</option>
+                                    <optgroup label="Sales Summary">
+                                        <option value="/dashboard/self-service/reports/sales/day">Day Wise</option>
+                                        <option value="/dashboard/self-service/reports/sales/month">Month Wise</option>
+                                        <option value="/dashboard/self-service/reports/sales/item">Item Wise</option>
+                                        <option value="/dashboard/self-service/reports/sales/category">Category Wise</option>
+                                        <option value="/dashboard/self-service/reports/sales/transaction">Transaction Wise</option>
+                                        <option value="/dashboard/self-service/reports/sales/profit">Sales Profit</option>
+                                    </optgroup>
+                                    <optgroup label="Purchase Summary">
+                                        <option value="/dashboard/self-service/reports/purchase/day">Day Wise</option>
+                                        <option value="/dashboard/self-service/reports/purchase/supplier">Supplier Wise</option>
+                                    </optgroup>
+                                </select>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    ▼
+                                </span>
+                            </div>
+                        }
+                    />
                     <div className="dashboard-content">
                         <div className="page-header">
                             <div className="page-title">
@@ -295,7 +327,37 @@ const ReportsPage = () => {
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
             <main className="dashboard-main">
-                <Header toggleSidebar={toggleSidebar} />
+                <Header
+                    toggleSidebar={toggleSidebar}
+                    title="Sales Reports"
+                    actions={
+                        <div className="relative">
+                            <select
+                                className="input-premium-modern text-xs font-bold appearance-none pr-8 cursor-pointer"
+                                defaultValue=""
+                                onChange={(e) => e.target.value && navigate(e.target.value)}
+                            >
+                                <option value="" disabled>Go to Specific Report...</option>
+                                <option value="/dashboard/self-service/stock">Stock Master</option>
+                                <optgroup label="Sales Summary">
+                                    <option value="/dashboard/self-service/reports/sales/day">Day Wise</option>
+                                    <option value="/dashboard/self-service/reports/sales/month">Month Wise</option>
+                                    <option value="/dashboard/self-service/reports/sales/item">Item Wise</option>
+                                    <option value="/dashboard/self-service/reports/sales/category">Category Wise</option>
+                                    <option value="/dashboard/self-service/reports/sales/transaction">Transaction Wise</option>
+                                    <option value="/dashboard/self-service/reports/sales/profit">Sales Profit</option>
+                                </optgroup>
+                                <optgroup label="Purchase Summary">
+                                    <option value="/dashboard/self-service/reports/purchase/day">Day Wise</option>
+                                    <option value="/dashboard/self-service/reports/purchase/supplier">Supplier Wise</option>
+                                </optgroup>
+                            </select>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                ▼
+                            </span>
+                        </div>
+                    }
+                />
 
                 <div className="dashboard-content">
                     <div className="page-header">

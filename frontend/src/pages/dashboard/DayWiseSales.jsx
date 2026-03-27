@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
+import ReportNavigationDropdown from '@/components/dashboard/ReportNavigationDropdown';
 import {
     Search,
     CreditCard,
@@ -36,7 +37,7 @@ import './Dashboard.css';
 const DayWiseSales = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-    
+
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
     const [summary, setSummary] = useState({
@@ -58,13 +59,13 @@ const DayWiseSales = () => {
             const savedUser = localStorage.getItem('user');
             if (!savedUser) return;
             const { token } = JSON.parse(savedUser);
-            
+
             const q = new URLSearchParams(filters).toString();
             const response = await fetch(`${import.meta.env.VITE_API_URL}/reports/sales/transaction-summary?${q}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await response.json();
-            
+
             if (result.success) {
                 // Group by Day
                 const grouped = {};
@@ -89,7 +90,7 @@ const DayWiseSales = () => {
                     grouped[date].total += t.total;
                 });
 
-                setData(Object.values(grouped).sort((a,b) => {
+                setData(Object.values(grouped).sort((a, b) => {
                     const da = a.date.split('/').reverse().join('-');
                     const db = b.date.split('/').reverse().join('-');
                     return new Date(db) - new Date(da);
@@ -134,7 +135,7 @@ const DayWiseSales = () => {
     return (
         <div className="dashboard-layout bg-white">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-            
+
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
@@ -143,7 +144,7 @@ const DayWiseSales = () => {
                 <Header toggleSidebar={toggleSidebar} />
 
                 <div className="dashboard-content fade-in p-6 lg:p-14 max-w-[2000px] mx-auto w-full">
-                    
+
                     {/* Industrial Header */}
                     <div className="flex flex-col xl:flex-row justify-between items-end xl:items-center mb-16 gap-8 border-b border-slate-100 pb-10">
                         <div>
@@ -156,12 +157,15 @@ const DayWiseSales = () => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4 p-2 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                            <div className="px-4 border-r border-slate-200">
+                                <ReportNavigationDropdown />
+                            </div>
                             <div className="flex items-center px-6 py-3 gap-6 border-r border-slate-200">
                                 <Calendar size={20} className="text-indigo-600" />
                                 <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
-                                    <input type="date" value={filters.startDate} onChange={e => setFilters(p => ({...p, startDate: e.target.value}))} className="bg-transparent border-none outline-none w-[115px] p-0"/>
+                                    <input type="date" value={filters.startDate} onChange={e => setFilters(p => ({ ...p, startDate: e.target.value }))} className="bg-transparent border-none outline-none w-[115px] p-0" />
                                     <span className="opacity-30">—</span>
-                                    <input type="date" value={filters.endDate} onChange={e => setFilters(p => ({...p, endDate: e.target.value}))} className="bg-transparent border-none outline-none w-[115px] p-0"/>
+                                    <input type="date" value={filters.endDate} onChange={e => setFilters(p => ({ ...p, endDate: e.target.value }))} className="bg-transparent border-none outline-none w-[115px] p-0" />
                                 </div>
                             </div>
                             <button className="h-12 px-8 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 shadow-lg shadow-slate-200" onClick={fetchReport}>

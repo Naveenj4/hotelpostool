@@ -273,50 +273,92 @@ const TableMaster = () => {
                                     <div className="h-px flex-1 bg-slate-200"></div>
                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{groupTables.length} Tables</span>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-                                    {groupTables.map(table => (
-                                        <div key={table._id} className={`group relative bg-white rounded-[2.5rem] border-2 transition-all p-2 ${table.is_active ? 'border-slate-50 hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-100/50 hover:-translate-y-2' : 'border-slate-100 opacity-50 grayscale'}`}>
-                                            <div className="p-6">
-                                                <div className="flex justify-between items-start mb-6">
-                                                    <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20 group-hover:bg-indigo-600 transition-colors">
-                                                        <span className="text-xl font-black">{table.table_number.charAt(0)}</span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                                    {groupTables.map(table => {
+                                        const isAvail = table.status === 'AVAILABLE';
+                                        const isOccupied = table.status === 'OCCUPIED';
+                                        const isPrinted = table.status === 'PRINTED';
+                                        const isReserved = table.status === 'RESERVED';
+                                        const isActive = isOccupied || isPrinted;
+                                        
+                                        const colorScheme = isOccupied
+                                            ? { border: '#fdba74', bg: '#fffaf5', text: '#ea580c', glow: '#fb923c22' }
+                                            : isPrinted
+                                                ? { border: '#86efac', bg: '#f0fdf4', text: '#16a34a', glow: '#22c55e22' }
+                                                : isReserved
+                                                    ? { border: '#c4b5fd', bg: '#fbfaff', text: '#7c3aed', glow: '#a78bfa22' }
+                                                    : { border: '#e2e8f0', bg: '#ffffff', text: '#334155', glow: 'transparent' };
+                                                    
+                                        const { border, bg, text, glow } = colorScheme;
+                                        
+                                        return (
+                                            <div key={table._id} style={{ display: 'flex', flexDirection: 'row', gap: '6px', flexShrink: 0, width: '164px', height: '108px', opacity: table.is_active ? 1 : 0.6, filter: table.is_active ? 'none' : 'grayscale(100%)', transition: 'all 0.2s ease' }}
+                                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}
+                                                onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
+                                            >
+                                                {/* Main Table Square */}
+                                                <div
+                                                    style={{
+                                                        flex: 1, height: '100%', border: `1px solid ${border}`,
+                                                        borderRadius: '12px', background: bg,
+                                                        display: 'flex', flexDirection: 'column',
+                                                        padding: '10px', position: 'relative',
+                                                        boxShadow: isActive || isReserved ? `0 4px 16px ${glow}` : '0 2px 4px rgba(0,0,0,0.02)',
+                                                        justifyContent: 'space-between'
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <span style={{ fontSize: '18px', fontWeight: 900, color: text, lineHeight: 1 }}>{table.table_number}</span>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 800, color: '#94a3b8' }}>
+                                                            <Users size={12} strokeWidth={3} /> {table.seating_capacity || '-'}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">{table.table_type || 'G Floor'}</span>
+                                                    
+                                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
+                                                        {table.captain && (
+                                                            <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textAlign: 'center', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                <span style={{color: '#cbd5e1', marginRight: '3px'}}>C:</span>{table.captain}
+                                                            </div>
+                                                        )}
+                                                        {table.waiter && (
+                                                            <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textAlign: 'center', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                <span style={{color: '#cbd5e1', marginRight: '3px'}}>W:</span>{table.waiter}
+                                                            </div>
+                                                        )}
+                                                        {!table.captain && !table.waiter && (
+                                                            <div style={{ fontSize: '10px', fontWeight: 800, color: '#cbd5e1' }}>Unassigned</div>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div style={{ height: '14px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', width: '100%' }}>
+                                                        <span style={{ fontSize: '9px', fontWeight: 900, color: text, letterSpacing: '0.05em' }}>{table.status}</span>
+                                                    </div>
                                                 </div>
 
-                                                <div className="mb-6">
-                                                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase group-hover:text-indigo-600 transition-colors">{table.table_number}</h3>
-                                                    <div className="flex items-center gap-2 text-slate-400 mt-1">
-                                                        <Users size={14} />
-                                                        <span className="text-xs font-bold uppercase tracking-widest">{table.seating_capacity} Persons</span>
-                                                    </div>
-                                                </div>
-
-                                                {(table.captain || table.waiter) && (
-                                                    <div className="mb-4 flex flex-col gap-1">
-                                                        {table.captain && <div className="text-xs font-bold text-slate-500 uppercase">C: <span className="text-slate-700">{table.captain}</span></div>}
-                                                        {table.waiter && <div className="text-xs font-bold text-slate-500 uppercase">W: <span className="text-slate-700">{table.waiter}</span></div>}
-                                                    </div>
-                                                )}
-
-                                                <div className="flex items-center justify-between mt-auto">
-                                                    <div className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em]" style={{
-                                                        backgroundColor: getStatusStyle(table.status).bg,
-                                                        color: getStatusStyle(table.status).text
-                                                    }}>
-                                                        {getStatusStyle(table.status).label}
-                                                    </div>
+                                                {/* Actions Column */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '42px', height: '100%' }}>
+                                                    <button onClick={() => handleEdit(table)} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f8fafc', color: '#6366f1', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s' }} 
+                                                        title="Edit Table"
+                                                        onMouseEnter={e => { e.currentTarget.style.background = '#eef2ff'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
+                                                        <Edit size={16} strokeWidth={2.5} />
+                                                    </button>
+                                                    <button onClick={() => handleToggleStatus(table)} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f8fafc', color: table.is_active ? '#15803d' : '#9a3412', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s' }} 
+                                                        title={table.is_active ? "Deactivate" : "Activate"}
+                                                        onMouseEnter={e => { e.currentTarget.style.background = table.is_active ? '#f0fdf4' : '#fff7ed'; e.currentTarget.style.borderColor = table.is_active ? '#bbf7d0' : '#ffedd5'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
+                                                        {table.is_active ? <CheckCircle2 size={16} strokeWidth={2.5} /> : <XCircle size={16} strokeWidth={2.5} />}
+                                                    </button>
+                                                    <button onClick={() => handleDelete(table)} style={{ flex: 1.2, display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s' }} 
+                                                        title="Delete Table"
+                                                        onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}>
+                                                        <Trash2 size={16} strokeWidth={2.5} />
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div className="bg-slate-50/50 rounded-[2rem] p-2 mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => handleEdit(table)} className="action-icon-btn edit flex-1 !h-12"><Edit size={18} /></button>
-                                                <button onClick={() => handleToggleStatus(table)} className="action-icon-btn flex-1 !h-12" style={{ background: '#fff', border: '1px solid #f1f5f9', color: table.is_active ? '#9a3412' : '#15803d' }}>
-                                                    {table.is_active ? <XCircle size={18} /> : <CheckCircle2 size={18} />}
-                                                </button>
-                                                <button onClick={() => handleDelete(table)} className="action-icon-btn delete flex-1 !h-12"><Trash2 size={18} /></button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))}

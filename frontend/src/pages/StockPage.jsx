@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
+import ReportNavigationDropdown from '@/components/dashboard/ReportNavigationDropdown';
 import {
     Search,
     Package,
@@ -155,8 +156,8 @@ const StockPage = () => {
             )}
 
             <main className="dashboard-main overflow-hidden font-sans">
-                <Header 
-                    toggleSidebar={toggleSidebar} 
+                <Header
+                    toggleSidebar={toggleSidebar}
                     title="Stock Master"
                     actions={
                         <div className="flex items-center gap-3">
@@ -178,7 +179,7 @@ const StockPage = () => {
                                 <Settings size={16} />
                             </button>
                             <button className="btn-premium-primary !py-2 !px-6" onClick={exportToCSV}>
-                                <Download size={16} /> 
+                                <Download size={16} />
                                 <span className="text-[10px] uppercase font-black">Export</span>
                             </button>
                         </div>
@@ -285,6 +286,9 @@ const StockPage = () => {
                         </div>
 
                         <div className="flex items-center gap-4 p-2 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="px-4 border-r border-slate-200">
+                                <ReportNavigationDropdown />
+                            </div>
                             <div className="flex items-center px-4 py-2 gap-4 border-r border-slate-200">
                                 <Calendar size={18} className="text-slate-400" />
                                 <div className="flex items-center gap-3 text-xs font-bold text-slate-600">

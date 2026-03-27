@@ -7,7 +7,7 @@ import {
     User, Key, Printer, FileText, Eye, EyeOff,
     Save, CheckCircle, Palette, AlertCircle, Loader2,
     Building2, Phone, Mail, Lock, Settings, TestTube,
-    LayoutTemplate, Shield, ChevronRight, Sliders, Ticket, Plus, Trash2, Edit
+    LayoutTemplate, Shield, ChevronRight, Sliders, Ticket, Plus, Trash2, Edit, Gift, Hash
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -41,6 +41,13 @@ const SettingsPage = () => {
         type: 'DISCOUNT', discount_type: 'PERCENT', discount_value: 0
     });
     const [editingCouponId, setEditingCouponId] = useState(null);
+    const [billSeriesForm, setBillSeriesForm] = useState({
+        dine_in: { prefix: 'DI', next_number: 1 },
+        takeaway: { prefix: 'TA', next_number: 1 },
+        delivery: { prefix: 'DE', next_number: 1 },
+        parcel: { prefix: 'PA', next_number: 1 },
+        party: { prefix: 'PT', next_number: 1 }
+    });
 
     const fetchSettings = async () => {
         try {
@@ -67,6 +74,7 @@ const SettingsPage = () => {
                 if (result.data.printer) setPrinterForm(result.data.printer);
                 if (result.data.billFormat) setBillForm(result.data.billFormat);
                 if (result.data.loyalty) setLoyaltyForm(result.data.loyalty);
+                if (result.data.billSeries) setBillSeriesForm(result.data.billSeries);
             }
 
             // Fetch Coupons
@@ -200,6 +208,22 @@ const SettingsPage = () => {
         finally { setSaving(prev => ({ ...prev, loyalty: false })); }
     };
 
+    const saveBillSeries = async () => {
+        setSaving(prev => ({ ...prev, billSeries: true }));
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/settings/bill-series`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ billSeries: billSeriesForm })
+            });
+            const result = await response.json();
+            if (result.success) { setSuccess(prev => ({ ...prev, billSeries: true })); setTimeout(() => setSuccess(prev => ({ ...prev, billSeries: false })), 3000); }
+            else { setErrors(prev => ({ ...prev, billSeries: result.message })); }
+        } catch (err) { setErrors(prev => ({ ...prev, billSeries: 'Failed to update bill series' })); }
+        finally { setSaving(prev => ({ ...prev, billSeries: false })); }
+    };
+
     const TABS = [
         { id: 'profile', icon: <User size={18} />, label: 'Profile', sub: 'Account info' },
         { id: 'password', icon: <Key size={18} />, label: 'Security', sub: 'Access control' },
@@ -207,6 +231,7 @@ const SettingsPage = () => {
         { id: 'bill', icon: <FileText size={18} />, label: 'Bill Format', sub: 'Receipt style' },
         { id: 'coupons', icon: <Ticket size={18} />, label: 'Coupons', sub: 'Offers & BOGO' },
         { id: 'loyalty', icon: <Gift size={18} />, label: 'Loyalty', sub: 'Points & Rewards' },
+        { id: 'bill_numbering', icon: <Hash size={18} />, label: 'Bill Series', sub: 'Number sequence' },
         { id: 'appearance', icon: <Palette size={18} />, label: 'Appearance', sub: 'UI & layout' },
     ];
 
@@ -704,6 +729,60 @@ const SettingsPage = () => {
                                         <div className="flex justify-end pt-8 border-t border-slate-50 mt-8">
                                             <button onClick={saveLoyaltySettings} disabled={saving.loyalty} className="btn-premium-primary !py-4 !px-10">
                                                 {saving.loyalty ? <><Loader2 className="animate-spin" /> Saving...</> : <><Save size={18} /> Update Rewards</>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bill Numbering Settings */}
+                            {activeTab === 'bill_numbering' && (
+                                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-10 fade-in">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <Hash size={20} className="text-indigo-600" />
+                                        <div>
+                                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Bill Number Series</h3>
+                                            <p className="text-xs font-bold text-slate-400 mt-0.5">Configure separate sequences for different order types</p>
+                                        </div>
+                                    </div>
+
+                                    {errors.billSeries && <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-6"><AlertCircle size={18} /> {errors.billSeries}</div>}
+                                    {success.billSeries && <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-3 text-emerald-700 font-bold text-sm mb-6"><CheckCircle size={18} /> Bill series updated successfully!</div>}
+
+                                    <div className="space-y-8">
+                                        {Object.keys(billSeriesForm).map((key) => (
+                                            <div key={key} className="p-6 bg-slate-50/50 rounded-3xl border border-slate-100">
+                                                <div className="flex items-center gap-2 mb-6">
+                                                    <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                                                    <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm">{key.replace('_', ' ')} Series</h4>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="form-group-premium">
+                                                        <label>Prefix</label>
+                                                        <input type="text" className="input-premium uppercase" 
+                                                            value={billSeriesForm[key].prefix} 
+                                                            onChange={e => setBillSeriesForm({
+                                                                ...billSeriesForm,
+                                                                [key]: { ...billSeriesForm[key], prefix: e.target.value.toUpperCase() }
+                                                            })} 
+                                                            placeholder="e.g. DI" />
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Next / Starting Number</label>
+                                                        <input type="number" className="input-premium" 
+                                                            value={billSeriesForm[key].next_number} 
+                                                            onChange={e => setBillSeriesForm({
+                                                                ...billSeriesForm,
+                                                                [key]: { ...billSeriesForm[key], next_number: parseInt(e.target.value) || 1 }
+                                                            })} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <div className="flex justify-end pt-8 border-t border-slate-50 mt-8">
+                                            <button onClick={saveBillSeries} disabled={saving.billSeries} className="btn-premium-primary !py-4 !px-10">
+                                                {saving.billSeries ? <><Loader2 className="animate-spin" /> Saving...</> : <><Save size={18} /> Save All Series</>}
                                             </button>
                                         </div>
                                     </div>
