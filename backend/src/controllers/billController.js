@@ -281,9 +281,22 @@ exports.processPayment = async (req, res) => {
             const AccountTransaction = require('../models/AccountTransaction');
             const coId = req.user.restaurant_id;
 
-            const salesL = await Ledger.findOne({ company_id: coId, name: 'Sales Account' });
+            // Helper to get or create ledger
+            const getOrCreateLedger = async (query, createData) => {
+                let ledg = await Ledger.findOne(query);
+                if (!ledg) {
+                    ledg = await Ledger.create({ ...query, ...createData, opening_balance: 0 });
+                }
+                return ledg;
+            };
+
+            // 1. Credit Sales Account for full bill amount
+            const salesL = await getOrCreateLedger(
+                { company_id: coId, name: 'Sales Account' },
+                { group: 'Sales Accounts' }
+            );
+
             if (salesL) {
-                // 1. Credit Sales Account for full bill amount
                 await AccountTransaction.create({
                     company_id: coId, ledger_id: salesL._id, type: 'CREDIT', amount: bill.grand_total,
                     voucher_type: 'SALES', voucher_number: bill.bill_number, reference_id: bill._id,
@@ -292,9 +305,29 @@ exports.processPayment = async (req, res) => {
                 await Ledger.findByIdAndUpdate(salesL._id, { $inc: { opening_balance: -bill.grand_total } });
 
                 // 2. Debit Payment Method Ledgers for amount actually paid
+                let defaultBankL = null;
                 for (const pm of payment_modes) {
-                    let accName = pm.type === 'CASH' ? 'Cash in Hand' : 'HDFC Bank';
-                    const payL = await Ledger.findOne({ company_id: coId, name: accName });
+                    if (pm.amount <= 0) continue;
+                    
+                    let payL = null;
+                    if (pm.type === 'CASH') {
+                        payL = await getOrCreateLedger(
+                            { company_id: coId, name: 'Cash in Hand' },
+                            { group: 'Cash in Hand' }
+                        );
+                    } else { // UPI, CARD, ONLINE, SPLIT parts
+                        if (!defaultBankL) {
+                            defaultBankL = await Ledger.findOne({ company_id: coId, group: 'Bank Accounts' });
+                            if (!defaultBankL) {
+                                defaultBankL = await getOrCreateLedger(
+                                    { company_id: coId, name: 'Bank Account' },
+                                    { group: 'Bank Accounts' }
+                                );
+                            }
+                        }
+                        payL = defaultBankL;
+                    }
+
                     if (payL) {
                         await AccountTransaction.create({
                             company_id: coId, ledger_id: payL._id, type: 'DEBIT', amount: pm.amount,
@@ -308,10 +341,19 @@ exports.processPayment = async (req, res) => {
                 // 3. If Partial Payment, Debit Customer Ledger for the balance
                 const balance = bill.grand_total - totalPaid;
                 if (balance > 0.01) {
-                    // Try to find ledger by phone first, then name
-                    let custL = await Ledger.findOne({ company_id: coId, phone: bill.customer_phone, party_type: 'CUSTOMER' });
-                    if (!custL) {
+                    let custL = null;
+                    if (bill.customer_phone) {
+                        custL = await Ledger.findOne({ company_id: coId, phone: bill.customer_phone, party_type: 'CUSTOMER' });
+                    }
+                    if (!custL && bill.customer_name) {
                         custL = await Ledger.findOne({ company_id: coId, name: bill.customer_name, party_type: 'CUSTOMER' });
+                    }
+                    if (!custL) {
+                        const fallBackName = bill.customer_name || 'Walk-in Customer';
+                        custL = await getOrCreateLedger(
+                            { company_id: coId, name: fallBackName, party_type: 'CUSTOMER' },
+                            { group: 'Sundry Debtors', phone: bill.customer_phone || '' }
+                        );
                     }
 
                     if (custL) {
@@ -325,7 +367,7 @@ exports.processPayment = async (req, res) => {
                 }
             }
         } catch (accErr) {
-            console.error("Accounting Integration Error:", accErr);
+            console.error("Accounting Integration Error:", accErr.message || accErr);
         }
 
         // LOYALTY INTEGRATION
@@ -499,7 +541,7 @@ exports.updateBill = async (req, res) => {
 // @access  Admin/Owner
 exports.getAllBills = async (req, res) => {
     try {
-        const { startDate, endDate, status, search } = req.query;
+        const { startDate, endDate, status, search, type } = req.query;
 
         let start, end;
 
@@ -519,10 +561,16 @@ exports.getAllBills = async (req, res) => {
         }
 
         if (status) {
-            query.status = status;
-        } else if (!search) {
-            // Default to PAID if no status or search specified
+            if (status !== 'ALL') {
+                query.status = status;
+            }
+        } else if (!search && !type) {
+            // Default to PAID if no status/type/search is explicitly specified
             query.status = 'PAID';
+        }
+
+        if (type && type !== 'ALL') {
+            query.type = type;
         }
 
         if (search) {

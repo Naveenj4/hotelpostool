@@ -7,7 +7,7 @@ import {
     User, Key, Printer, FileText, Eye, EyeOff,
     Save, CheckCircle, Palette, AlertCircle, Loader2,
     Building2, Phone, Mail, Lock, Settings, TestTube,
-    LayoutTemplate, Shield, ChevronRight, Sliders, Ticket, Plus, Trash2, Edit, Gift, Hash
+    LayoutTemplate, Shield, ChevronRight, Sliders, Ticket, Plus, Trash2, Edit, Gift, Hash, List, CalendarDays, Search
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -49,6 +49,13 @@ const SettingsPage = () => {
         party: { prefix: 'PT', next_number: 1 }
     });
 
+    // Bill History State
+    const [billsHistory, setBillsHistory] = useState([]);
+    const [loadingBills, setLoadingBills] = useState(false);
+    const [billDateFilter, setBillDateFilter] = useState('TODAY');
+    const [billTypeFilter, setBillTypeFilter] = useState('ALL');
+    const [billSearchQuery, setBillSearchQuery] = useState('');
+
     const fetchSettings = async () => {
         try {
             const savedUser = localStorage.getItem('user');
@@ -87,7 +94,55 @@ const SettingsPage = () => {
         finally { setLoading(false); }
     };
 
+    const fetchBillHistory = async () => {
+        setLoadingBills(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            if (!savedUser) return;
+            const { token } = JSON.parse(savedUser);
+
+            let start = new Date();
+            let end = new Date();
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+
+            const today = new Date();
+            if (billDateFilter === 'WEEK') {
+                start.setDate(today.getDate() - today.getDay());
+            } else if (billDateFilter === 'MONTH') {
+                start.setDate(1);
+            } else if (billDateFilter === 'YEAR') {
+                start.setMonth(0, 1);
+            }
+
+            let query = `?status=ALL`;
+            if (billDateFilter !== 'ALL_TIME') {
+                query += `&startDate=${start.toISOString()}&endDate=${end.toISOString()}`;
+            }
+            if (billTypeFilter !== 'ALL') query += `&type=${billTypeFilter}`;
+            if (billSearchQuery) query += `&search=${billSearchQuery}`;
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/bills${query}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.success) setBillsHistory(result.data);
+            else setBillsHistory([]);
+        } catch (err) {
+            console.error("Failed to fetch bill history", err);
+            setBillsHistory([]);
+        } finally {
+            setLoadingBills(false);
+        }
+    };
+
     useEffect(() => { fetchSettings(); }, []);
+
+    useEffect(() => {
+        if (activeTab === 'bill_history') {
+            fetchBillHistory();
+        }
+    }, [activeTab, billDateFilter, billTypeFilter]);
 
     const toggleSidebar = () => {
         if (window.innerWidth <= 768) { setIsMobileSidebarOpen(!isMobileSidebarOpen); }
@@ -232,6 +287,7 @@ const SettingsPage = () => {
         { id: 'coupons', icon: <Ticket size={18} />, label: 'Coupons', sub: 'Offers & BOGO' },
         { id: 'loyalty', icon: <Gift size={18} />, label: 'Loyalty', sub: 'Points & Rewards' },
         { id: 'bill_numbering', icon: <Hash size={18} />, label: 'Bill Series', sub: 'Number sequence' },
+        { id: 'bill_history', icon: <List size={18} />, label: 'Generated Bills', sub: 'View all bills' },
         { id: 'appearance', icon: <Palette size={18} />, label: 'Appearance', sub: 'UI & layout' },
     ];
 
@@ -784,6 +840,109 @@ const SettingsPage = () => {
                                             <button onClick={saveBillSeries} disabled={saving.billSeries} className="btn-premium-primary !py-4 !px-10">
                                                 {saving.billSeries ? <><Loader2 className="animate-spin" /> Saving...</> : <><Save size={18} /> Save All Series</>}
                                             </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bill History Settings */}
+                            {activeTab === 'bill_history' && (
+                                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-10 fade-in flex flex-col min-h-[600px]">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <List size={20} className="text-indigo-600" />
+                                        <div>
+                                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Generated Bills</h3>
+                                            <p className="text-xs font-bold text-slate-400 mt-0.5">View and filter all previous transactions</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Filters */}
+                                    <div className="flex flex-wrap gap-4 mb-6">
+                                        <div className="flex-1 min-w-[200px] relative">
+                                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input type="text" placeholder="Search Bill No, Customer or Table..." 
+                                                className="input-premium !pl-12 w-full"
+                                                value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && fetchBillHistory()}
+                                            />
+                                        </div>
+                                        <select className="input-premium !px-4 !py-3 bg-white w-40 cursor-pointer" 
+                                            value={billDateFilter} onChange={(e) => setBillDateFilter(e.target.value)}>
+                                            <option value="TODAY">Today</option>
+                                            <option value="WEEK">This Week</option>
+                                            <option value="MONTH">This Month</option>
+                                            <option value="YEAR">This Year</option>
+                                            <option value="ALL_TIME">All Time</option>
+                                        </select>
+                                        <select className="input-premium !px-4 !py-3 bg-white w-48 cursor-pointer" 
+                                            value={billTypeFilter} onChange={(e) => setBillTypeFilter(e.target.value)}>
+                                            <option value="ALL">All Order Types</option>
+                                            <option value="DINE_IN">Dine In</option>
+                                            <option value="TAKEAWAY">Takeaway</option>
+                                            <option value="PARCEL">Parcel</option>
+                                            <option value="DELIVERY">Delivery</option>
+                                            <option value="PARTY">Party Order</option>
+                                            <option value="SELF_SERVICE">Self Service</option>
+                                        </select>
+                                        <button onClick={fetchBillHistory} className="btn-premium-primary !py-3 !px-6 shrink-0">
+                                            <Search size={16} /> Fetch
+                                        </button>
+                                    </div>
+
+                                    {/* Datatable */}
+                                    <div className="bg-slate-50 border border-slate-100 rounded-3xl overflow-hidden flex-1 flex flex-col">
+                                        <div className="overflow-x-auto flex-1 custom-scrollbar max-h-[500px]">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-100/80 sticky top-0 z-10 backdrop-blur-md">
+                                                        <th className="p-4 text-xs font-black tracking-widest text-slate-500 uppercase rounded-tl-3xl">Bill No</th>
+                                                        <th className="p-4 text-xs font-black tracking-widest text-slate-500 uppercase">Date & Time</th>
+                                                        <th className="p-4 text-xs font-black tracking-widest text-slate-500 uppercase">Type</th>
+                                                        <th className="p-4 text-xs font-black tracking-widest text-slate-500 uppercase">Customer / Table</th>
+                                                        <th className="p-4 text-xs font-black tracking-widest text-slate-500 uppercase">Status</th>
+                                                        <th className="p-4 text-xs font-black tracking-widest text-slate-500 uppercase text-right rounded-tr-3xl">Total (₹)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 bg-white">
+                                                    {loadingBills ? (
+                                                        <tr><td colSpan="6" className="p-10 text-center flex flex-col items-center justify-center text-slate-400 gap-2"><Loader2 className="animate-spin" /> Fetching latest bills...</td></tr>
+                                                    ) : billsHistory.length === 0 ? (
+                                                        <tr><td colSpan="6" className="p-10 text-center font-bold text-slate-400 uppercase tracking-widest">No matching bills found</td></tr>
+                                                    ) : (
+                                                        billsHistory.map(b => (
+                                                            <tr key={b._id} className="hover:bg-slate-50/50 transition-colors group">
+                                                                <td className="p-4">
+                                                                    <span className="font-black text-slate-800 text-sm">{b.bill_number}</span>
+                                                                </td>
+                                                                <td className="p-4 text-xs font-bold text-slate-500">
+                                                                    {new Date(b.createdAt).toLocaleString('en-IN', { hour12: true, dateStyle: 'short', timeStyle: 'short' })}
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md">
+                                                                        {b.type ? b.type.replace('_', ' ') : 'WALK IN'}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-4 text-xs font-bold text-slate-600">
+                                                                    {b.customer_name || 'Walk-in'} {b.customer_phone ? `(${b.customer_phone})` : ''}
+                                                                    {b.table_no && <span className="ml-2 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-100 text-slate-500">{b.table_no}</span>}
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <span className={`text-[10px] inline-flex items-center gap-1 font-black uppercase tracking-widest px-2 py-1 rounded-md ${
+                                                                        b.status === 'PAID' ? 'bg-emerald-50 text-emerald-600' :
+                                                                        b.status === 'CANCELLED' ? 'bg-rose-50 text-rose-600' :
+                                                                        'bg-amber-50 text-amber-600'
+                                                                    }`}>
+                                                                        {b.status} {b.status === 'PAID' && b.payment_mode ? `· ${b.payment_mode}` : ''}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-4 text-right font-black text-slate-800 text-sm">
+                                                                    ₹{(b.grand_total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
