@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
@@ -16,7 +17,18 @@ const SettingsPage = () => {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('profile');
+    const location = useLocation();
+    const navigate = useNavigate();
+    
+    // Read initial tab from URL or default to profile
+    const initialTab = new URLSearchParams(location.search).get('tab') || 'profile';
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    // Sync tab changes when URL changes (e.g., clicking sidebar link)
+    useEffect(() => {
+        const tab = new URLSearchParams(location.search).get('tab');
+        if (tab) setActiveTab(tab);
+    }, [location.search]);
 
     const [profileForm, setProfileForm] = useState({
         ownerName: '', email: '', mobile: '', businessName: '', restaurantType: '', billingLayout: 'SIDEBAR'
@@ -326,7 +338,7 @@ const SettingsPage = () => {
                             <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-3 sticky top-6">
                                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest px-4 py-2">Configuration Modules</p>
                                 {TABS.map(tab => (
-                                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                                    <button key={tab.id} onClick={() => { setActiveTab(tab.id); navigate(`?tab=${tab.id}`, { replace: true }); }}
                                         className={`w-full flex items-center gap-4 p-4 rounded-2xl mb-1 text-left transition-all group ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'hover:bg-slate-50 text-slate-600'}`}>
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-50 group-hover:text-indigo-600'} transition-all`}>
                                             {tab.icon}

@@ -6,7 +6,7 @@ import {
     Users, Pocket, UserCircle, User, Book, ShoppingCart, Wallet,
     History, BarChart, Grid, ChevronDown, ChevronRight, Calculator,
     PieChart, List, CreditCard, Landmark, Printer, ChefHat, Lock, Globe,
-    TrendingUp, TrendingDown, Package, Monitor, Receipt, LayoutGrid
+    TrendingUp, TrendingDown, Package, Monitor, Receipt, LayoutGrid, Hash
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../pages/dashboard/Dashboard.css';
@@ -134,7 +134,16 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             subItems: [
                 { label: "General", route: "/dashboard/self-service/settings", icon: <Settings size={18} /> },
                 { label: "User Rights", route: "/dashboard/self-service/access-control", icon: <Lock size={18} /> },
-                { label: "Order Integration", route: "/dashboard/self-service/settings/integration", icon: <Globe size={18} /> }
+                { label: "Order Integration", route: "/dashboard/self-service/settings/integration", icon: <Globe size={18} /> },
+                {
+                    label: "Bill",
+                    icon: <Receipt size={18} />,
+                    pageKey: "settings",
+                    subItems: [
+                        { label: "Bill Series", route: "/dashboard/self-service/settings?tab=bill_numbering", icon: <Hash size={18} /> },
+                        { label: "Generated Bills", route: "/dashboard/self-service/settings?tab=bill_history", icon: <List size={18} /> }
+                    ]
+                }
             ]
         }
     ];
