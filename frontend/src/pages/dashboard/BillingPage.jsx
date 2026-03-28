@@ -70,6 +70,7 @@ const BillingPage = () => {
     const [activeCategory, setActiveCategory] = useState("ALL");
     const [searchQuery, setSearchQuery] = useState("");
     const [billItems, setBillItems] = useState([]);
+    const [previousItems, setPreviousItems] = useState([]); // Items from previous KOTs/sessions
     const [loading, setLoading] = useState(true);
     const [currentBillId, setCurrentBillId] = useState(null);
     const [billNumber, setBillNumber] = useState('Wait...');
@@ -186,11 +187,28 @@ const BillingPage = () => {
     const [selectionOverlay, setSelectionOverlay] = useState('NONE'); // NONE, TABLE, CAPTAIN, ALTER, TRANSFER, RETURN, SPLIT
     const [selectedItemForAction, setSelectedItemForAction] = useState(null);
     const [billSearchKots, setBillSearchKots] = useState([]);
+    const [billSearchResults, setBillSearchResults] = useState([]);
+    const [showBillDropdown, setShowBillDropdown] = useState(false);
+    const [billSearchLoading, setBillSearchLoading] = useState(false);
+    const [kotSearchResults, setKotSearchResults] = useState([]);
+    const [showKotDropdown, setShowKotDropdown] = useState(false);
+    const [loadedBillMode, setLoadedBillMode] = useState('NONE'); // NONE, ALTER, RETURN, TRANSFER
+
+    const [transferMode, setTransferMode] = useState('TABLE'); // TABLE or BILL
+    const [transferBillQuery, setTransferBillQuery] = useState('');
+    const [transferBillResults, setTransferBillResults] = useState([]);
+    const [transferBillLoading, setTransferBillLoading] = useState(false);
+    const [transferTargetBill, setTransferTargetBill] = useState(null);
+
+    const [returnQtys, setReturnQtys] = useState({});
+    const [returnReasons, setReturnReasons] = useState({});
+    const [transferItemSel, setTransferItemSel] = useState({});
 
     // -- LATEST CALCULATION HOOK --
     // -- LATEST CALCULATION HOOK --
     const billCalculations = useMemo(() => {
-        const sub = billItems.reduce((acc, item) => acc + (item.is_complementary ? 0 : item.total_price), 0);
+        const allItems = [...previousItems, ...billItems];
+        const sub = allItems.reduce((acc, item) => acc + (item.is_complementary ? 0 : item.total_price), 0);
         let discAmt = 0;
         if (discountType === 'PERCENT') {
             discAmt = sub * (parseFloat(discount) / 100);
@@ -209,7 +227,7 @@ const BillingPage = () => {
                 }
             } else if (appliedCoupon.type === 'BOGO') {
                 // BOGO: Every 2nd unit of an item is free
-                billItems.forEach(item => {
+                allItems.forEach(item => {
                     if (!item.is_complementary && item.quantity >= 2) {
                         const freeQty = Math.floor(item.quantity / 2);
                         couponDisc += freeQty * item.unit_price;
@@ -241,7 +259,7 @@ const BillingPage = () => {
             roundOff: rOff,
             grandTotal: roundedTotal
         };
-    }, [billItems, discount, gstPercentage, discountType, deliveryCharge, containerCharge, appliedCoupon, loyaltyRedeemedPoints, loyaltySettings]);
+    }, [previousItems, billItems, discount, gstPercentage, discountType, deliveryCharge, containerCharge, appliedCoupon, loyaltyRedeemedPoints, loyaltySettings]);
 
     const { subTotal, taxAmount, discountAmount, couponDiscount, loyaltyDiscount, roundOff, grandTotal } = billCalculations;
 
@@ -441,7 +459,8 @@ const BillingPage = () => {
                                 // Restore full bill into POS
                                 setCurrentBillId(bill._id);
                                 setBillNumber(bill.bill_number);
-                                setBillItems(bill.items || []);
+                                setPreviousItems(bill.items || []);
+                                setBillItems([]);
                                 setSelectedTableId(tableId); // Set the table ID from navigation state
                                 setTableNo(bill.table_no || location.state.tableNo || '');
                                 setPersons(bill.persons || location.state.persons || '');
@@ -774,260 +793,14 @@ const BillingPage = () => {
         const searchLower = searchQuery.toLowerCase();
         const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
             (p.code && p.code.toLowerCase().includes(searchLower));
-
-        // Check availability based on order mode
         const modeMap = {
-            'DINE_IN': 'dine_in',
-            'TAKEAWAY': 'pickup',
-            'SELF_SERVICE': 'pickup',
-            'PARCEL': 'pickup',
-            'DELIVERY': 'delivery',
-            'PARTY': 'party_order'
+            'DINE_IN': 'dine_in', 'TAKEAWAY': 'pickup', 'SELF_SERVICE': 'pickup',
+            'PARCEL': 'pickup', 'DELIVERY': 'delivery', 'PARTY': 'party_order'
         };
         const serveKey = modeMap[orderMode];
         const isAvailable = !serveKey || !p.serve_types || p.serve_types[serveKey] !== false;
-
         return matchesCategory && matchesSearch && isAvailable;
     });
-
-    // ── Bill / KOT Search ──────────────────────────────────────────────────
-    const [billSearchResults, setBillSearchResults] = useState([]);
-    const [kotSearchResults, setKotSearchResults] = useState([]);
-    const [showBillDropdown, setShowBillDropdown] = useState(false);
-    const [showKotDropdown, setShowKotDropdown] = useState(false);
-    const [billSearchLoading, setBillSearchLoading] = useState(false);
-
-    // Search bills live as user types
-    const searchBills = async (query, statusFilter = '') => {
-        if (!query || query.trim().length < 1) {
-            setBillSearchResults([]);
-            setKotSearchResults([]);
-            return;
-        }
-        setBillSearchLoading(true);
-        try {
-            const savedUser = localStorage.getItem('user');
-            const { token } = JSON.parse(savedUser);
-            // Search across all statuses (OPEN + PAID)
-            const url = statusFilter
-                ? `${import.meta.env.VITE_API_URL}/bills?search=${encodeURIComponent(query)}&status=${statusFilter}`
-                : `${import.meta.env.VITE_API_URL}/bills?search=${encodeURIComponent(query)}`;
-            const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-            const data = await res.json();
-            const results = data.success ? data.data : [];
-            if (statusFilter === 'OPEN') {
-                setKotSearchResults(results);
-            } else {
-                setBillSearchResults(results);
-            }
-        } catch (e) {
-            console.error('Bill search error', e);
-        } finally {
-            setBillSearchLoading(false);
-        }
-    };
-
-    // Load a bill from search (replaces current bill state)
-    const loadBillForAlter = async (billOrId, mode = 'ALTER') => {
-        if (!billOrId) return;
-        const bId = typeof billOrId === 'string' ? billOrId : billOrId._id;
-
-        isRestoringTableBill.current = true; // Block auto-create
-        setPaymentLoading(true);
-        try {
-            const savedUser = localStorage.getItem('user');
-            const { token } = JSON.parse(savedUser);
-
-            // Re-fetch the full bill by ID to ensure we have the absolute latest state
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${bId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-
-            if (data.success && data.data) {
-                const bill = data.data;
-                setCurrentBillId(bill._id);
-                setBillNumber(bill.bill_number);
-                setBillItems(bill.items || []);
-                setOrderMode(bill.type || 'DINE_IN');
-
-                // Try to find the matching table ID from our local tables list to enable live sync
-                const targetTableNo = bill.table_no || '';
-                setTableNo(targetTableNo);
-                const matchingTable = tables.find(t => t.table_number === targetTableNo || t.table_no === targetTableNo);
-                if (matchingTable) {
-                    setSelectedTableId(matchingTable._id);
-                } else {
-                    setSelectedTableId('');
-                }
-
-                setPersons(bill.persons || '');
-                setCustomerName(bill.customer_name || '');
-                setCustomerPhone(bill.customer_phone || '');
-                setCustomerAddress(bill.customer_address || '');
-                setCustomerGst(bill.customer_gst || '');
-                setCaptainName(bill.captain_name || '');
-                setWaiterName(bill.waiter_name || '');
-                setDiscount(bill.discount_amount || 0);
-                setDeliveryCharge(bill.delivery_charge || 0);
-                setContainerCharge(bill.container_charge || 0);
-
-                setSelectionOverlay('NONE');
-                setActiveItemActions(null);
-                setSelectedItemForAction(null);
-
-                // Close dropdowns & clear searches
-                setBillSearchQuery('');
-                setKotSearchQuery('');
-                setShowBillDropdown(false);
-                setShowKotDropdown(false);
-                setBillSearchResults([]);
-                setKotSearchResults([]);
-
-                // Auto-open the relevant panel if a mode is specified
-                if (mode === 'ALTER') { setShowAlterForm(true); setShowReturnForm(false); setShowTransferForm(false); }
-                else if (mode === 'RETURN') { setShowReturnForm(true); setShowAlterForm(false); setShowTransferForm(false); }
-                else if (mode === 'TRANSFER') { setShowTransferForm(true); setShowAlterForm(false); setShowReturnForm(false); }
-                else {
-                    // mode === 'LOAD' (default) - Close all modes, just show the bill items
-                    setShowAlterForm(false);
-                    setShowReturnForm(false);
-                    setShowTransferForm(false);
-                    setShowCustomerForm(false);
-                    setShowTableForm(false);
-                    setShowPersonsForm(false);
-                    // No alert needed for a smooth load
-                }
-            } else {
-                alert(data.error || "Could not fetch bill details.");
-            }
-        } catch (e) {
-            console.error('Load bill error', e);
-            alert("Error fetching bill details.");
-        } finally {
-            setPaymentLoading(false);
-            isRestoringTableBill.current = false;
-        }
-    };
-
-    // Save altered bill (ALTER mode)
-    const saveAlteredBill = async () => {
-        if (!currentBillId) return;
-        setPaymentLoading(true);
-        try {
-            const savedUser = localStorage.getItem('user');
-            const { token } = JSON.parse(savedUser);
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    items: billItems,
-                    sub_total: subTotal, tax_amount: taxAmount,
-                    discount_amount: discountAmount, grand_total: grandTotal,
-                    table_no: tableNo, persons, customer_name: customerName,
-                    customer_phone: customerPhone, captain_name: captainName,
-                    waiter_name: waiterName
-                })
-            });
-            const data = await res.json();
-            if (data.success) {
-                setShowAlterForm(false);
-                alert(`Bill ${billNumber} updated successfully.`);
-            } else { alert(data.error || 'Update failed'); }
-        } catch (e) { console.error('Alter save error', e); }
-        finally { setPaymentLoading(false); }
-    };
-
-    // Return state for the inline RETURN panel
-    const [returnQtys, setReturnQtys] = useState({});
-    const [returnReasons, setReturnReasons] = useState({});
-
-    const handleInlineReturn = async () => {
-        const hasAny = Object.values(returnQtys).some(q => q > 0);
-        if (!hasAny) return alert('Select at least one item to return.');
-
-        const newItems = billItems.map((item, idx) => {
-            const rQty = parseInt(returnQtys[idx] || 0);
-            if (!rQty) return item;
-            // Log return
-            const entry = {
-                id: Date.now() + idx, billId: currentBillId, billNumber,
-                item: item.name, quantity: rQty,
-                reason: returnReasons[idx] || 'Customer unsatisfied',
-                timestamp: new Date().toISOString()
-            };
-            const hist = JSON.parse(localStorage.getItem('pos_return_history') || '[]');
-            localStorage.setItem('pos_return_history', JSON.stringify([entry, ...hist]));
-            return { ...item, quantity: item.quantity - rQty, total_price: (item.quantity - rQty) * item.unit_price };
-        }).filter(item => item.quantity > 0);
-
-        setBillItems(newItems);
-
-        // Save updated bill to backend
-        try {
-            const savedUser = localStorage.getItem('user');
-            const { token } = JSON.parse(savedUser);
-            await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ items: newItems, grand_total: newItems.reduce((a, i) => a + i.total_price, 0) })
-            });
-        } catch (e) { console.error('Return save error', e); }
-
-        setReturnQtys({});
-        setReturnReasons({});
-        setShowReturnForm(false);
-        alert('Return processed and logged.');
-    };
-
-    // Transfer items to another table's bill
-    const [transferTargetTable, setTransferTargetTable] = useState(null);
-    const [transferItemSel, setTransferItemSel] = useState({}); // { idx: qty }
-
-    const handleTransferToTable = async (targetTable) => {
-        const hasAny = Object.values(transferItemSel).some(q => q > 0);
-        if (!hasAny) return alert('Select at least one item with a quantity to transfer.');
-        if (!targetTable.bill_id) return alert(`Table ${targetTable.table_number} has no active bill. A captain must open the table first.`);
-
-        const savedUser = localStorage.getItem('user');
-        const { token } = JSON.parse(savedUser);
-
-        // 1. Add items to the target bill
-        for (const [idxStr, qty] of Object.entries(transferItemSel)) {
-            const qty2 = parseInt(qty || 0);
-            if (!qty2) continue;
-            const item = billItems[parseInt(idxStr)];
-            await fetch(`${import.meta.env.VITE_API_URL}/bills/${targetTable.bill_id}/items`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ product_id: item.product_id, quantity: qty2 })
-            }).catch(e => console.error('Transfer add error', e));
-        }
-
-        // 2. Remove transferred items from source bill
-        const newItems = billItems.map((item, idx) => {
-            const tQty = parseInt(transferItemSel[idx] || 0);
-            if (!tQty) return item;
-            return { ...item, quantity: item.quantity - tQty, total_price: (item.quantity - tQty) * item.unit_price };
-        }).filter(i => i.quantity > 0);
-
-        setBillItems(newItems);
-        await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ items: newItems, grand_total: newItems.reduce((a, i) => a + i.total_price, 0) })
-        }).catch(e => console.error('Transfer source save error', e));
-
-        setTransferItemSel({});
-        setTransferTargetTable(null);
-        setShowTransferForm(false);
-        alert(`Items transferred to Table ${targetTable.table_number} successfully.`);
-    };
-
-    const handleNotificationClick = () => {
-        alert("No new notifications at the moment.");
-    };
-
     const handlePayment = (type = '') => {
         if (!currentBillId) return;
         if (subTotal === 0) return alert("Bill is empty!");
@@ -1073,14 +846,12 @@ const BillingPage = () => {
             });
             const data = await res.json();
             if (data.success) {
-                // Free the table after payment (reset to AVAILABLE)
                 if (selectedTableId) {
                     freeTableAfterPayment(selectedTableId);
                 }
                 setLastBillId(currentBillId);
                 setLastPaymentModes(paymentModes);
                 setShowBillPreview(true);
-                // Reset everything for the next bill
                 setTableNo("");
                 setPersons("");
                 setSelectedTableId("");
@@ -1109,12 +880,13 @@ const BillingPage = () => {
 
     const handleOrderAction = async (type) => {
         if (!currentBillId) return;
-        if (billItems.length === 0) return alert("Add items first!");
+        if (billItems.length === 0 && previousItems.length === 0) return alert("Add items first!");
 
         setPaymentLoading(true);
         try {
             const savedUser = localStorage.getItem('user');
             const { token } = JSON.parse(savedUser);
+            const mergedItems = [...previousItems, ...billItems];
             const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
                 method: 'PUT',
                 headers: {
@@ -1122,7 +894,7 @@ const BillingPage = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    items: billItems,
+                    items: mergedItems,
                     action_type: type === 'KOT' ? 'GENERATE_KOT' : (type === 'SAVE' || type === 'PRINT' ? 'GENERATE_BILL_NO' : undefined),
                     status: type === 'KOT' ? 'OPEN' : undefined,
                     kitchen_status: type === 'KOT' ? 'PENDING' : undefined,
@@ -1146,10 +918,8 @@ const BillingPage = () => {
             const data = await res.json();
             if (data.success) {
                 if (type === 'KOT') {
-                    // 1. Update table amount + mark KOT SENT on floor plan
                     if (selectedTableId) {
                         updateTableLiveAmount(selectedTableId, grandTotal);
-                        // Mark table kot_status = KOT_SENT so floor plan shows the indicator
                         try {
                             const { token: tk } = JSON.parse(localStorage.getItem('user'));
                             fetch(`${import.meta.env.VITE_API_URL}/tables/${selectedTableId}/kot-status`, {
@@ -1159,7 +929,6 @@ const BillingPage = () => {
                             });
                         } catch (e) { console.error('KOT status update error', e); }
                     }
-                    // 2. Signal KDS to refresh IMMEDIATELY using BroadcastChannel
                     try {
                         const kotChannel = new BroadcastChannel('restoboard_kot');
                         kotChannel.postMessage({ type: 'KOT_FIRED', billId: currentBillId, billNumber, tableNo, ts: Date.now() });
@@ -1167,18 +936,17 @@ const BillingPage = () => {
                     } catch (e) {
                         localStorage.setItem('kot_fired', JSON.stringify({ ts: Date.now() }));
                     }
-                    // 3. Print KOT on physical printer
                     if (data.new_kot) {
                         handleKOTPrint(data.new_kot);
                         if (data.data && data.data.items) {
-                            setBillItems(data.data.items);
+                            setPreviousItems(data.data.items);
+                            setBillItems([]);
                         }
                     } else {
                         alert("No new items to send to Kitchen.");
                     }
                 }
                 else if (type === 'SAVE' || type === 'PRINT') {
-                    // Mark table as PRINTED when Save & Print is clicked
                     if (selectedTableId) {
                         try {
                             const savedUser = localStorage.getItem('user');
@@ -1204,7 +972,6 @@ const BillingPage = () => {
 
     const handleKOTPrint = (kotData) => {
         if (!kotData || !kotData.items || kotData.items.length === 0) return;
-        // Build items HTML
         const rowsHtml = kotData.items.map(item => `
             <tr>
                 <td class="item-name">${item.name}</td>
@@ -1220,12 +987,7 @@ const BillingPage = () => {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @page { size: 80mm auto; margin: 4mm; }
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
-            width: 72mm;
-            padding: 4px;
-        }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 13px; width: 72mm; padding: 4px; }
         .sep { border: none; border-top: 1px dashed #000; margin: 6px 0; }
         .sep-solid { border: none; border-top: 2px solid #000; margin: 6px 0; }
         .center { text-align: center; }
@@ -1236,9 +998,7 @@ const BillingPage = () => {
         table { width: 100%; border-collapse: collapse; margin: 6px 0; }
         .item-name { font-weight: 700; font-size: 14px; padding: 5px 2px; vertical-align: middle; }
         .footer { text-align: center; font-size: 11px; margin-top: 8px; }
-        @media print {
-            body { width: 72mm; }
-        }
+        @media print { body { width: 72mm; } }
     </style>
 </head>
 <body>
@@ -1266,28 +1026,20 @@ const BillingPage = () => {
     <div class="footer" style="margin-top:4px; font-size:10px; color:#555;">RestoBoard KOT</div>
 </body>
 </html>`;
-
         const printWindow = window.open('', '_blank', 'width=400,height=600');
-        if (!printWindow) {
-            alert('Popup blocked. Please allow popups for printing KOT.');
-            return;
-        }
+        if (!printWindow) return alert('Popup blocked. Please allow popups for printing KOT.');
         printWindow.document.open();
         printWindow.document.write(kotHtml);
         printWindow.document.close();
-
-        // Wait for resources to load, then print
         printWindow.onload = () => {
             printWindow.focus();
             printWindow.print();
-            // Close the window automatically after print dialog closes
             printWindow.onafterprint = () => printWindow.close();
         };
     };
 
     const handleAllKotsPrint = (billData) => {
         if (!billData || !billData.kots || billData.kots.length === 0) return alert("No KOT items to print.");
-
         const allKotsHtml = billData.kots.map(kot => {
             const rowsHtml = kot.items.map(item => `
                 <tr>
@@ -1324,11 +1076,248 @@ const BillingPage = () => {
     <hr class="sep-solid"><div class="center" style="font-size: 11px; margin-top: 10px;">Reprinted at ${new Date().toLocaleTimeString()}</div>
 </body>
 </html>`;
-
         const printWindow = window.open('', '_blank', 'width=400,height=600');
+        if (!printWindow) return;
         printWindow.document.write(kotHtml);
         printWindow.document.close();
         printWindow.onload = () => { printWindow.focus(); printWindow.print(); printWindow.onafterprint = () => printWindow.close(); };
+    };
+
+    const searchBills = async (query, statusFilter = '') => {
+        if (!query || query.length < 2) {
+            if (statusFilter === 'OPEN') setKotSearchResults([]);
+            else setBillSearchResults([]);
+            return;
+        }
+        if (statusFilter === '') setBillSearchLoading(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const dateParams = statusFilter === 'OPEN' ? '&startDate=today&endDate=today' : '';
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills?bill_number=${query}&status=${statusFilter}${dateParams}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (statusFilter === 'OPEN') setKotSearchResults(data.data);
+                else setBillSearchResults(data.data);
+            }
+        } catch (err) {
+            console.error("Search error", err);
+        } finally {
+            setBillSearchLoading(false);
+        }
+    };
+
+    const loadBillForAlter = (bill, mode) => {
+        if (!bill) return;
+        setLoadedBillMode(mode);
+        setCurrentBillId(bill._id);
+        setBillNumber(bill.bill_number);
+        setPreviousItems([]);
+        setBillItems(bill.items || []);
+        setTableNo(bill.table_no || "");
+        setOrderMode(bill.type || 'DINE_IN');
+        setCustomerName(bill.customer_name || "");
+        setCustomerPhone(bill.customer_phone || "");
+        setCustomerAddress(bill.customer_address || "");
+        setDiscount(bill.discount_amount || 0);
+
+        if (mode === 'ALTER') { setShowAlterForm(true); setShowReturnForm(false); setShowTransferForm(false); }
+        if (mode === 'RETURN') { setShowReturnForm(true); setShowAlterForm(false); setShowTransferForm(false); }
+        if (mode === 'TRANSFER') { setShowTransferForm(true); setShowAlterForm(false); setShowReturnForm(false); }
+        if (mode === 'LOAD') {
+            setShowAlterForm(false); setShowReturnForm(false); setShowTransferForm(false);
+            alert(`Bill ${bill.bill_number} loaded into POS.`);
+        }
+    };
+
+    const saveAlteredBill = async () => {
+        if (!currentBillId) return;
+        setPaymentLoading(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    items: billItems,
+                    sub_total: subTotal,
+                    tax_amount: taxAmount,
+                    discount_amount: discountAmount,
+                    grand_total: grandTotal,
+                    status: 'OPEN'
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Bill alterations saved successfully.");
+                setShowAlterForm(false);
+                setLoadedBillMode('NONE');
+            } else {
+                alert(data.message || "Failed to save alterations.");
+            }
+        } catch (err) { console.error(err); }
+        finally { setPaymentLoading(false); }
+    };
+
+    const handleInlineReturn = async () => {
+        const itemsToReturn = [];
+        Object.keys(returnQtys).forEach(idx => {
+            const qty = returnQtys[idx];
+            if (qty > 0) {
+                itemsToReturn.push({
+                    ...billItems[idx],
+                    quantity: qty,
+                    reason: returnReasons[idx] || 'Customer Return',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+        if (itemsToReturn.length === 0) return alert("Select at least one item and quantity to return.");
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const newBillItems = billItems.map((item, idx) => {
+                const retQty = returnQtys[idx] || 0;
+                const finalQty = Math.max(0, item.quantity - retQty);
+                return { ...item, quantity: finalQty, total_price: finalQty * item.unit_price };
+            }).filter(item => item.quantity > 0);
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    items: newBillItems,
+                    return_items: itemsToReturn
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setBillItems(newBillItems);
+                setReturnQtys({});
+                setReturnReasons({});
+                setShowReturnForm(false);
+                setLoadedBillMode('NONE');
+                alert("Return processed successfully and logged to backend.");
+            }
+        } catch (err) { console.error("Return failed", err); }
+    };
+
+    const searchTransferBills = async (q) => {
+        if (q.length < 2) return setTransferBillResults([]);
+        setTransferBillLoading(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills?bill_number=${q}&status=OPEN`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setTransferBillResults(data.data);
+        } finally { setTransferBillLoading(false); }
+    };
+
+    const handleTransferToBill = async () => {
+        if (!transferTargetBill) return alert("Please select a target bill first.");
+        const itemsToMove = [];
+        Object.keys(transferItemSel).forEach(idx => {
+            if (transferItemSel[idx] > 0) {
+                itemsToMove.push({ ...billItems[idx], quantity: transferItemSel[idx] });
+            }
+        });
+        if (itemsToMove.length === 0) return alert("Select items to transfer.");
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            for (const item of itemsToMove) {
+                await fetch(`${import.meta.env.VITE_API_URL}/bills/${transferTargetBill._id}/items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ product_id: item.product_id, quantity: item.quantity, name: item.name })
+                });
+            }
+            const newSourceItems = billItems.map((item, idx) => {
+                const moveQty = transferItemSel[idx] || 0;
+                const finalQty = item.quantity - moveQty;
+                return { ...item, quantity: finalQty, total_price: finalQty * item.unit_price };
+            }).filter(i => i.quantity > 0);
+            await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ items: newSourceItems })
+            });
+            setBillItems(newSourceItems);
+            setTransferTargetBill(null);
+            setTransferItemSel({});
+            setShowTransferForm(false);
+            setLoadedBillMode('NONE');
+            alert(`Items transferred to ${transferTargetBill.bill_number}`);
+        } catch (err) { console.error("Transfer error", err); }
+    };
+
+    const handleTransferToTable = async (targetTable) => {
+        const itemsToMove = [];
+        Object.keys(transferItemSel).forEach(idx => {
+            const qty = transferItemSel[idx];
+            if (qty > 0) {
+                itemsToMove.push({ ...billItems[idx], quantity: qty });
+            }
+        });
+
+        if (itemsToMove.length === 0) return alert("Select items to transfer.");
+        if (!targetTable || !targetTable._id) return alert("Select a destination table.");
+
+        setPaymentLoading(true);
+        try {
+            const savedUser = localStorage.getItem('user');
+            const { token } = JSON.parse(savedUser);
+            
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/tables/${targetTable._id}/transfer-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ 
+                    source_bill_id: currentBillId,
+                    items: itemsToMove.map(i => ({ 
+                        product_id: i.product_id, 
+                        name: i.name, 
+                        quantity: i.quantity, 
+                        unit_price: i.unit_price 
+                    }))
+                })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                const newSourceItems = billItems.map((item, idx) => {
+                    const moveQty = transferItemSel[idx] || 0;
+                    const finalQty = item.quantity - moveQty;
+                    return { ...item, quantity: finalQty, total_price: finalQty * item.unit_price };
+                }).filter(i => i.quantity > 0);
+
+                setBillItems(newSourceItems);
+                setTransferItemSel({});
+                setShowTransferForm(false);
+                setLoadedBillMode('NONE');
+                alert(`Items transferred to Table ${targetTable.table_number || targetTable.table_no}`);
+                
+                if (selectedTableId) {
+                    const newSub = newSourceItems.reduce((acc, i) => acc + (i.is_complementary ? 0 : i.total_price), 0);
+                    updateTableLiveAmount(selectedTableId, newSub);
+                }
+            } else {
+                alert(data.message || "Transfer failed.");
+            }
+        } catch (err) {
+            console.error("Transfer error", err);
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
+
+    const handleNotificationClick = () => {
+        alert("System notifications: Backend connected successfully.");
     };
 
     const resetForm = () => {
@@ -1347,7 +1336,8 @@ const BillingPage = () => {
         setShowMoreForm(false);
         setShowCouponForm(false);
         setAppliedCoupon(null);
-        setCouponNumber('');        setCustomerPhone("");
+        setCouponNumber('');
+        setCustomerPhone("");
         setCustomerAddress("");
         setCustomerGst("");
         setCaptainName("");
@@ -1358,6 +1348,7 @@ const BillingPage = () => {
         setLoyaltyRedeemedPoints(0);
         setRedeemPointsInput('');
         setBillItems([]);
+        setPreviousItems([]);
         setStepProceeded(false);
         setPromoCode('');
         createNewBill();
@@ -1381,7 +1372,6 @@ const BillingPage = () => {
 
     const handleTransferItem = (idx) => {
         setSelectedItemForAction(idx);
-        // Open transfer form (bill must be loaded)
         if (!currentBillId) return;
         setShowTransferForm(true);
         setShowAlterForm(false);
@@ -1389,7 +1379,6 @@ const BillingPage = () => {
     };
 
     const handleReturnItem = (idx) => {
-        // Just open the return panel focusing this item
         if (!currentBillId) return;
         setReturnQtys({ [idx]: 1 });
         setShowReturnForm(true);
@@ -1401,8 +1390,6 @@ const BillingPage = () => {
         if (billItems.length < 2) return alert("Need at least 2 items to split!");
         toggleExpandableForm('SPLIT');
     };
-
-    // loadBillForAlter now defined above near handleBillSearch
 
     const toggleFullBillComplimentary = () => {
         const anyNonComp = billItems.some(i => !i.is_complementary);
@@ -1481,20 +1468,17 @@ const BillingPage = () => {
         setPromoCode('');
     };
 
-    // Toggle billing layout instantly from the header
     const toggleLayout = async () => {
         const newLayout = billingLayout === 'SIDEBAR' ? 'TOP_HEADER' : 'SIDEBAR';
         setBillingLayout(newLayout);
         localStorage.setItem('cachedBillingLayout', newLayout);
 
-        // If switching to TOP_HEADER, close sidebar
         if (newLayout === 'TOP_HEADER') {
             setShowSidebar(false);
         } else {
             setShowSidebar(true);
         }
 
-        // Save to backend silently
         try {
             const savedUser = localStorage.getItem('user');
             if (!savedUser) return;
@@ -2089,12 +2073,29 @@ const BillingPage = () => {
                             <div style={{ padding: '10px 15px' }}>
                                 {!currentBillId || billItems.length === 0 ? (
                                     <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '8px 0' }}>
-                                        Search a bill above, then select items and a destination table.
+                                        Search a bill above, then select items and choose a destination.
                                     </p>
-                                ) : !transferTargetTable ? (
+                                ) : (
                                     <>
                                         <div style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a', marginBottom: '8px' }}>Transfer Items — from Bill: {billNumber}</div>
-                                        {/* Step 1: pick qty per item */}
+
+                                        {/* Mode Toggle: TABLE / BILL */}
+                                        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                                            <button
+                                                onClick={() => setTransferMode('TABLE')}
+                                                style={{ flex: 1, padding: '6px', fontSize: '11px', fontWeight: 800, borderRadius: '7px', border: '1.5px solid', borderColor: transferMode === 'TABLE' ? '#16a34a' : '#e2e8f0', background: transferMode === 'TABLE' ? '#f0fdf4' : '#f8fafc', color: transferMode === 'TABLE' ? '#16a34a' : '#64748b', cursor: 'pointer' }}
+                                            >
+                                                TABLE
+                                            </button>
+                                            <button
+                                                onClick={() => setTransferMode('BILL')}
+                                                style={{ flex: 1, padding: '6px', fontSize: '11px', fontWeight: 800, borderRadius: '7px', border: '1.5px solid', borderColor: transferMode === 'BILL' ? '#2563eb' : '#e2e8f0', background: transferMode === 'BILL' ? '#eff6ff' : '#f8fafc', color: transferMode === 'BILL' ? '#2563eb' : '#64748b', cursor: 'pointer' }}
+                                            >
+                                                BILL NO.
+                                            </button>
+                                        </div>
+
+                                        {/* Item selection */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '130px', overflowY: 'auto', marginBottom: '8px' }}>
                                             {billItems.map((item, idx) => (
                                                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '7px', padding: '5px 10px' }}>
@@ -2109,26 +2110,74 @@ const BillingPage = () => {
                                                 </div>
                                             ))}
                                         </div>
-                                        {/* Step 2: pick destination table */}
-                                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>Select destination table (must be OCCUPIED or PRINTED):</div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
-                                            {tables.filter(t => (t.status === 'OCCUPIED' || t.status === 'PRINTED') && t.table_no !== tableNo && t.table_number !== tableNo).map(t => (
-                                                <button key={t._id}
-                                                    onClick={() => handleTransferToTable(t)}
-                                                    style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: t.status === 'PRINTED' ? '#f0fdf4' : '#fffbeb', color: t.status === 'PRINTED' ? '#15803d' : '#92400e', borderRadius: '8px', border: `1.5px solid ${t.status === 'PRINTED' ? '#86efac' : '#fde68a'}`, cursor: 'pointer', fontSize: '11px', fontWeight: 800, transition: 'all 0.15s' }}
-                                                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                                                >
-                                                    <TableLogo size={16} />
-                                                    <span style={{ marginTop: '2px' }}>{t.table_number || t.table_no}</span>
+
+                                        {/* TABLE mode: grid of occupied tables */}
+                                        {transferMode === 'TABLE' && (
+                                            <>
+                                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>Select destination table:</div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                                                    {tables.filter(t => (t.status === 'OCCUPIED' || t.status === 'PRINTED') && t.table_no !== tableNo && t.table_number !== tableNo).map(t => (
+                                                        <button key={t._id}
+                                                            onClick={() => handleTransferToTable(t)}
+                                                            style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: t.status === 'PRINTED' ? '#f0fdf4' : '#fffbeb', color: t.status === 'PRINTED' ? '#15803d' : '#92400e', borderRadius: '8px', border: `1.5px solid ${t.status === 'PRINTED' ? '#86efac' : '#fde68a'}`, cursor: 'pointer', fontSize: '11px', fontWeight: 800, transition: 'all 0.15s' }}
+                                                            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                                                            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                                        >
+                                                            <TableLogo size={16} />
+                                                            <span style={{ marginTop: '2px' }}>{t.table_number || t.table_no}</span>
+                                                        </button>
+                                                    ))}
+                                                    {tables.filter(t => (t.status === 'OCCUPIED' || t.status === 'PRINTED') && t.table_no !== tableNo && t.table_number !== tableNo).length === 0 && (
+                                                        <p style={{ gridColumn: '1/-1', fontSize: '11px', color: '#94a3b8', textAlign: 'center', padding: '8px 0', fontStyle: 'italic' }}>No other active tables found.</p>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* BILL mode: search for target bill */}
+                                        {transferMode === 'BILL' && (
+                                            <>
+                                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>Search target bill number:</div>
+                                                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. BILL-123 or table name..."
+                                                        value={transferBillQuery}
+                                                        onChange={e => { setTransferBillQuery(e.target.value); searchTransferBills(e.target.value); setTransferTargetBill(null); }}
+                                                        style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', fontSize: '12px', border: '1.5px solid #bfdbfe', borderRadius: '8px', outline: 'none', color: '#1e293b' }}
+                                                    />
+                                                    {transferBillLoading && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '10px', color: '#94a3b8' }}>...</span>}
+                                                    {transferBillResults.length > 0 && !transferTargetBill && (
+                                                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 999, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.1)', maxHeight: '140px', overflowY: 'auto', marginTop: '3px' }}>
+                                                            {transferBillResults.map(b => (
+                                                                <button key={b._id}
+                                                                    onMouseDown={() => { setTransferTargetBill(b); setTransferBillQuery(b.bill_number); setTransferBillResults([]); }}
+                                                                    style={{ width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', background: 'none', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}
+                                                                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                                                                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                                                >
+                                                                    <span style={{ fontWeight: 800, fontSize: '12px', color: '#1e293b' }}>{b.bill_number}</span>
+                                                                    <span style={{ fontSize: '11px', color: '#64748b' }}>{b.table_no || b.type} · ₹{b.grand_total || 0}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {transferTargetBill && (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '8px', padding: '7px 10px', marginBottom: '8px' }}>
+                                                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e40af', flex: 1 }}>→ {transferTargetBill.bill_number}</span>
+                                                        <button onClick={() => { setTransferTargetBill(null); setTransferBillQuery(''); }}
+                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '16px', lineHeight: 1 }}>✕</button>
+                                                    </div>
+                                                )}
+                                                <button onClick={handleTransferToBill}
+                                                    style={{ width: '100%', padding: '8px', fontSize: '12px', fontWeight: 900, background: 'linear-gradient(135deg,#1d4ed8,#3b82f6)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', boxShadow: '0 3px 8px rgba(37,99,235,0.3)' }}>
+                                                    TRANSFER TO BILL
                                                 </button>
-                                            ))}
-                                            {tables.filter(t => (t.status === 'OCCUPIED' || t.status === 'PRINTED') && t.table_no !== tableNo && t.table_number !== tableNo).length === 0 && (
-                                                <p style={{ gridColumn: '1/-1', fontSize: '11px', color: '#94a3b8', textAlign: 'center', padding: '8px 0', fontStyle: 'italic' }}>No other active tables found.</p>
-                                            )}
-                                        </div>
+                                            </>
+                                        )}
                                     </>
-                                ) : null}
+                                )}
                             </div>
                         </div>
                     )}
@@ -2160,6 +2209,24 @@ const BillingPage = () => {
                         {showRateColumn && <span className="col-rate">RATE</span>}
                         <span className="col-amt">AMT</span>
                     </div>
+
+                    {/* Loaded Bill Action Bar — shown when a bill is fetched via search */}
+                    {loadedBillMode !== 'NONE' || (billItems.length > 0 && !selectedTableId && billNumber && !billNumber.startsWith('TEMP-')) ? (
+                        billItems.length > 0 && !billNumber.startsWith('TEMP-') && (
+                            <div style={{ display: 'flex', gap: '6px', padding: '6px 10px', background: 'linear-gradient(135deg,#f8fafc,#f1f5f9)', borderBottom: '1px solid #e2e8f0' }}>
+                                <div style={{ flex: 1, fontSize: '11px', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ background: '#e0e7ff', color: '#3730a3', borderRadius: '4px', padding: '1px 6px', fontSize: '10px' }}>{billNumber}</span>
+                                    <span style={{ color: '#94a3b8' }}>Loaded</span>
+                                </div>
+                                <button onClick={() => loadBillForAlter(currentBillId, 'ALTER')}
+                                    style={{ padding: '4px 10px', fontSize: '10px', fontWeight: 800, background: '#f0f9ff', color: '#0369a1', border: '1.5px solid #bae6fd', borderRadius: '6px', cursor: 'pointer' }}>ALTER</button>
+                                <button onClick={() => loadBillForAlter(currentBillId, 'RETURN')}
+                                    style={{ padding: '4px 10px', fontSize: '10px', fontWeight: 800, background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: '6px', cursor: 'pointer' }}>RETURN</button>
+                                <button onClick={() => loadBillForAlter(currentBillId, 'TRANSFER')}
+                                    style={{ padding: '4px 10px', fontSize: '10px', fontWeight: 800, background: '#f0fdf4', color: '#16a34a', border: '1.5px solid #bbf7d0', borderRadius: '6px', cursor: 'pointer' }}>TRANSFER</button>
+                            </div>
+                        )
+                    ) : null}
 
                     {/* Scrollable area: items list + scrollable summary details */}
                     <div className="bill-scroll-area">
@@ -2520,7 +2587,6 @@ const BillingPage = () => {
                                     </button>
                                 ))}
                             </div>
-
                             <div className="p-6 bg-slate-50 flex justify-center border-t border-slate-100">
                                 <button onClick={() => setVariationModalProduct(null)} className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-rose-500 transition-colors">
                                     <X size={14} /> Close & Cancel
@@ -2530,18 +2596,15 @@ const BillingPage = () => {
                     </div>
                 )}
 
-                {
-                    showBillPreview && (
-                        <BillPreviewModal
-                            isOpen={showBillPreview}
-                            onClose={() => setShowBillPreview(false)}
-                            billId={lastBillId}
-                            paymentModes={lastPaymentModes}
-                        />
-                    )
-                }
+                {showBillPreview && (
+                    <BillPreviewModal
+                        isOpen={showBillPreview}
+                        onClose={() => setShowBillPreview(false)}
+                        billId={lastBillId}
+                        paymentModes={lastPaymentModes}
+                    />
+                )}
             </div>
-
     );
 };
 
