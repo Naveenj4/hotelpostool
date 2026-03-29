@@ -63,20 +63,20 @@ const ProductMaster = () => {
         food_type: 'NONE',
         item_nature: 'GOOD',
         product_type: 'BUY_SELL',
-        purchase_price: 0,
-        cost_price: 0,
-        selling_price: 0,
-        mrp: 0,
-        gst_sales: 0,
-        gst_purchase: 0,
+        // IMPORTANT: store as strings so inputs never get stuck at '0'
+        purchase_price: '',
+        cost_price: '',
+        selling_price: '',
+        mrp: '',
+        gst_sales: '',
+        gst_purchase: '',
         hsn_code: '',
         unit: '',
-        opening_stock: 0,
-        stock_value: 0,
-        min_stock: 0,
-        max_stock: 0,
-        reorder_level: 0,
-        urgent_order_level: 0,
+        opening_stock: '',
+        min_stock: '',
+        max_stock: '',
+        reorder_level: '',
+        urgent_order_level: '',
         available_timings: [
             { label: 'Morning', start_time: '08:00', end_time: '12:00', enabled: true },
             { label: 'Afternoon', start_time: '12:00', end_time: '16:00', enabled: true },
@@ -343,26 +343,47 @@ const ProductMaster = () => {
         reader.readAsText(file);
     };
 
-    useEffect(() => {
-        const value = (parseFloat(formData.purchase_price) || 0) * (parseFloat(formData.opening_stock) || 0);
-        setFormData(prev => ({ ...prev, stock_value: value.toFixed(2) }));
-    }, [formData.purchase_price, formData.opening_stock]);
+    // Live computed stock value — shown in disabled Asset Value field
+    const computedStockValue = ((parseFloat(formData.purchase_price) || 0) * (parseFloat(formData.opening_stock) || 0)).toFixed(2);
 
+    // Simple handleInputChange — stores raw string for ALL fields.
+    // Number fields are kept as strings during editing to prevent the
+    // React controlled-input "stuck at 0" bug where typing '5' into a
+    // field showing 0 produces no state change and the input won't update.
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
-        const newValue = type === 'checkbox' ? checked : value;
 
+        if (type === 'checkbox') {
+            setFormData(prev => ({ ...prev, [name]: checked }));
+            return;
+        }
+
+        // Handle specific fields
         if (name === 'category') {
             const selectedCat = categories.find(c => c.name === value);
             setFormData(prev => ({
                 ...prev,
-                [name]: newValue,
+                [name]: value,
                 hsn_code: selectedCat?.hsn_code || ''
             }));
             return;
         }
 
-        setFormData(prev => ({ ...prev, [name]: newValue }));
+        // Numeric fields filtering logic
+        const numberFields = ['purchase_price','cost_price','selling_price','mrp','gst_sales','gst_purchase','opening_stock','min_stock','max_stock','reorder_level','urgent_order_level'];
+        if (numberFields.includes(name)) {
+            // Only allow numbers, decimals, and empty strings
+            const sanitizedValue = value.replace(/[^0-9.]/g, '');
+            // Prevent multiple decimal points
+            const parts = sanitizedValue.split('.');
+            if (parts.length > 2) return; 
+            
+            setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+            return;
+        }
+
+        // Store raw value for everything else
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleServeTypeChange = (type) => {
@@ -409,6 +430,15 @@ const ProductMaster = () => {
             const savedUser = localStorage.getItem('user');
             const { token } = JSON.parse(savedUser);
 
+            // Sanitize: ensure all number fields are actual numbers (not empty strings)
+            const numberFields = ['purchase_price','cost_price','selling_price','mrp','gst_sales','gst_purchase','opening_stock','min_stock','max_stock','reorder_level','urgent_order_level'];
+            const sanitizedData = { ...formData };
+            numberFields.forEach(f => {
+                sanitizedData[f] = parseFloat(sanitizedData[f]) || 0;
+            });
+            // Update stock_value based on sanitized values
+            sanitizedData.stock_value = (sanitizedData.purchase_price * sanitizedData.opening_stock);
+
             const url = isEditing
                 ? `${import.meta.env.VITE_API_URL}/products/${formData._id}`
                 : `${import.meta.env.VITE_API_URL}/products`;
@@ -418,12 +448,13 @@ const ProductMaster = () => {
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(sanitizedData)
             });
 
             const result = await response.json();
             if (!result.success) throw new Error(result.message);
 
+            alert(isEditing ? 'Product Master updated successfully!' : 'New Product created successfully in Master!');
             fetchData();
             setShowDrawer(false);
             resetForm();
@@ -464,7 +495,14 @@ const ProductMaster = () => {
     };
 
     const handleEdit = (product) => {
-        setFormData({ ...initialFormState, ...product, serve_types: product.serve_types || initialFormState.serve_types });
+        const numFields = ['purchase_price','cost_price','selling_price','mrp','gst_sales','gst_purchase','opening_stock','min_stock','max_stock','reorder_level','urgent_order_level'];
+        const productAsStrings = { ...product };
+        numFields.forEach(f => {
+            // Convert number from DB to string for form (e.g. 150 → '150', 0 → '')
+            const v = product[f];
+            productAsStrings[f] = (v === 0 || v === null || v === undefined) ? '' : String(v);
+        });
+        setFormData({ ...initialFormState, ...productAsStrings, serve_types: product.serve_types || initialFormState.serve_types });
         setIsEditing(true);
         setShowDrawer(true);
     };
@@ -892,42 +930,41 @@ const ProductMaster = () => {
                                             </div>
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                                                 <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Rate (Buy)</label>
-                                                    <div className="relative group">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
-                                                        <input type="number" name="purchase_price" className="input-premium-modern !pl-10 w-full text-base font-black text-slate-700" value={formData.purchase_price} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest">Rate (Buy)</label>
+                                                    <div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all">
+                                                        <span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200">₹</span>
+                                                        <input type="text" inputMode="decimal" name="purchase_price" placeholder="0" className="w-full py-3 px-3 text-base font-black text-slate-700 bg-transparent outline-none" value={formData.purchase_price} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Net Cost</label>
-                                                    <div className="relative group">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
-                                                        <input type="number" name="cost_price" className="input-premium-modern !pl-10 w-full text-base font-black text-slate-700" value={formData.cost_price} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest">Net Cost</label>
+                                                    <div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all">
+                                                        <span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200">₹</span>
+                                                        <input type="text" inputMode="decimal" name="cost_price" placeholder="0" className="w-full py-3 px-3 text-base font-black text-slate-700 bg-transparent outline-none" value={formData.cost_price} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Maximum (MRP)</label>
-                                                    <div className="relative group">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
-                                                        <input type="number" name="mrp" className="input-premium-modern !pl-10 w-full text-base font-black text-slate-700" value={formData.mrp} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest">Max (MRP)</label>
+                                                    <div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all">
+                                                        <span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200">₹</span>
+                                                        <input type="text" inputMode="decimal" name="mrp" placeholder="0" className="w-full py-3 px-3 text-base font-black text-slate-700 bg-transparent outline-none" value={formData.mrp} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                                 <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-widest">Sale Price *</label>
-                                                    <div className="relative group">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 font-black">₹</span>
-                                                        <input type="number" name="selling_price" required className="input-premium-modern !pl-10 w-full text-base font-black !text-indigo-600 !bg-indigo-50/20" value={formData.selling_price} onChange={handleInputChange} />
+                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest text-indigo-600">Sale Price *</label>
+                                                    <div className="flex items-center bg-indigo-50/30 rounded-xl border border-indigo-100 overflow-hidden focus-within:border-indigo-400 transition-all shadow-sm">
+                                                        <span className="px-3 text-indigo-400 font-black bg-indigo-50 border-r border-indigo-100">₹</span>
+                                                        <input type="text" inputMode="decimal" name="selling_price" required placeholder="0" className="w-full py-3 px-3 text-base font-black text-indigo-600 bg-transparent outline-none" value={formData.selling_price} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">TAX (P) %</label>
-                                                    <input type="number" name="gst_purchase" className="input-premium-modern w-full text-base font-bold text-slate-600" value={formData.gst_purchase} onChange={handleInputChange} />
+                                                    <input type="text" inputMode="decimal" name="gst_purchase" placeholder="0" className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-600 outline-none focus:border-indigo-400" value={formData.gst_purchase} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">TAX (S) %</label>
-                                                    <input type="number" name="gst_sales" className="input-premium-modern w-full text-base font-bold text-slate-600" value={formData.gst_sales} onChange={handleInputChange} />
+                                                    <input type="text" inputMode="decimal" name="gst_sales" placeholder="0" className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-600 outline-none focus:border-indigo-400" value={formData.gst_sales} onChange={handleInputChange} />
                                                 </div>
-
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">Measure (Unit)</label>
                                                     <input type="text" name="unit" className="input-premium-modern w-full text-base font-bold uppercase" placeholder="PCS / KG" value={formData.unit} onChange={handleInputChange} />
@@ -943,13 +980,13 @@ const ProductMaster = () => {
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-wide">Opening Vol.</label>
-                                                    <input type="number" name="opening_stock" className="input-premium-modern w-full text-base font-black" value={formData.opening_stock} onChange={handleInputChange} />
+                                                    <input type="text" inputMode="decimal" name="opening_stock" placeholder="0" className="input-premium-modern w-full text-base font-black relative z-10" value={formData.opening_stock} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-wide">Asset Value</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">₹</span>
-                                                        <input type="number" disabled className="input-premium-modern w-full !bg-slate-50 !text-emerald-700 !border-dashed !pl-10 text-base font-black" value={formData.stock_value} />
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold pointer-events-none z-20">₹</span>
+                                                        <input type="text" disabled className="input-premium-modern w-full !bg-slate-50 !text-emerald-700 !border-dashed !pl-10 text-base font-black" value={computedStockValue === '0.00' ? '' : computedStockValue} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -957,19 +994,19 @@ const ProductMaster = () => {
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-2 block">Maximum</label>
-                                                    <input type="number" name="max_stock" className="input-premium-modern w-full text-base font-semibold" value={formData.max_stock} onChange={handleInputChange} />
+                                                    <input type="text" inputMode="decimal" name="max_stock" placeholder="0" className="input-premium-modern w-full text-base font-semibold relative z-10" value={formData.max_stock} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-2 block">Minimum</label>
-                                                    <input type="number" name="min_stock" className="input-premium-modern w-full text-base font-semibold" value={formData.min_stock} onChange={handleInputChange} />
+                                                    <input type="text" inputMode="decimal" name="min_stock" placeholder="0" className="input-premium-modern w-full text-base font-semibold relative z-10" value={formData.min_stock} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-2 block font-black text-rose-500">Alert Re-order</label>
-                                                    <input type="number" name="reorder_level" className="input-premium-modern w-full text-base font-black bg-rose-50/20 text-rose-600 border-rose-100" value={formData.reorder_level} onChange={handleInputChange} />
+                                                    <input type="text" inputMode="decimal" name="reorder_level" placeholder="0" className="input-premium-modern w-full text-base font-black bg-rose-50/20 text-rose-600 border-rose-100 relative z-10" value={formData.reorder_level} onChange={handleInputChange} />
                                                 </div>
                                                 <div className="form-group-premium">
                                                     <label className="text-xs font-bold text-slate-500 mb-2 block font-black text-rose-700">Crisis Alert</label>
-                                                    <input type="number" name="urgent_order_level" className="input-premium-modern w-full text-base font-black bg-rose-100/30 text-rose-800 border-rose-200" value={formData.urgent_order_level} onChange={handleInputChange} />
+                                                    <input type="text" inputMode="decimal" name="urgent_order_level" placeholder="0" className="input-premium-modern w-full text-base font-black bg-rose-100/30 text-rose-800 border-rose-200 relative z-10" value={formData.urgent_order_level} onChange={handleInputChange} />
                                                 </div>
                                             </div>
                                         </div>

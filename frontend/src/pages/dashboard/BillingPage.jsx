@@ -325,73 +325,84 @@ const BillingPage = () => {
                 const { token } = JSON.parse(savedUser);
                 const headers = { 'Authorization': `Bearer ${token}` };
 
-                const catRes = await fetch(`${import.meta.env.VITE_API_URL}/categories`, { headers });
-                const catData = await catRes.json();
-                if (catData.success) setCategories(catData.data);
+                const fetchWithAuth = async (endpoint) => {
+                    const res = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, { headers });
+                    if (!res.ok) throw new Error(`Fetch failed: ${endpoint}`);
+                    return res.json();
+                };
 
-                // 2. Fetch Active Coupons
-                const coupRes = await fetch(`${import.meta.env.VITE_API_URL}/coupons/active`, { headers });
-                const coupData = await coupRes.json();
-                if (coupData.success) setAvailableCoupons(coupData.data);
+                // 1. Categories
+                try {
+                    const catData = await fetchWithAuth('/categories');
+                    if (catData.success) setCategories(catData.data);
+                } catch (e) { console.error("Categories fetch failed", e); }
 
-                // 3. Fetch Loyalty settings
-                const settingsRes = await fetch(`${import.meta.env.VITE_API_URL}/settings/loyalty`, { headers });
-                const settingsData = await settingsRes.json();
-                if (settingsData.success) {
-                    setLoyaltySettings(settingsData.data.loyalty);
-                    setLoyaltyEnabled(settingsData.data.loyalty.enabled);
+                // 2. Products (Active Only)
+                try {
+                    const prodData = await fetchWithAuth('/products?is_active=true');
+                    if (prodData.success) setProducts(prodData.data);
+                } catch (e) {
+                    console.error("Products fetch failed", e);
+                    alert("Critical Error: Could not load products. Please check connection.");
                 }
 
-                // 2. Fetch Products
-                const prodRes = await fetch(`${import.meta.env.VITE_API_URL}/products`, { headers });
-                const prodData = await prodRes.json();
-                if (prodData.success) setProducts(prodData.data);
+                // 3. Coupons
+                try {
+                    const coupData = await fetchWithAuth('/coupons/active');
+                    if (coupData.success) setAvailableCoupons(coupData.data);
+                } catch (e) { console.error("Coupons fetch failed", e); }
 
-                // 3. Fetch Counters
-                const countRes = await fetch(`${import.meta.env.VITE_API_URL}/counters`, { headers });
-                const countData = await countRes.json();
-                if (countData.success) {
-                    setCounters(countData.data);
-                    if (countData.data.length > 0) setSelectedCounter(countData.data[0]._id);
-                }
+                // 4. Loyalty Settings
+                try {
+                    const settingsData = await fetchWithAuth('/settings/loyalty');
+                    if (settingsData.success) {
+                        setLoyaltySettings(settingsData.data.loyalty);
+                        setLoyaltyEnabled(settingsData.data.loyalty.enabled);
+                    }
+                } catch (e) { console.error("Loyalty settings fetch failed", e); }
 
-                // 4. Fetch Restaurant Info
-                const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/profile`, { headers });
-                const profileData = await profileRes.json();
+                // 5. Counters
+                try {
+                    const countData = await fetchWithAuth('/counters');
+                    if (countData.success) {
+                        setCounters(countData.data);
+                        if (countData.data.length > 0) setSelectedCounter(countData.data[0]._id);
+                    }
+                } catch (e) { console.error("Counters fetch failed", e); }
 
-                if (profileData.success) {
-                    setRestaurantName(profileData.data.restaurant.name);
-                    const layout = profileData.data.restaurant.billing_layout || 'SIDEBAR';
-                    setBillingLayout(layout);
-                    localStorage.setItem('cachedBillingLayout', layout);
-                }
+                // 6. Auth Profile
+                try {
+                    const profileData = await fetchWithAuth('/auth/profile');
+                    if (profileData.success) {
+                        setRestaurantName(profileData.data.restaurant.name);
+                        const layout = profileData.data.restaurant.billing_layout || 'SIDEBAR';
+                        setBillingLayout(layout);
+                        localStorage.setItem('cachedBillingLayout', layout);
+                    }
+                } catch (e) { console.error("Profile fetch failed", e); }
 
-                // 5. Fetch Tables & Types
-                const [tableRes, typeRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_API_URL}/tables`, { headers }),
-                    fetch(`${import.meta.env.VITE_API_URL}/table-types`, { headers })
-                ]);
-                const tableData = await tableRes.json();
-                const typeData = await typeRes.json();
+                // 7. Tables & Types
+                try {
+                    const [tableData, typeData] = await Promise.all([
+                        fetchWithAuth('/tables'),
+                        fetchWithAuth('/table-types')
+                    ]);
+                    if (tableData.success) setTables(tableData.data);
+                    if (typeData.success) setTableTypes(typeData.data);
+                } catch (e) { console.error("Tables fetch failed", e); }
 
-                if (tableData.success) setTables(tableData.data);
-                if (typeData.success) setTableTypes(typeData.data);
-
-                // 6. Fetch Captains & Waiters
-                const [capRes, waitRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_API_URL}/captains`, { headers }),
-                    fetch(`${import.meta.env.VITE_API_URL}/waiters`, { headers })
-                ]);
-                const capData = await capRes.json();
-                const waitData = await waitRes.json();
-
-                if (capData.success) setCaptains(capData.data);
-                if (waitData.success) setWaiters(waitData.data);
-
+                // 8. Captains & Waiters
+                try {
+                    const [capData, waitData] = await Promise.all([
+                        fetchWithAuth('/captains'),
+                        fetchWithAuth('/waiters')
+                    ]);
+                    if (capData.success) setCaptains(capData.data);
+                    if (waitData.success) setWaiters(waitData.data);
+                } catch (e) { console.error("Staff fetch failed", e); }
 
             } catch (error) {
                 console.error("Billing init error", error);
-                alert("Connection failed. If you just deployed to Render, the server might be waking up. Please refresh in 30 seconds.");
             } finally {
                 setLoading(false);
             }
@@ -2275,6 +2286,7 @@ const BillingPage = () => {
                                     )}
                                     <div className="item-amt">{item.is_complementary ? 0 : item.total_price}</div>
                                     <div className="item-actions-cell">
+                                        <button className="remove-btn" onClick={() => removeFromBill(idx)} title="Remove Item"><Trash2 size={14} /></button>
                                         {activeItemActions === idx && (
                                             <div className="extra-actions-layer">
                                                 <button className="row-action-btn" onClick={() => handleTransferItem(idx)} title="Transfer Item"><ArrowLeftRight size={14} /></button>
@@ -2286,7 +2298,6 @@ const BillingPage = () => {
                                                 >
                                                     <Gift size={14} />
                                                 </button>
-                                                <button className="remove-btn" onClick={() => removeFromBill(idx)} title="Remove Item"><Trash2 size={14} /></button>
                                             </div>
                                         )}
                                         <button

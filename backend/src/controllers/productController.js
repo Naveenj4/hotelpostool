@@ -6,7 +6,8 @@ const Product = require('../models/Product');
 exports.getProducts = async (req, res) => {
     try {
         const { is_active } = req.query;
-        let query = { company_id: req.user.restaurant_id };
+        const restId = req.user.restaurant_id._id || req.user.restaurant_id;
+        let query = { company_id: restId };
 
         if (is_active) {
             query.is_active = is_active === 'true';
@@ -36,9 +37,10 @@ exports.createProduct = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please provide all required fields' });
         }
 
+        const restId = req.user.restaurant_id._id || req.user.restaurant_id;
         // Check for duplicates
         const exists = await Product.findOne({
-            company_id: req.user.restaurant_id,
+            company_id: restId,
             name: { $regex: new RegExp(`^${name}$`, 'i') } // Case-insensitive check
         });
 
@@ -48,7 +50,7 @@ exports.createProduct = async (req, res) => {
 
         const product = await Product.create({
             ...req.body,
-            company_id: req.user.restaurant_id,
+            company_id: restId,
             current_stock: req.body.opening_stock || 0
         });
 
@@ -67,7 +69,8 @@ exports.createProduct = async (req, res) => {
 // @access  Private (Admin, Owner)
 exports.updateProduct = async (req, res) => {
     try {
-        let product = await Product.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        const restId = req.user.restaurant_id._id || req.user.restaurant_id;
+        let product = await Product.findOne({ _id: req.params.id, company_id: restId });
 
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
@@ -94,7 +97,8 @@ exports.updateProduct = async (req, res) => {
 // @access  Private (Admin, Owner)
 exports.toggleProductStatus = async (req, res) => {
     try {
-        const product = await Product.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        const restId = req.user.restaurant_id._id || req.user.restaurant_id;
+        const product = await Product.findOne({ _id: req.params.id, company_id: restId });
 
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
@@ -118,7 +122,8 @@ exports.toggleProductStatus = async (req, res) => {
 // @access  Private (Admin, Owner)
 exports.deleteProduct = async (req, res) => {
     try {
-        const product = await Product.findOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        const restId = req.user.restaurant_id._id || req.user.restaurant_id;
+        const product = await Product.findOne({ _id: req.params.id, company_id: restId });
 
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
@@ -139,7 +144,7 @@ exports.deleteProduct = async (req, res) => {
             });
         }
 
-        await Product.deleteOne({ _id: req.params.id, company_id: req.user.restaurant_id });
+        await Product.deleteOne({ _id: req.params.id, company_id: restId });
 
         res.status(200).json({
             success: true,

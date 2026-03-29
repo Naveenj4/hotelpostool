@@ -321,7 +321,7 @@ export default function PurchaseEntryForm() {
     );
 
     return (
-        <div className="dashboard-layout">
+        <div className="dashboard-layout bg-slate-50/50">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
@@ -364,7 +364,7 @@ export default function PurchaseEntryForm() {
                         </div>
                     }
                 />
-                <div className="pef-container">
+                <div className="pef-container fade-in-up" style={{ animationDuration: '0.4s' }}>
 
                     {/* ─── Bill Header ─── */}
                     <div className="pef-bill-header">
@@ -543,7 +543,7 @@ export default function PurchaseEntryForm() {
                                 </thead>
                                 <tbody>
                                     {items.map((item, idx) => (
-                                        <tr key={idx} className="pef-item-row">
+                                        <tr key={idx} className="pef-item-row fade-in-up" style={{ animationDelay: `${idx * 0.05}s`, animationFillMode: 'both' }}>
                                             <td className="pef-td-sno">{idx + 1}</td>
                                             {colConfig.barcode && (
                                                 <td>
