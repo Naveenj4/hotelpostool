@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Utensils } from 'lucide-react';
+import { Workflow } from 'lucide-react';
 
 const LandingFooter = () => {
     return (
@@ -8,13 +8,11 @@ const LandingFooter = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-24 mb-24">
                     <div className="lg:col-span-1">
                         <div className="flex items-center gap-4 mb-8">
-                            <div className="bg-primary-500 p-2 rounded-2xl flex items-center justify-center">
-                                <Utensils className="w-8 h-8 text-white" />
-                            </div>
-                            <span className="text-3xl font-black tracking-tighter text-slate-900">Resto<span className="text-primary-500">SaaS</span></span>
+                            <img src="/logo.jpeg" alt="Yugam Logo" style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'cover' }} />
+                            <span className="text-3xl font-normal tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Yugam <span className="text-primary-500 font-bold">Software</span></span>
                         </div>
                         <p className="text-slate-500 font-bold mb-8 leading-relaxed">
-                            RestoSaaS is the definitive enterprise operating system for the modern hospitality industry. Scaling excellence through modular innovation.
+                            Yugam Software is the definitive enterprise operating system for the modern hospitality industry. Scaling excellence through modular innovation.
                         </p>
                         <div className="flex gap-4">
                             <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center font-black cursor-pointer transition-all duration-300 hover:bg-primary-500 hover:text-white hover:-translate-y-1">
@@ -53,7 +51,7 @@ const LandingFooter = () => {
 
                 <div className="flex justify-between items-center pt-12 border-t border-slate-200">
                     <div className="text-slate-400 font-bold">
-                        © 2026 RestoSaaS Operations Center. All Rights Reserved.
+                        © 2026 Yugam Software Operations Center. All Rights Reserved.
                     </div>
                     <div className="text-slate-400 font-black tracking-widest uppercase text-xs">
                         Built for professional scale.

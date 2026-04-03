@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Menu, User, Calendar, Clock, Bell, LogOut } from 'lucide-react';
+import { useState, useEffect, memo } from 'react';
+import { Menu, User, Calendar, Clock, Bell, LogOut, Store } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
-    const { user, logout } = useAuth();
+const TimeDisplay = memo(() => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -29,6 +28,24 @@ const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
     };
 
     return (
+        <div className="date-time-display">
+            <div className="display-item">
+                <Calendar size={13} />
+                <span>{formatDate(currentTime)}</span>
+            </div>
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 300, fontSize: '0.8rem' }}>|</span>
+            <div className="display-item">
+                <Clock size={13} />
+                <span>{formatTime(currentTime)}</span>
+            </div>
+        </div>
+    );
+});
+
+const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
+    const { user, logout } = useAuth();
+    
+    return (
         <header className={`dashboard-header ${title ? 'master-header-mode' : ''}`}>
             <div className="header-left">
                 <button className="icon-btn menu-toggle" onClick={toggleSidebar}>
@@ -41,24 +58,23 @@ const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
                             <h2 className="premium-page-title">{title}</h2>
                         </div>
                     ) : (
-                        <span className="restaurant-name">{restaurantName || "RestoSaaS Partner"}</span>
+                        <div className="flex items-center gap-3">
+                            {user?.logo_url ? (
+                                <img src={user.logo_url} alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+                            ) : (
+                                <img src="/logo.jpeg" alt="Yugam" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+                            )}
+                            <span className="restaurant-name" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 400, fontSize: '1.2rem' }}>
+                                {user?.restaurant_name || "Yugam Software"}
+                            </span>
+                        </div>
                     )}
                 </div>
             </div>
 
             {!title && (
                 <div className="header-center">
-                    <div className="date-time-display">
-                        <div className="display-item">
-                            <Calendar size={13} />
-                            <span>{formatDate(currentTime)}</span>
-                        </div>
-                        <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 300, fontSize: '0.8rem' }}>|</span>
-                        <div className="display-item">
-                            <Clock size={13} />
-                            <span>{formatTime(currentTime)}</span>
-                        </div>
-                    </div>
+                    <TimeDisplay />
                 </div>
             )}
 
@@ -99,4 +115,4 @@ const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
     );
 };
 
-export default Header;
+export default memo(Header);

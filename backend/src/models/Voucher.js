@@ -60,6 +60,11 @@ const voucherSchema = new mongoose.Schema({
         },
         amount_settled: Number
     }],
+    payment_modes: [{
+        mode: { type: String, enum: ['CASH', 'UPI', 'CARD', 'ONLINE'] },
+        amount: { type: Number, required: true },
+        ledger_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Ledger' }
+    }],
     is_deleted: {
         type: Boolean,
         default: false

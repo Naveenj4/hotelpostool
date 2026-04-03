@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import {
     LayoutDashboard, PlusCircle, Box, Layers, Database, FileText,
     BarChart3, Settings, LogOut, Utensils, Store, Shield, Tag,
@@ -7,7 +7,7 @@ import {
     History, BarChart, Grid, ChevronDown, ChevronRight, Calculator,
     PieChart, List, CreditCard, Landmark, Printer, ChefHat, Lock, Globe,
     TrendingUp, TrendingDown, Package, Monitor, Receipt, LayoutGrid, Hash,
-    MinusCircle, AlertTriangle, ArrowUpRight, Activity, Calendar
+    MinusCircle, AlertTriangle, ArrowUpRight, Activity, Calendar, Ticket, Gift, Workflow
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../pages/dashboard/Dashboard.css';
@@ -15,7 +15,7 @@ import '../../pages/dashboard/Dashboard.css';
 const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, logout, hasPageAccess, isAdmin } = useAuth();
+    const { user, logout, hasPageAccess, hasModuleAccess, isAdmin } = useAuth();
     const [expandedMenus, setExpandedMenus] = useState({});
 
     const logoutWithBackup = async () => {
@@ -28,7 +28,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                     await fetch(`${import.meta.env.VITE_API_URL}/settings/backup`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ backupPath: localStorage.getItem('backup_path') || 'C:/RestoBoard/Backups' })
+                        body: JSON.stringify({ backupPath: localStorage.getItem('backup_path') || 'C:/Yugam/Backups' })
                     });
                 }
             } catch (err) { console.error("Auto backup failed", err); }
@@ -50,12 +50,13 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
         }));
     };
 
-    const menuStructure = [
+    const menuStructure = useMemo(() => [
         {
             label: "Dashboard",
             icon: <LayoutDashboard size={20} />,
             route: "/dashboard/self-service/home",
-            pageKey: "dashboard"
+            pageKey: "dashboard",
+            module: "dashboard"
         },
         {
             label: "Entry",
@@ -89,9 +90,9 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                 { label: "Item", route: "/dashboard/self-service/products", icon: <Box size={18} /> },
                 { label: "Category", route: "/dashboard/self-service/categories", icon: <Layers size={18} /> },
                 { label: "Brand", route: "/dashboard/self-service/brands", icon: <Tag size={18} /> },
-                { label: "Table", route: "/dashboard/self-service/tables", icon: <Grid size={18} /> },
-                { label: "Table Type", route: "/dashboard/self-service/table-types", icon: <Layers size={18} /> },
-                { label: "Captain/Waiter", route: "/dashboard/self-service/staff", icon: <Users size={18} /> },
+                { label: "Table", route: "/dashboard/self-service/tables", icon: <Grid size={18} />, module: "table" },
+                { label: "Table Type", route: "/dashboard/self-service/table-types", icon: <Layers size={18} />, module: "table" },
+                { label: "Captain/Waiter", route: "/dashboard/self-service/staff", icon: <Users size={18} />, module: "staff" },
                 { label: "Ledger", route: "/dashboard/self-service/ledgers", icon: <User size={18} /> },
                 { label: "Ledger Group", route: "/dashboard/self-service/group-master", icon: <Layers size={18} /> }
             ]
@@ -101,59 +102,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             icon: <BarChart size={20} />,
             pageKey: "advanced_reports",
             route: "/dashboard/self-service/reports?category=stock&filter=all",
-            subItems: [
-                {
-                    label: "Stock Report",
-                    icon: <Package size={18} />,
-                    subItems: [
-                        { label: "All Stock", route: "/dashboard/self-service/reports?category=stock&filter=all", icon: <Grid size={16} /> },
-                        { label: "Negative Stock", route: "/dashboard/self-service/reports?category=stock&filter=negative", icon: <TrendingDown size={16} /> },
-                        { label: "Nil Stock", route: "/dashboard/self-service/reports?category=stock&filter=nil", icon: <MinusCircle size={16} /> },
-                        { label: "Below Minimum Stock", route: "/dashboard/self-service/reports?category=stock&filter=min", icon: <AlertTriangle size={16} /> },
-                        { label: "Maximum Stock", route: "/dashboard/self-service/reports?category=stock&filter=max", icon: <ArrowUpRight size={16} /> },
-                        { label: "Moving Item", route: "/dashboard/self-service/reports?category=stock&filter=moving", icon: <Activity size={16} /> },
-                        { label: "Non Moving Item", route: "/dashboard/self-service/reports?category=stock&filter=non-moving", icon: <Box size={16} /> },
-                        { label: "Transaction Item", route: "/dashboard/self-service/reports?category=stock&filter=transaction", icon: <List size={16} /> }
-                    ]
-                },
-                {
-                    label: "Sales Summary",
-                    icon: <BarChart3 size={18} />,
-                    subItems: [
-                        { label: "Day Wise", route: "/dashboard/self-service/reports?category=sales&filter=day", icon: <Calendar size={16} /> },
-                        { label: "Month Wise", route: "/dashboard/self-service/reports?category=sales&filter=month", icon: <PieChart size={16} /> },
-                        { label: "Item Wise", route: "/dashboard/self-service/reports?category=sales&filter=item", icon: <Box size={16} /> },
-                        { label: "Group Wise", route: "/dashboard/self-service/reports?category=sales&filter=group", icon: <Layers size={16} /> },
-                        { label: "Transaction Wise", route: "/dashboard/self-service/reports?category=sales&filter=transaction", icon: <FileText size={16} /> },
-                        { label: "Profit Audit", route: "/dashboard/self-service/reports?category=sales&filter=profit", icon: <TrendingUp size={16} /> },
-                        { label: "Brand Wise", route: "/dashboard/self-service/reports?category=sales&filter=brand", icon: <Tag size={16} /> },
-                        { label: "Captain Wise", route: "/dashboard/self-service/reports?category=sales&filter=captain", icon: <UserCircle size={16} /> },
-                        { label: "Agent Wise", route: "/dashboard/self-service/reports?category=sales&filter=agent", icon: <Users size={16} /> }
-                    ]
-                },
-                {
-                    label: "Purchase Summary",
-                    icon: <ShoppingCart size={18} />,
-                    subItems: [
-                        { label: "Day Wise", route: "/dashboard/self-service/reports?category=purchase&filter=day", icon: <Calendar size={16} /> },
-                        { label: "Month Wise", route: "/dashboard/self-service/reports?category=purchase&filter=month", icon: <PieChart size={16} /> },
-                        { label: "Item Wise", route: "/dashboard/self-service/reports?category=purchase&filter=item", icon: <Box size={16} /> },
-                        { label: "Group Wise", route: "/dashboard/self-service/reports?category=purchase&filter=group", icon: <Layers size={16} /> },
-                        { label: "Brand Wise", route: "/dashboard/self-service/reports?category=purchase&filter=brand", icon: <Tag size={16} /> },
-                        { label: "Supplier Wise", route: "/dashboard/self-service/reports?category=purchase&filter=supplier", icon: <Users size={16} /> }
-                    ]
-                },
-                {
-                    label: "Outstanding",
-                    icon: <CreditCard size={18} />,
-                    subItems: [
-                        { label: "Customer Wise", route: "/dashboard/self-service/reports?category=outstanding&filter=customer", icon: <User size={16} /> },
-                        { label: "Supplier Wise", route: "/dashboard/self-service/reports?category=outstanding&filter=supplier", icon: <Users size={16} /> },
-                        { label: "Receivable", route: "/dashboard/self-service/reports?category=outstanding&filter=receivable", icon: <TrendingUp size={16} /> },
-                        { label: "Payable", route: "/dashboard/self-service/reports?category=outstanding&filter=payable", icon: <TrendingDown size={16} /> }
-                    ]
-                }
-            ]
+            module: "reports"
         },
         {
             label: "Accounts",
@@ -171,15 +120,15 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             pageKey: "settings",
             subItems: [
                 { label: "General", route: "/dashboard/self-service/settings", icon: <Settings size={18} /> },
-                { label: "Counter", route: "/dashboard/self-service/counters", icon: <Store size={18} />, pageKey: "counters" },
+                { label: "Counter", route: "/dashboard/self-service/counters", icon: <Store size={18} />, pageKey: "counters", module: "counter" },
                 {
                     label: "Kitchen & Printers",
                     icon: <ChefHat size={18} />,
                     pageKey: "settings",
                     subItems: [
-                        { label: "Management", route: "/dashboard/self-service/kitchen-management", icon: <ChefHat size={18} /> },
-                        { label: "Kitchen Display", route: "/dashboard/self-service/kitchen-display", icon: <Monitor size={18} /> },
-                        { label: "Printer Feed", route: "/dashboard/self-service/printer-display", icon: <Printer size={18} /> }
+                        { label: "Management", route: "/dashboard/self-service/kitchen-management", icon: <ChefHat size={18} />, module: "printer" },
+                        { label: "Kitchen Display", route: "/dashboard/self-service/kitchen-display", icon: <Monitor size={18} />, module: "kitchen" },
+                        { label: "Printer Feed", route: "/dashboard/self-service/printer-display", icon: <Printer size={18} />, module: "printer" }
                     ]
                 },
                 { label: "User Rights", route: "/dashboard/self-service/access-control", icon: <Lock size={18} /> },
@@ -192,6 +141,12 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
                         { label: "Bill Series", route: "/dashboard/self-service/settings?tab=bill_numbering", icon: <Hash size={18} /> },
                         { label: "Generated Bills", route: "/dashboard/self-service/settings?tab=bill_history", icon: <List size={18} /> }
                     ]
+                },
+                {
+                    label: "Extra Modules",
+                    icon: <Layers size={18} />,
+                    route: "/dashboard/self-service/extra-modules",
+                    pageKey: "extra_modules"
                 }
             ]
         },
@@ -201,7 +156,7 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             route: "/dashboard/self-service/profile",
             pageKey: "settings"
         }
-    ];
+    ], []);
 
     const renderMenuItem = (item, isSub = false) => {
         const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -224,6 +179,10 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
             if (sub.pageKey) return hasPageAccess(sub.pageKey);
             return true; // Default sub-items without keys to visible
         });
+
+        // Module visibility check
+        const isModuleAvailable = item.module ? hasModuleAccess(item.module) : true;
+        if (!isModuleAvailable) return null;
 
         if (!isSub && !hasAccess && !hasVisibleChildren) return null;
 
@@ -260,7 +219,11 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
 
                 {hasSubItems && isExpanded && !isCollapsed && (
                     <div className="sub-menu">
-                        {item.subItems.map(sub => renderMenuItem(sub, true))}
+                        {item.subItems.map(subItem => {
+                            const isSubModuleAvailable = subItem.module ? hasModuleAccess(subItem.module) : true;
+                            if (!isSubModuleAvailable) return null;
+                            return renderMenuItem(subItem, true);
+                        })}
                     </div>
                 )}
             </div>
@@ -271,9 +234,9 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
         <aside className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'show' : ''}`}>
             <div className="sidebar-brand">
                 <div className="brand-icon">
-                    <Utensils size={24} color="white" />
+                    <img src="/logo.jpeg" alt="Yugam" style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
                 </div>
-                {!isCollapsed && <span className="brand-name">RestoBoard</span>}
+                {!isCollapsed && <span className="brand-name" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 400, letterSpacing: '0.02em', fontSize: '1.2rem' }}>Yugam Software</span>}
             </div>
 
             <nav className="sidebar-nav">
@@ -290,4 +253,4 @@ const Sidebar = ({ isCollapsed, isMobileOpen, onMobileClose }) => {
     );
 };
 
-export default Sidebar;
+export default memo(Sidebar);

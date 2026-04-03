@@ -95,21 +95,23 @@ const AccountsReceivable = ({ isEmbedded = false }) => {
 
     const content = (
         <div className={`master-content-layout fade-in ${isEmbedded ? 'p-0' : ''}`}>
-            <div className="master-header-premium">
-                <div className="master-title-premium">
-                    <div className="flex items-center gap-2 mb-2">
-                        <ArrowDownToLine className="text-emerald-600" size={18} />
-                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-1 rounded-full">Receivables</span>
+            {!isEmbedded && (
+                <div className="master-header-premium">
+                    <div className="master-title-premium">
+                        <div className="flex items-center gap-2 mb-2">
+                            <ArrowDownToLine className="text-emerald-600" size={18} />
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-1 rounded-full">Receivables</span>
+                        </div>
+                        <h2>Accounts Receivable Aging</h2>
+                        <p>Detailed temporal analysis of pending inbound capital.</p>
                     </div>
-                    <h2>Accounts Receivable Aging</h2>
-                    <p>Detailed temporal analysis of pending inbound capital.</p>
+                    <div className="flex gap-3">
+                        <button onClick={exportToCSV} className="btn-premium-outline">
+                            <Download size={18} /> EXPORT CSV
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-3">
-                    <button onClick={exportToCSV} className="btn-premium-outline">
-                        <Download size={18} /> EXPORT CSV
-                    </button>
-                </div>
-            </div>
+            )}
 
             <div className="toolbar-premium">
                 <div className="flex gap-4 items-center w-full justify-between">

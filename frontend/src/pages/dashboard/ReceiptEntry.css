@@ -337,6 +337,24 @@
 .re-total-amount { color: #10b981; font-family: 'Inter', monospace; font-weight: 800; }
 .re-pay-total { color: #f97316; font-family: 'Inter', monospace; font-weight: 800; }
 
+.re-amt-main { font-weight: 800; }
+.re-amt-breakdown {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 2px;
+}
+.re-mode-tag {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+.re-mode-tag.cash { background: #dcfce7; color: #166534; }
+.re-mode-tag.upi { background: #fef9c3; color: #854d0e; }
+.re-mode-tag.card { background: #ffedd5; color: #9a3412; }
+.re-mode-tag.online { background: #dbeafe; color: #1e40af; }
+
 /* ═══════════════════════════════════════════════════
    FORM VIEW
    ═══════════════════════════════════════════════════ */
@@ -428,6 +446,22 @@
     color: #94a3b8 !important;
     cursor: not-allowed;
     border-color: #e2e8f0 !important;
+}
+
+.re-breakdown-row {
+    display: flex;
+    gap: 1rem;
+    background: #fdfdfd;
+    border: 1px dashed #e2e8f0;
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+.re-mode-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
 }
 
 .re-amt-input, .re-pay-amt-input {

@@ -12,6 +12,10 @@ const restaurantSchema = new mongoose.Schema({
         required: [true, 'Store name is required'],
         trim: true
     },
+    logo_url: {
+        type: String,
+        default: ''
+    },
     print_name: {
         type: String,
         required: [true, 'Print name is required'],
@@ -84,10 +88,19 @@ const restaurantSchema = new mongoose.Schema({
     zomato_api_key: { type: String, default: '' },
     swiggy_api_key: { type: String, default: '' },
     order_integration_enabled: { type: Boolean, default: false },
+    coupon_enabled: { type: Boolean, default: false },
     loyalty_enabled: { type: Boolean, default: false },
     loyalty_points_per_100: { type: Number, default: 1 },
     loyalty_target_points: { type: Number, default: 0 },
     loyalty_point_value: { type: Number, default: 1 },
+    billing_coupon_active: { type: Boolean, default: true },
+    billing_loyalty_active: { type: Boolean, default: true },
+    kitchen_enabled: { type: Boolean, default: true },
+    counter_enabled: { type: Boolean, default: true },
+    dashboard_enabled: { type: Boolean, default: true },
+    reports_enabled: { type: Boolean, default: true },
+    staff_enabled: { type: Boolean, default: true },
+    table_enabled: { type: Boolean, default: true },
     bill_series: {
         dine_in: { 
             numbering_method: { type: String, enum: ['Automatic', 'Manual'], default: 'Automatic' },

@@ -29,7 +29,8 @@ const RegisterRestaurant = () => {
         mobile: '',
         password: '',
         confirm_password: '',
-        security_control_enabled: true
+        security_control_enabled: true,
+        logo_url: ''
     });
 
     const handleChange = (e) => {
@@ -262,6 +263,17 @@ const RegisterRestaurant = () => {
                                         placeholder="Re-enter security key"
                                         className="input-field-professional"
                                         value={formData.confirm_password}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="input-header">Brand Logo URL</label>
+                                    <input
+                                        type="text"
+                                        name="logo_url"
+                                        placeholder="https://example.com/logo.png (Optional)"
+                                        className="input-field-professional"
+                                        value={formData.logo_url}
                                         onChange={handleChange}
                                     />
                                 </div>

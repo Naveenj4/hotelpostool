@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
-import ReportNavigationDropdown from '@/components/dashboard/ReportNavigationDropdown';
 import StockPage from './StockPage';
 import GenericSummaryReport from './dashboard/GenericSummaryReport';
 
@@ -24,10 +23,62 @@ import CustomerOutstanding from './dashboard/CustomerOutstanding';
 import AccountsReceivable from './dashboard/AccountsReceivable';
 import AccountsPayable from './dashboard/AccountsPayable';
 
+import {
+    PackageOpen, BarChart3, ShoppingCart, CreditCard,
+    Grid, TrendingDown, MinusCircle, AlertTriangle, ArrowDownRight,
+    Activity, FileText, Calendar, PieChart, Box, Layers, TrendingUp, Tag,
+    UserCircle, Users, ChevronRight, Search
+} from 'lucide-react';
 import './ReportsPage.css';
+
+const CATEGORIES = [
+    { key: 'stock', label: 'Stock Report', icon: <PackageOpen size={18} />, color: '#f59e0b', bg: '#fef3c7' },
+    { key: 'sales', label: 'Sales Summary', icon: <BarChart3 size={18} />, color: '#10b981', bg: '#d1fae5' },
+    { key: 'purchase', label: 'Purchase Summary', icon: <ShoppingCart size={18} />, color: '#6366f1', bg: '#e0e7ff' },
+    { key: 'outstanding', label: 'Outstanding', icon: <CreditCard size={18} />, color: '#f43f5e', bg: '#ffe4e6' }
+];
+
+const FILTERS = {
+    stock: [
+        { key: 'all', label: 'All Stock', icon: <Grid size={14} /> },
+        { key: 'negative', label: 'Negative', icon: <TrendingDown size={14} /> },
+        { key: 'nil', label: 'Nil Stock', icon: <MinusCircle size={14} /> },
+        { key: 'min', label: 'Below Min', icon: <AlertTriangle size={14} /> },
+        { key: 'max', label: 'Maximum', icon: <ArrowDownRight size={14} /> },
+        { key: 'moving', label: 'Moving', icon: <Activity size={14} /> },
+        { key: 'non-moving', label: 'Non Moving', icon: <Box size={14} /> },
+        { key: 'transaction', label: 'Transaction', icon: <FileText size={14} /> }
+    ],
+    sales: [
+        { key: 'day', label: 'Day Wise', icon: <Calendar size={14} /> },
+        { key: 'month', label: 'Month Wise', icon: <PieChart size={14} /> },
+        { key: 'item', label: 'Item Wise', icon: <Box size={14} /> },
+        { key: 'group', label: 'Group Wise', icon: <Layers size={14} /> },
+        { key: 'transaction', label: 'Transaction', icon: <FileText size={14} /> },
+        { key: 'profit', label: 'Profit Audit', icon: <TrendingUp size={14} /> },
+        { key: 'brand', label: 'Brand Wise', icon: <Tag size={14} /> },
+        { key: 'captain', label: 'Captain Wise', icon: <UserCircle size={14} /> },
+        { key: 'agent', label: 'Agent Wise', icon: <Users size={14} /> }
+    ],
+    purchase: [
+        { key: 'day', label: 'Day Wise', icon: <Calendar size={14} /> },
+        { key: 'month', label: 'Month Wise', icon: <PieChart size={14} /> },
+        { key: 'item', label: 'Item Wise', icon: <Box size={14} /> },
+        { key: 'group', label: 'Group Wise', icon: <Layers size={14} /> },
+        { key: 'brand', label: 'Brand Wise', icon: <Tag size={14} /> },
+        { key: 'supplier', label: 'Supplier Wise', icon: <Users size={14} /> }
+    ],
+    outstanding: [
+        { key: 'customer', label: 'Customer Wise', icon: <UserCircle size={14} /> },
+        { key: 'supplier', label: 'Supplier Wise', icon: <Users size={14} /> },
+        { key: 'receivable', label: 'Receivable', icon: <TrendingUp size={14} /> },
+        { key: 'payable', label: 'Payable', icon: <TrendingDown size={14} /> }
+    ]
+};
 
 const ReportsPage = () => {
     const location = useLocation();
+    const navigate = useNavigate(); // Add useNavigate here
     const searchParams = new URLSearchParams(location.search);
     const category = searchParams.get('category') || 'stock';
     const filter = searchParams.get('filter') || 'all';
@@ -143,36 +194,50 @@ const ReportsPage = () => {
                 
                 <div className="fade-in px-6 lg:px-10 py-6 max-w-[2000px] mx-auto w-full flex-1 flex flex-col min-h-0 overflow-hidden">
                     
-                    {/* Navigation Control Bar */}
-                    <div className="bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-2xl p-3 mb-6 flex flex-col lg:flex-row lg:items-center justify-between z-20 relative gap-3 flex-shrink-0">
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <ReportNavigationDropdown />
-                            <div className="h-6 w-px bg-slate-100 hidden lg:block mx-2"></div>
-                            <div className="flex items-center gap-2">
-                                <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
-                                    category === 'sales'       ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                    category === 'purchase'    ? 'bg-indigo-50  text-indigo-600  border-indigo-100'  :
-                                    category === 'outstanding' ? 'bg-rose-50    text-rose-600    border-rose-100'    :
-                                                                 'bg-amber-50   text-amber-600   border-amber-100'
-                                }`}>
-                                    {category}
-                                </span>
-                                <span className="text-slate-200 font-bold">/</span>
-                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                                    {filter.replace(/-/g, ' ')}
-                                </span>
-                            </div>
+                    {/* Integrated Compact Navigation Hub */}
+                    <div className="bg-white border border-slate-100 shadow-[0_2px_15px_rgb(0,0,0,0.02)] rounded-[1.5rem] p-2 mb-6 z-20 relative flex flex-col gap-2 flex-shrink-0">
+                        {/* Category Selector (Compact Tabs) */}
+                        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-slate-50/50 rounded-xl">
+                            {CATEGORIES.map(cat => (
+                                <button
+                                    key={cat.key}
+                                    onClick={() => navigate(`/dashboard/self-service/reports?category=${cat.key}&filter=${FILTERS[cat.key][0].key}`)}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                                        category === cat.key 
+                                            ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
+                                            : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                                    }`}
+                                >
+                                    <span style={{ color: category === cat.key ? cat.color : '#94a3b8' }}>{cat.icon}</span>
+                                    {cat.label}
+                                </button>
+                            ))}
                         </div>
-                        {/* Live indicator */}
-                        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Live System Feed</span>
+
+                        {/* Filter Chip Hub (Very Compact) */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
+                            {(FILTERS[category] || []).map(f => (
+                                <button
+                                    key={f.key}
+                                    onClick={() => navigate(`/dashboard/self-service/reports?category=${category}&filter=${f.key}`)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[8.5px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                                        filter === f.key
+                                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                                            : 'text-slate-400 hover:text-slate-500 hover:bg-slate-50 border border-transparent'
+                                    }`}
+                                >
+                                    <span className={filter === f.key ? 'text-indigo-500' : 'text-slate-300'}>{f.icon}</span>
+                                    {f.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     {/* Report Content Container */}
-                    <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden relative min-h-0 flex flex-col">
-                        {renderActiveReport()}
+                    <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden relative min-h-0 flex flex-col">
+                        <div className="flex-1 overflow-y-auto scrollbar-premium is-embedded">
+                            {renderActiveReport()}
+                        </div>
                     </div>
                 </div>
             </main>

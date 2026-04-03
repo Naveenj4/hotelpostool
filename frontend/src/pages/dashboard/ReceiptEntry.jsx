@@ -32,6 +32,14 @@ export default function ReceiptEntry() {
     const [paymodeLedgers, setPaymodeLedgers] = useState([]); // Cash/Bank
     const [bills, setBills] = useState([]);
     const [saving, setSaving] = useState(false);
+    const [counterSettings, setCounterSettings] = useState(null);
+
+    // Multi-mode input states
+    const [modes, setModes] = useState({
+        cash: { amount: '', ledger_id: '' },
+        upi: { amount: '', ledger_id: '' },
+        card: { amount: '', ledger_id: '' }
+    });
 
     // Party autocomplete
     const [partySearch, setPartySearch] = useState('');
@@ -120,6 +128,22 @@ export default function ReceiptEntry() {
                     l.name?.toLowerCase().includes('cash') ||
                     l.name?.toLowerCase().includes('bank')
                 ));
+
+                // Try to find default ledgers from counters
+                fetch(`${API}/counters`, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success && d.data.length > 0) {
+                            const c = d.data[0];
+                            setCounterSettings(c);
+                            setModes(prev => ({
+                                ...prev,
+                                cash: { ...prev.cash, ledger_id: c.cash_ledger_id || '' },
+                                upi: { ...prev.upi, ledger_id: c.upi_ledger_id || '' },
+                                card: { ...prev.card, ledger_id: c.card_ledger_id || '' }
+                            }));
+                        }
+                    });
             }
         };
         load();
@@ -195,7 +219,14 @@ export default function ReceiptEntry() {
     /* ─────────────── BILL LOGIC ─────────────── */
     const handleReceivedAmountChange = (val) => {
         setFormData(fd => ({ ...fd, received_amount: val }));
-        let remaining = parseFloat(val) || 0;
+        
+        // When total changes, if other modes are empty, assume it's the primary mode
+        // But better to just distribute it to bills
+        distributeToBills(val);
+    };
+
+    const distributeToBills = (total) => {
+        let remaining = parseFloat(total) || 0;
         const newBills = bills.map(b => {
             if (remaining > 0) {
                 const settle = Math.min(remaining, b.due_amount);
@@ -205,6 +236,19 @@ export default function ReceiptEntry() {
             return { ...b, amount_settled: '', is_selected: false };
         });
         setBills(newBills);
+    };
+
+    const handleModeAmountChange = (mode, val) => {
+        const newModes = { ...modes, [mode]: { ...modes[mode], amount: val } };
+        setModes(newModes);
+        
+        // Sum up all modes
+        const total = (parseFloat(newModes.cash.amount) || 0) + 
+                      (parseFloat(newModes.upi.amount) || 0) + 
+                      (parseFloat(newModes.card.amount) || 0);
+        
+        setFormData(fd => ({ ...fd, received_amount: total > 0 ? total.toString() : '' }));
+        distributeToBills(total);
     };
 
     const handleBillChange = (idx, val) => {
@@ -250,6 +294,11 @@ export default function ReceiptEntry() {
             const settled = bills.filter(b => parseFloat(b.amount_settled) > 0)
                 .map(b => ({ bill_id: b._id, amount_settled: parseFloat(b.amount_settled) }));
 
+            const pModes = [];
+            if (parseFloat(modes.cash.amount) > 0) pModes.push({ mode: 'CASH', amount: parseFloat(modes.cash.amount), ledger_id: modes.cash.ledger_id || formData.paymode_ledger_id });
+            if (parseFloat(modes.upi.amount) > 0) pModes.push({ mode: 'UPI', amount: parseFloat(modes.upi.amount), ledger_id: modes.upi.ledger_id || formData.paymode_ledger_id });
+            if (parseFloat(modes.card.amount) > 0) pModes.push({ mode: 'CARD', amount: parseFloat(modes.card.amount), ledger_id: modes.card.ledger_id || formData.paymode_ledger_id });
+
             const payload = {
                 party_id: cust?._id || '',
                 receipt_no: formData.receipt_no,
@@ -257,7 +306,8 @@ export default function ReceiptEntry() {
                 received_amount: formData.received_amount,
                 paymode_ledger_id: formData.paymode_ledger_id,
                 narration: formData.narration,
-                settled_bills: settled
+                settled_bills: settled,
+                payment_modes: pModes.length > 0 ? pModes : undefined
             };
 
             const res = await fetch(`${API}/receipts`, {
@@ -394,7 +444,18 @@ export default function ReceiptEntry() {
                                             <td>{fmtD(r.date)}</td>
                                             <td className="re-party-name">{r.party_id?.name || r.party_ledger_id?.name || '—'}</td>
                                             <td className="re-narration-cell">{r.narration || '—'}</td>
-                                            <td className="text-right re-amount-cell">₹{fmt(r.amount)}</td>
+                                            <td className="text-right re-amount-cell">
+                                                <div className="re-amt-main">₹{fmt(r.amount)}</div>
+                                                {r.payment_modes && r.payment_modes.length > 1 && (
+                                                    <div className="re-amt-breakdown">
+                                                        {r.payment_modes.map((m, idx) => (
+                                                            <span key={idx} className={`re-mode-tag ${m.mode.toLowerCase()}`}>
+                                                                {m.mode.slice(0, 1)}: {fmt(m.amount)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </td>
                                             <td>
                                                 <button onClick={() => handleDelete(r._id)} className="re-del-btn" title="Delete">
                                                     <Trash2 size={14} />
@@ -494,15 +555,24 @@ export default function ReceiptEntry() {
                                 />
                             </div>
 
-                            {/* PAYMODE * */}
                             <div className="re-field-group">
-                                <label className="re-field-label">Pay Mode *</label>
+                                <label className="re-field-label">Pay Mode (Primary) *</label>
                                 <select
                                     id="re_paymode"
                                     className="re-input"
                                     value={formData.paymode_ledger_id}
-                                    onKeyDown={e => handleKeyDown(e, isBank ? 're_ref' : 're_narration', 're_amount')}
-                                    onChange={e => setFormData(fd => ({ ...fd, paymode_ledger_id: e.target.value, reference_no: '' }))}
+                                    onKeyDown={e => handleKeyDown(e, 're_cash_amt', 're_amount')}
+                                    onChange={e => {
+                                        const lid = e.target.value;
+                                        setFormData(fd => ({ ...fd, paymode_ledger_id: lid, reference_no: '' }));
+                                        // Also update mode ledgers if they are not set
+                                        setModes(prev => ({
+                                            ...prev,
+                                            cash: { ...prev.cash, ledger_id: prev.cash.ledger_id || lid },
+                                            upi: { ...prev.upi, ledger_id: prev.upi.ledger_id || lid },
+                                            card: { ...prev.card, ledger_id: prev.card.ledger_id || lid }
+                                        }));
+                                    }}
                                 >
                                     <option value="">— Select Account —</option>
                                     {(() => {
@@ -519,6 +589,33 @@ export default function ReceiptEntry() {
                                         ));
                                     })()}
                                 </select>
+                            </div>
+
+                            {/* BREAKDOWN ROW */}
+                            <div className="re-field-group" style={{ gridColumn: '1 / -1' }}>
+                                <div className="re-breakdown-row">
+                                    <div className="re-mode-col">
+                                        <label className="re-field-label">Cash Amount</label>
+                                        <input id="re_cash_amt" type="number" className="re-input" placeholder="0.00" 
+                                            value={modes.cash.amount} 
+                                            onKeyDown={e => handleKeyDown(e, 're_upi_amt', 're_paymode')}
+                                            onChange={e => handleModeAmountChange('cash', e.target.value)} />
+                                    </div>
+                                    <div className="re-mode-col">
+                                        <label className="re-field-label">UPI Amount</label>
+                                        <input id="re_upi_amt" type="number" className="re-input" placeholder="0.00" 
+                                            value={modes.upi.amount} 
+                                            onKeyDown={e => handleKeyDown(e, 're_card_amt', 're_cash_amt')}
+                                            onChange={e => handleModeAmountChange('upi', e.target.value)} />
+                                    </div>
+                                    <div className="re-mode-col">
+                                        <label className="re-field-label">Card Amount</label>
+                                        <input id="re_card_amt" type="number" className="re-input" placeholder="0.00" 
+                                            value={modes.card.amount} 
+                                            onKeyDown={e => handleKeyDown(e, isBank ? 're_ref' : 're_narration', 're_upi_amt')}
+                                            onChange={e => handleModeAmountChange('card', e.target.value)} />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* REFERENCE NO - only when bank selected */}

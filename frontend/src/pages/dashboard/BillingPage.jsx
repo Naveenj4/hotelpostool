@@ -58,7 +58,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 // Custom Table Logo (Furniture style)
-const TableLogo = ({ size = 18, color = 'currentColor' }) => (
+const TableLogo = memo(({ size = 18, color = 'currentColor' }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 3v18" opacity="0" />
         <path d="M3 7h18" />
@@ -66,7 +66,7 @@ const TableLogo = ({ size = 18, color = 'currentColor' }) => (
         <path d="M18 7v10" />
         <path d="M6 11h12" />
     </svg>
-);
+));
 
 const BillingPage = () => {
     const navigate = useNavigate();
@@ -106,6 +106,9 @@ const BillingPage = () => {
     const [showTimer, setShowTimer] = useState(true);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [loyaltyEnabled, setLoyaltyEnabled] = useState(() => localStorage.getItem('pos_loyalty_enabled') === 'true');
+    const [couponEnabled, setCouponEnabled] = useState(() => localStorage.getItem('pos_coupon_enabled') === 'true');
+    const [loyaltyUnlocked, setLoyaltyUnlocked] = useState(false);
+    const [couponUnlocked, setCouponUnlocked] = useState(false);
     const [showRateColumn, setShowRateColumn] = useState(() => localStorage.getItem('pos_show_rate') !== 'false');
     const [showProductPrice, setShowProductPrice] = useState(() => localStorage.getItem('pos_show_prod_price') !== 'false');
     const [showBillNumber, setShowBillNumber] = useState(true);
@@ -406,6 +409,17 @@ const BillingPage = () => {
                         if (settingsData.data.loyalty) {
                             setLoyaltySettings(settingsData.data.loyalty);
                             setLoyaltyEnabled(settingsData.data.loyalty.enabled);
+                        }
+                        if (settingsData.data.modules) {
+                            setCouponUnlocked(settingsData.data.modules.coupon_enabled);
+                            setLoyaltyUnlocked(settingsData.data.modules.loyalty_enabled);
+                            
+                            // Load local active states
+                            setCouponEnabled(settingsData.data.modules.billing_coupon_active);
+                            setLoyaltyEnabled(settingsData.data.modules.billing_loyalty_active);
+                            
+                            localStorage.setItem('pos_coupon_enabled', String(settingsData.data.modules.billing_coupon_active));
+                            localStorage.setItem('pos_loyalty_enabled', String(settingsData.data.modules.billing_loyalty_active));
                         }
                         if (settingsData.data.billSeries) {
                             setBillSeriesSettings(settingsData.data.billSeries);
@@ -930,19 +944,21 @@ const BillingPage = () => {
     };
 
 
-    const filteredProducts = products.filter(p => {
-        const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
+    const filteredProducts = useMemo(() => {
         const searchLower = searchQuery.toLowerCase();
-        const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
-            (p.code && p.code.toLowerCase().includes(searchLower));
-        const modeMap = {
-            'DINE_IN': 'dine_in', 'TAKEAWAY': 'pickup', 'SELF_SERVICE': 'pickup',
-            'PARCEL': 'pickup', 'DELIVERY': 'delivery', 'PARTY': 'party_order'
-        };
-        const serveKey = modeMap[orderMode];
-        const isAvailable = !serveKey || !p.serve_types || p.serve_types[serveKey] !== false;
-        return matchesCategory && matchesSearch && isAvailable;
-    });
+        return products.filter(p => {
+            const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
+            const matchesSearch = p.name.toLowerCase().includes(searchLower) ||
+                (p.code && p.code.toLowerCase().includes(searchLower));
+            const modeMap = {
+                'DINE_IN': 'dine_in', 'TAKEAWAY': 'pickup', 'SELF_SERVICE': 'pickup',
+                'PARCEL': 'pickup', 'DELIVERY': 'delivery', 'PARTY': 'party_order'
+            };
+            const serveKey = modeMap[orderMode];
+            const isAvailable = !serveKey || !p.serve_types || p.serve_types[serveKey] !== false;
+            return matchesCategory && matchesSearch && isAvailable;
+        });
+    }, [products, activeCategory, searchQuery, orderMode]);
     const handlePayment = (type = '') => {
         if (!currentBillId) return;
         if (subTotal === 0) return alert("Bill is empty!");
@@ -1805,17 +1821,36 @@ const BillingPage = () => {
 
 
 
-                                <div className="settings-option">
-                                    <span>Loyalty System</span>
-                                    <label className="switch">
-                                        <input type="checkbox" checked={loyaltyEnabled} onChange={() => {
-                                            const next = !loyaltyEnabled;
-                                            setLoyaltyEnabled(next);
-                                            localStorage.setItem('pos_loyalty_enabled', String(next));
-                                        }} />
-                                        <span className="slider round"></span>
-                                    </label>
-                                </div>
+                                {loyaltyUnlocked && (
+                                    <div className="settings-option">
+                                        <span>Loyalty System</span>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={loyaltyEnabled} onChange={async () => {
+                                                const next = !loyaltyEnabled;
+                                                setLoyaltyEnabled(next);
+                                                localStorage.setItem('pos_loyalty_enabled', String(next));
+                                                // Sync with backend
+                                                try { await fetchWithAuth('/settings/modules', { method: 'PUT', body: JSON.stringify({ billing_loyalty_active: next }) }); } catch(err) {}
+                                            }} />
+                                            <span className="slider round"></span>
+                                        </label>
+                                    </div>
+                                )}
+                                {couponUnlocked && (
+                                    <div className="settings-option">
+                                        <span>Coupon System</span>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={couponEnabled} onChange={async () => {
+                                                const next = !couponEnabled;
+                                                setCouponEnabled(next);
+                                                localStorage.setItem('pos_coupon_enabled', String(next));
+                                                // Sync with backend
+                                                try { await fetchWithAuth('/settings/modules', { method: 'PUT', body: JSON.stringify({ billing_coupon_active: next }) }); } catch(err) {}
+                                            }} />
+                                            <span className="slider round"></span>
+                                        </label>
+                                    </div>
+                                )}
                                 <div className="settings-option">
                                     <span>Show Rate Column</span>
                                     <label className="switch">
@@ -2791,14 +2826,16 @@ const BillingPage = () => {
                         {/* Top Control Buttons */}
                         <div className="billing-actions-panel">
                             <div className="panel-controls">
-                                {loyaltyEnabled && (
+                                {loyaltyUnlocked && loyaltyEnabled && (
                                     <button className={`control-btn ${showLoyaltyForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('LOYALTY')}>
                                         <Gift size={15} /> Loyalty
                                     </button>
                                 )}
-                                <button className={`control-btn ${showCouponForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COUPON')}>
-                                    <Ticket size={15} /> COUPON
-                                </button>
+                                {couponUnlocked && couponEnabled && (
+                                    <button className={`control-btn ${showCouponForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('COUPON')}>
+                                        <Ticket size={15} /> COUPON
+                                    </button>
+                                )}
                                 <button className={`control-btn ${showMoreForm ? 'active' : ''}`} onClick={() => toggleExpandableForm('MORE')}>
                                     <MoreHorizontal size={15} /> More
                                 </button>

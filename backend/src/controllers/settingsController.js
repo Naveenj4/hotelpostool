@@ -39,7 +39,8 @@ exports.getUserSettings = async (req, res) => {
                     gstin: restaurant.gstin || '',
                     financial_year_start: restaurant.financial_year_start,
                     financial_year_end: restaurant.financial_year_end,
-                    books_from: restaurant.books_from
+                    books_from: restaurant.books_from,
+                    logo_url: restaurant.logo_url || ''
                 },
                 printer: {
                     enabled: restaurant.printer_enabled || false,
@@ -58,6 +59,19 @@ exports.getUserSettings = async (req, res) => {
                     footer: restaurant.bill_footer || '',
                     gstNo: restaurant.gst_no || '',
                     autoPrint: restaurant.auto_print || false
+                },
+                modules: {
+                    coupon_enabled: restaurant.coupon_enabled || false,
+                    loyalty_enabled: restaurant.loyalty_enabled || false,
+                    billing_coupon_active: restaurant.billing_coupon_active !== undefined ? restaurant.billing_coupon_active : true,
+                    billing_loyalty_active: restaurant.billing_loyalty_active !== undefined ? restaurant.billing_loyalty_active : true,
+                    kitchen_enabled: restaurant.kitchen_enabled !== undefined ? restaurant.kitchen_enabled : true,
+                    printer_enabled: restaurant.printer_enabled !== undefined ? restaurant.printer_enabled : true,
+                    counter_enabled: restaurant.counter_enabled !== undefined ? restaurant.counter_enabled : true,
+                    dashboard_enabled: restaurant.dashboard_enabled !== undefined ? restaurant.dashboard_enabled : true,
+                    reports_enabled: restaurant.reports_enabled !== undefined ? restaurant.reports_enabled : true,
+                    staff_enabled: restaurant.staff_enabled !== undefined ? restaurant.staff_enabled : true,
+                    table_enabled: restaurant.table_enabled !== undefined ? restaurant.table_enabled : true
                 },
                 loyalty: {
                     enabled: restaurant.loyalty_enabled || false,
@@ -157,7 +171,7 @@ exports.updateProfile = async (req, res) => {
             ownerName, email, mobile, phone, businessName, 
             billingLayout, restaurantType, store_name, print_name,
             address, fssai_no, gstin, financial_year_start, 
-            financial_year_end, books_from 
+            financial_year_end, books_from, logo_url 
         } = req.body;
         const mobileToUse = mobile || phone;
 
@@ -192,7 +206,8 @@ exports.updateProfile = async (req, res) => {
             gstin: gstin || existingRestaurant.gstin,
             financial_year_start: financial_year_start || existingRestaurant.financial_year_start,
             financial_year_end: financial_year_end || existingRestaurant.financial_year_end,
-            books_from: books_from || existingRestaurant.books_from
+            books_from: books_from || existingRestaurant.books_from,
+            logo_url: logo_url || existingRestaurant.logo_url
         };
 
         const restaurant = await Restaurant.findByIdAndUpdate(
@@ -490,6 +505,53 @@ exports.updateBillSeries = async (req, res) => {
         });
     } catch (error) {
         console.error('Update bill series error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Update Module Settings (Enable/Disable Coupons, Loyalty)
+// @route   PUT /api/settings/modules
+// @access  Private (Admin, Owner)
+exports.updateModuleSettings = async (req, res) => {
+    try {
+        const { coupon_enabled, loyalty_enabled } = req.body;
+        const updatePayload = {};
+        if (coupon_enabled !== undefined) updatePayload.coupon_enabled = coupon_enabled;
+        if (loyalty_enabled !== undefined) updatePayload.loyalty_enabled = loyalty_enabled;
+        if (req.body.billing_coupon_active !== undefined) updatePayload.billing_coupon_active = req.body.billing_coupon_active;
+        if (req.body.billing_loyalty_active !== undefined) updatePayload.billing_loyalty_active = req.body.billing_loyalty_active;
+        if (req.body.kitchen_enabled !== undefined) updatePayload.kitchen_enabled = req.body.kitchen_enabled;
+        if (req.body.printer_enabled !== undefined) updatePayload.printer_enabled = req.body.printer_enabled; // Added printer_enabled
+        if (req.body.counter_enabled !== undefined) updatePayload.counter_enabled = req.body.counter_enabled;
+        if (req.body.dashboard_enabled !== undefined) updatePayload.dashboard_enabled = req.body.dashboard_enabled;
+        if (req.body.reports_enabled !== undefined) updatePayload.reports_enabled = req.body.reports_enabled;
+        if (req.body.staff_enabled !== undefined) updatePayload.staff_enabled = req.body.staff_enabled;
+        if (req.body.table_enabled !== undefined) updatePayload.table_enabled = req.body.table_enabled;
+
+        const restaurant = await Restaurant.findByIdAndUpdate(
+            req.user.restaurant_id,
+            updatePayload,
+            { new: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Module settings updated successfully',
+            data: {
+                coupon_enabled: restaurant.coupon_enabled,
+                loyalty_enabled: restaurant.loyalty_enabled,
+                billing_coupon_active: restaurant.billing_coupon_active,
+                billing_loyalty_active: restaurant.billing_loyalty_active,
+                kitchen_enabled: restaurant.kitchen_enabled,
+                printer_enabled: restaurant.printer_enabled,
+                counter_enabled: restaurant.counter_enabled,
+                dashboard_enabled: restaurant.dashboard_enabled,
+                reports_enabled: restaurant.reports_enabled,
+                staff_enabled: restaurant.staff_enabled,
+                table_enabled: restaurant.table_enabled
+            }
+        });
+    } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };

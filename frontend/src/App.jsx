@@ -1,67 +1,67 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
 import { Provider } from 'react-redux';
 import { store } from './redux/store';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-import LandingPage from './pages/LandingPage.jsx';
-import RegisterRestaurant from './pages/RegisterRestaurant.jsx';
-import Login from './pages/Login.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import SelfServiceDashboard from './pages/dashboard/SelfServiceDashboard.jsx';
-import ProductMaster from './pages/dashboard/ProductMaster.jsx';
-import CategoryMaster from './pages/dashboard/CategoryMaster.jsx';
-import BrandMaster from './pages/dashboard/BrandMaster.jsx';
-import TableMaster from './pages/dashboard/TableMaster.jsx';
-import TableTypeMaster from './pages/dashboard/TableTypeMaster.jsx';
-import CaptainMaster from './pages/dashboard/CaptainMaster.jsx';
-import WaiterMaster from './pages/dashboard/WaiterMaster.jsx';
-import StaffMaster from './pages/dashboard/StaffMaster.jsx';
-import SupplierMaster from './pages/dashboard/SupplierMaster.jsx';
-import CustomerMaster from './pages/dashboard/CustomerMaster.jsx';
-import GroupMaster from './pages/dashboard/GroupMaster.jsx';
-import PurchaseEntry from './pages/dashboard/PurchaseEntry.jsx';
-import PurchaseBillManagement from './pages/dashboard/PurchaseBillManagement.jsx';
-import PurchaseInvoices from './pages/dashboard/PurchaseInvoices.jsx';
-import PurchaseEntryForm from './pages/dashboard/PurchaseEntryForm.jsx';
-import AdvancedReports from './pages/dashboard/AdvancedReports.jsx';
-import LedgerStatement from './pages/dashboard/LedgerStatement.jsx';
-import VoucherManagement from './pages/dashboard/VoucherManagement.jsx';
-import ReceiptEntry from './pages/dashboard/ReceiptEntry.jsx';
-import PaymentEntry from './pages/dashboard/PaymentEntry.jsx';
-import LedgerMaster from './pages/dashboard/LedgerMaster.jsx';
-import LedgerCreationForm from './pages/dashboard/LedgerCreationForm.jsx';
-import CounterMaster from './pages/dashboard/CounterMaster.jsx';
-import BillingPage from './pages/dashboard/BillingPage.jsx';
-import TableSelectionPage from './pages/dashboard/TableSelectionPage.jsx';
-import HoldBillsPage from './pages/dashboard/HoldBillsPage.jsx';
-import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage.jsx';
-import StockPage from './pages/StockPage.jsx';
-import ReportsPage from './pages/ReportsPage.jsx';
-import SettingsPage from './pages/SettingsPage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
-import AccessControlPage from './pages/AccessControlPage.jsx';
-import GenericSummaryReport from './pages/dashboard/GenericSummaryReport.jsx';
-import GenericModulePlaceholder from './pages/dashboard/GenericModulePlaceholder.jsx';
-import DayWiseSales from './pages/dashboard/DayWiseSales.jsx';
-import MonthWiseSales from './pages/dashboard/MonthWiseSales.jsx';
-import ItemWiseSales from './pages/dashboard/ItemWiseSales.jsx';
-import CategoryWiseSales from './pages/dashboard/CategoryWiseSales.jsx';
-import TransactionWiseSales from './pages/dashboard/TransactionWiseSales.jsx';
-import DayWisePurchase from './pages/dashboard/DayWisePurchase.jsx';
-import SupplierWisePurchase from './pages/dashboard/SupplierWisePurchase.jsx';
-import CustomerOutstanding from './pages/dashboard/CustomerOutstanding.jsx';
-import SupplierOutstanding from './pages/dashboard/SupplierOutstanding.jsx';
-import AccountsReceivable from './pages/dashboard/AccountsReceivable.jsx';
-import AccountsPayable from './pages/dashboard/AccountsPayable.jsx';
-import Daybook from './pages/dashboard/Daybook.jsx';
-import CashBalance from './pages/dashboard/CashBalance.jsx';
-import BankBalance from './pages/dashboard/BankBalance.jsx';
-import CashAndBank from './pages/dashboard/CashAndBank.jsx';
-import KitchenPrinterManagement from './pages/dashboard/KitchenPrinterManagement.jsx';
-import KitchenDisplay, { KitchenDisplayList } from './pages/dashboard/KitchenDisplay.jsx';
-import PrinterDisplay, { PrinterDisplayList } from './pages/dashboard/PrinterDisplay.jsx';
-import OrderIntegrationSettings from './pages/dashboard/OrderIntegrationSettings.jsx';
-import SalesProfit from './pages/dashboard/SalesProfit.jsx';
+const LandingPage = lazy(() => import('./pages/LandingPage.jsx'));
+const RegisterRestaurant = lazy(() => import('./pages/RegisterRestaurant.jsx'));
+const Login = lazy(() => import('./pages/Login.jsx'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
+const SelfServiceDashboard = lazy(() => import('./pages/dashboard/SelfServiceDashboard.jsx'));
+const ProductMaster = lazy(() => import('./pages/dashboard/ProductMaster.jsx'));
+const CategoryMaster = lazy(() => import('./pages/dashboard/CategoryMaster.jsx'));
+const BrandMaster = lazy(() => import('./pages/dashboard/BrandMaster.jsx'));
+const TableMaster = lazy(() => import('./pages/dashboard/TableMaster.jsx'));
+const TableTypeMaster = lazy(() => import('./pages/dashboard/TableTypeMaster.jsx'));
+const StaffMaster = lazy(() => import('./pages/dashboard/StaffMaster.jsx'));
+const SupplierMaster = lazy(() => import('./pages/dashboard/SupplierMaster.jsx'));
+const CustomerMaster = lazy(() => import('./pages/dashboard/CustomerMaster.jsx'));
+const GroupMaster = lazy(() => import('./pages/dashboard/GroupMaster.jsx'));
+const PurchaseBillManagement = lazy(() => import('./pages/dashboard/PurchaseBillManagement.jsx'));
+const PurchaseInvoices = lazy(() => import('./pages/dashboard/PurchaseInvoices.jsx'));
+const PurchaseEntryForm = lazy(() => import('./pages/dashboard/PurchaseEntryForm.jsx'));
+const AdvancedReports = lazy(() => import('./pages/dashboard/AdvancedReports.jsx'));
+const LedgerStatement = lazy(() => import('./pages/dashboard/LedgerStatement.jsx'));
+const VoucherManagement = lazy(() => import('./pages/dashboard/VoucherManagement.jsx'));
+const ReceiptEntry = lazy(() => import('./pages/dashboard/ReceiptEntry.jsx'));
+const PaymentEntry = lazy(() => import('./pages/dashboard/PaymentEntry.jsx'));
+const LedgerMaster = lazy(() => import('./pages/dashboard/LedgerMaster.jsx'));
+const LedgerCreationForm = lazy(() => import('./pages/dashboard/LedgerCreationForm.jsx'));
+const CounterMaster = lazy(() => import('./pages/dashboard/CounterMaster.jsx'));
+const BillingPage = lazy(() => import('./pages/dashboard/BillingPage.jsx'));
+const TableSelectionPage = lazy(() => import('./pages/dashboard/TableSelectionPage.jsx'));
+const HoldBillsPage = lazy(() => import('./pages/dashboard/HoldBillsPage.jsx'));
+const BillsAndSalesPage = lazy(() => import('./pages/dashboard/BillsAndSalesPage.jsx'));
+const StockPage = lazy(() => import('./pages/StockPage.jsx'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage.jsx'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const AccessControlPage = lazy(() => import('./pages/AccessControlPage.jsx'));
+const GenericSummaryReport = lazy(() => import('./pages/dashboard/GenericSummaryReport.jsx'));
+const DayWiseSales = lazy(() => import('./pages/dashboard/DayWiseSales.jsx'));
+const MonthWiseSales = lazy(() => import('./pages/dashboard/MonthWiseSales.jsx'));
+const ItemWiseSales = lazy(() => import('./pages/dashboard/ItemWiseSales.jsx'));
+const CategoryWiseSales = lazy(() => import('./pages/dashboard/CategoryWiseSales.jsx'));
+const TransactionWiseSales = lazy(() => import('./pages/dashboard/TransactionWiseSales.jsx'));
+const DayWisePurchase = lazy(() => import('./pages/dashboard/DayWisePurchase.jsx'));
+const SupplierWisePurchase = lazy(() => import('./pages/dashboard/SupplierWisePurchase.jsx'));
+const CustomerOutstanding = lazy(() => import('./pages/dashboard/CustomerOutstanding.jsx'));
+const SupplierOutstanding = lazy(() => import('./pages/dashboard/SupplierOutstanding.jsx'));
+const AccountsReceivable = lazy(() => import('./pages/dashboard/AccountsReceivable.jsx'));
+const AccountsPayable = lazy(() => import('./pages/dashboard/AccountsPayable.jsx'));
+const Daybook = lazy(() => import('./pages/dashboard/Daybook.jsx'));
+const CashBalance = lazy(() => import('./pages/dashboard/CashBalance.jsx'));
+const BankBalance = lazy(() => import('./pages/dashboard/BankBalance.jsx'));
+const CashAndBank = lazy(() => import('./pages/dashboard/CashAndBank.jsx'));
+const KitchenPrinterManagement = lazy(() => import('./pages/dashboard/KitchenPrinterManagement.jsx'));
+const KitchenDisplay = lazy(() => import('./pages/dashboard/KitchenDisplay.jsx').then(module => ({ default: module.default })));
+const KitchenDisplayList = lazy(() => import('./pages/dashboard/KitchenDisplay.jsx').then(module => ({ default: module.KitchenDisplayList })));
+const PrinterDisplayList = lazy(() => import('./pages/dashboard/PrinterDisplay.jsx').then(module => ({ default: module.PrinterDisplayList })));
+const PrinterDisplay = lazy(() => import('./pages/dashboard/PrinterDisplay.jsx').then(module => ({ default: module.default })));
+const OrderIntegrationSettings = lazy(() => import('./pages/dashboard/OrderIntegrationSettings.jsx'));
+const SalesProfit = lazy(() => import('./pages/dashboard/SalesProfit.jsx'));
+const ExtraModules = lazy(() => import('./pages/dashboard/ExtraModules.jsx'));
 
 const ProtectedRoute = ({ children, adminOnly }) => {
     const { user, loading, isAdmin } = useAuth();
@@ -78,13 +78,19 @@ const ProtectedRoute = ({ children, adminOnly }) => {
 };
 
 // Route guard that checks page-level permission
-const PermissionRoute = ({ children, pageKey }) => {
-    const { user, loading, hasPageAccess, getLandingPage } = useAuth();
+const PermissionRoute = ({ children, pageKey, module }) => {
+    const { user, loading, hasPageAccess, hasModuleAccess, getLandingPage } = useAuth();
 
     if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
     if (!user) return <Navigate to="/login" />;
 
-    if (!hasPageAccess(pageKey)) {
+    // 1. Check global module visibility first
+    if (module && !hasModuleAccess(module)) {
+        return <Navigate to={getLandingPage()} replace />;
+    }
+
+    // 2. Check user-level page access
+    if (pageKey && !hasPageAccess(pageKey)) {
         return <Navigate to={getLandingPage()} replace />;
     }
 
@@ -114,7 +120,7 @@ function AppRoutes() {
                     <ProtectedRoute>
                         <Routes>
                             <Route path="home" element={
-                                <PermissionRoute pageKey="dashboard"><SelfServiceDashboard /></PermissionRoute>
+                                <PermissionRoute pageKey="dashboard" module="dashboard"><SelfServiceDashboard /></PermissionRoute>
                             } />
                             <Route path="products" element={
                                 <PermissionRoute pageKey="products"><ProductMaster /></PermissionRoute>
@@ -126,19 +132,19 @@ function AppRoutes() {
                                 <PermissionRoute pageKey="brands"><BrandMaster /></PermissionRoute>
                             } />
                             <Route path="tables" element={
-                                <PermissionRoute pageKey="tables"><TableMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="tables" module="table"><TableMaster /></PermissionRoute>
                             } />
                             <Route path="table-types" element={
-                                <PermissionRoute pageKey="master"><TableTypeMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="master" module="table"><TableTypeMaster /></PermissionRoute>
                             } />
                             <Route path="captains" element={
-                                <PermissionRoute pageKey="captains"><StaffMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="captains" module="staff"><StaffMaster /></PermissionRoute>
                             } />
                             <Route path="waiters" element={
-                                <PermissionRoute pageKey="waiters"><StaffMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="waiters" module="staff"><StaffMaster /></PermissionRoute>
                             } />
                             <Route path="staff" element={
-                                <PermissionRoute pageKey="master"><StaffMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="master" module="staff"><StaffMaster /></PermissionRoute>
                             } />
                             <Route path="suppliers" element={
                                 <PermissionRoute pageKey="suppliers"><SupplierMaster /></PermissionRoute>
@@ -180,7 +186,7 @@ function AppRoutes() {
                                 <PermissionRoute pageKey="vouchers"><PaymentEntry /></PermissionRoute>
                             } />
                             <Route path="counters" element={
-                                <PermissionRoute pageKey="counters"><CounterMaster /></PermissionRoute>
+                                <PermissionRoute pageKey="counters" module="counter"><CounterMaster /></PermissionRoute>
                             } />
                             <Route path="table-select" element={
                                 <PermissionRoute pageKey="billing"><TableSelectionPage /></PermissionRoute>
@@ -198,7 +204,7 @@ function AppRoutes() {
                                 <PermissionRoute pageKey="stock"><StockPage /></PermissionRoute>
                             } />
                             <Route path="reports" element={
-                                <PermissionRoute pageKey="advanced_reports"><ReportsPage /></PermissionRoute>
+                                <PermissionRoute pageKey="advanced_reports" module="reports"><ReportsPage /></PermissionRoute>
                             } />
                             <Route path="profile" element={
                                 <PermissionRoute pageKey="settings"><ProfilePage /></PermissionRoute>
@@ -208,6 +214,9 @@ function AppRoutes() {
                             } />
                             <Route path="access-control" element={
                                 <ProtectedRoute adminOnly><AccessControlPage /></ProtectedRoute>
+                            } />
+                            <Route path="extra-modules" element={
+                                <PermissionRoute pageKey="extra_modules"><ExtraModules /></PermissionRoute>
                             } />
 
                             {/* Enterprise Extended Routes */}
@@ -279,7 +288,14 @@ function App() {
         <Provider store={store}>
             <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <AuthProvider>
-                    <AppRoutes />
+                    <Suspense fallback={
+                        <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
+                            <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Initializing System...</p>
+                        </div>
+                    }>
+                        <AppRoutes />
+                    </Suspense>
                 </AuthProvider>
             </Router>
         </Provider>

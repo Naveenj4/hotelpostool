@@ -32,6 +32,14 @@ export default function PaymentEntry() {
     const [paymodeLedgers, setPaymodeLedgers] = useState([]);
     const [bills, setBills] = useState([]);
     const [saving, setSaving] = useState(false);
+    const [counterSettings, setCounterSettings] = useState(null);
+
+    // Multi-mode input states
+    const [modes, setModes] = useState({
+        cash: { amount: '', ledger_id: '' },
+        upi: { amount: '', ledger_id: '' },
+        card: { amount: '', ledger_id: '' }
+    });
 
     // Party autocomplete
     const [partySearch, setPartySearch] = useState('');
@@ -122,6 +130,22 @@ export default function PaymentEntry() {
                     l.name?.toLowerCase().includes('cash') ||
                     l.name?.toLowerCase().includes('bank')
                 ));
+
+                // Fetch default ledgers
+                fetch(`${API}/counters`, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success && d.data.length > 0) {
+                            const c = d.data[0];
+                            setCounterSettings(c);
+                            setModes(prev => ({
+                                ...prev,
+                                cash: { ...prev.cash, ledger_id: c.cash_ledger_id || '' },
+                                upi: { ...prev.upi, ledger_id: c.upi_ledger_id || '' },
+                                card: { ...prev.card, ledger_id: c.card_ledger_id || '' }
+                            }));
+                        }
+                    });
             }
         };
         load();
@@ -180,7 +204,11 @@ export default function PaymentEntry() {
     /* ─────────────── BILL LOGIC ─────────────── */
     const handlePaidAmountChange = (val) => {
         setFormData(fd => ({ ...fd, paid_amount: val }));
-        let remaining = parseFloat(val) || 0;
+        distributeToBills(val);
+    };
+
+    const distributeToBills = (total) => {
+        let remaining = parseFloat(total) || 0;
         const newBills = bills.map(b => {
             if (remaining > 0) {
                 const settle = Math.min(remaining, b.due_amount);
@@ -190,6 +218,16 @@ export default function PaymentEntry() {
             return { ...b, amount_settled: '', is_selected: false };
         });
         setBills(newBills);
+    };
+
+    const handleModeAmountChange = (mode, val) => {
+        const newModes = { ...modes, [mode]: { ...modes[mode], amount: val } };
+        setModes(newModes);
+        const total = (parseFloat(newModes.cash.amount) || 0) + 
+                      (parseFloat(newModes.upi.amount) || 0) + 
+                      (parseFloat(newModes.card.amount) || 0);
+        setFormData(fd => ({ ...fd, paid_amount: total > 0 ? total.toString() : '' }));
+        distributeToBills(total);
     };
 
     const handleBillChange = (idx, val) => {
@@ -229,6 +267,11 @@ export default function PaymentEntry() {
             const settled = bills.filter(b => parseFloat(b.amount_settled) > 0)
                 .map(b => ({ bill_id: b._id, amount_settled: parseFloat(b.amount_settled) }));
 
+            const pModes = [];
+            if (parseFloat(modes.cash.amount) > 0) pModes.push({ mode: 'CASH', amount: parseFloat(modes.cash.amount), ledger_id: modes.cash.ledger_id || formData.paymode_ledger_id });
+            if (parseFloat(modes.upi.amount) > 0) pModes.push({ mode: 'UPI', amount: parseFloat(modes.upi.amount), ledger_id: modes.upi.ledger_id || formData.paymode_ledger_id });
+            if (parseFloat(modes.card.amount) > 0) pModes.push({ mode: 'CARD', amount: parseFloat(modes.card.amount), ledger_id: modes.card.ledger_id || formData.paymode_ledger_id });
+
             const payload = {
                 party_ledger_id: formData.party_ledger_id,
                 payment_no: formData.payment_no,
@@ -237,7 +280,8 @@ export default function PaymentEntry() {
                 paymode_ledger_id: formData.paymode_ledger_id,
                 reference_no: formData.reference_no,
                 narration: formData.narration,
-                settled_bills: settled
+                settled_bills: settled,
+                payment_modes: pModes.length > 0 ? pModes : undefined
             };
 
             const res = await fetch(`${API}/payments`, {
@@ -374,7 +418,18 @@ export default function PaymentEntry() {
                                             <td>{fmtD(p.date)}</td>
                                             <td className="re-party-name">{p.party_ledger_id?.name || '—'}</td>
                                             <td className="re-narration-cell">{p.narration || '—'}</td>
-                                            <td className="text-right re-pay-amount-cell">₹{fmt(p.amount)}</td>
+                                            <td className="text-right re-pay-amount-cell">
+                                                <div className="re-amt-main">₹{fmt(p.amount)}</div>
+                                                {p.payment_modes && p.payment_modes.length > 1 && (
+                                                    <div className="re-amt-breakdown">
+                                                        {p.payment_modes.map((m, idx) => (
+                                                            <span key={idx} className={`re-mode-tag ${m.mode.toLowerCase()}`}>
+                                                                {m.mode.slice(0, 1)}: {fmt(m.amount)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </td>
                                             <td>
                                                 <button onClick={() => handleDelete(p._id)} className="re-del-btn" title="Delete">
                                                     <Trash2 size={14} />
@@ -474,15 +529,23 @@ export default function PaymentEntry() {
                                 />
                             </div>
 
-                            {/* PAYMODE * */}
                             <div className="re-field-group">
-                                <label className="re-field-label">Pay Mode *</label>
+                                <label className="re-field-label">Pay Mode (Primary) *</label>
                                 <select
                                     id="pe_paymode"
                                     className="re-input"
                                     value={formData.paymode_ledger_id}
-                                    onKeyDown={e => handleKeyDown(e, isBank ? 'pe_ref' : 'pe_narration', 'pe_amount')}
-                                    onChange={e => setFormData(fd => ({ ...fd, paymode_ledger_id: e.target.value, reference_no: '' }))}
+                                    onKeyDown={e => handleKeyDown(e, 'pe_cash_amt', 'pe_amount')}
+                                    onChange={e => {
+                                        const lid = e.target.value;
+                                        setFormData(fd => ({ ...fd, paymode_ledger_id: lid, reference_no: '' }));
+                                        setModes(prev => ({
+                                            ...prev,
+                                            cash: { ...prev.cash, ledger_id: prev.cash.ledger_id || lid },
+                                            upi: { ...prev.upi, ledger_id: prev.upi.ledger_id || lid },
+                                            card: { ...prev.card, ledger_id: prev.card.ledger_id || lid }
+                                        }));
+                                    }}
                                 >
                                     <option value="">— Select Account —</option>
                                     {(() => {
@@ -499,6 +562,33 @@ export default function PaymentEntry() {
                                         ));
                                     })()}
                                 </select>
+                            </div>
+
+                            {/* BREAKDOWN ROW */}
+                            <div className="re-field-group" style={{ gridColumn: '1 / -1' }}>
+                                <div className="re-breakdown-row">
+                                    <div className="re-mode-col">
+                                        <label className="re-field-label">Cash Amount</label>
+                                        <input id="pe_cash_amt" type="number" className="re-input" placeholder="0.00" 
+                                            value={modes.cash.amount} 
+                                            onKeyDown={e => handleKeyDown(e, 'pe_upi_amt', 'pe_paymode')}
+                                            onChange={e => handleModeAmountChange('cash', e.target.value)} />
+                                    </div>
+                                    <div className="re-mode-col">
+                                        <label className="re-field-label">UPI Amount</label>
+                                        <input id="pe_upi_amt" type="number" className="re-input" placeholder="0.00" 
+                                            value={modes.upi.amount} 
+                                            onKeyDown={e => handleKeyDown(e, 'pe_card_amt', 'pe_cash_amt')}
+                                            onChange={e => handleModeAmountChange('upi', e.target.value)} />
+                                    </div>
+                                    <div className="re-mode-col">
+                                        <label className="re-field-label">Card Amount</label>
+                                        <input id="pe_card_amt" type="number" className="re-input" placeholder="0.00" 
+                                            value={modes.card.amount} 
+                                            onKeyDown={e => handleKeyDown(e, isBank ? 'pe_ref' : 'pe_narration', 'pe_upi_amt')}
+                                            onChange={e => handleModeAmountChange('card', e.target.value)} />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* REFERENCE NO - only when bank selected */}

@@ -198,7 +198,7 @@ const LandingPage = () => {
                     >
                         <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl -z-1"></div>
                         <h2 className="text-5xl font-extrabold text-white mb-8 tracking-tighter">Scale with Confidence.</h2>
-                        <p className="text-slate-400 mb-12 text-2xl max-w-2xl mx-auto">Join the ranks of high-performance restaurants transforming their operations with RestoSaaS.</p>
+                        <p className="text-slate-400 mb-12 text-2xl max-w-2xl mx-auto">Join the ranks of high-performance restaurants transforming their operations with Yugam Software.</p>
                         <div>
                             <Link to="/register" className="inline-block bg-white text-slate-900 px-14 py-5 rounded-2xl text-xl font-bold no-underline transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl">
                                 Activate Your Profile

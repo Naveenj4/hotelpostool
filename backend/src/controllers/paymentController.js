@@ -130,15 +130,16 @@ exports.createPayment = async (req, res) => {
     try {
         const {
             party_ledger_id, payment_no, date, paid_amount, paymode_ledger_id,
-            reference_no, narration, settled_bills // [{ bill_id, amount_settled }]
+            reference_no, narration, settled_bills, payment_modes // [{ mode, amount, ledger_id }]
         } = req.body;
 
         const company_id = req.user.restaurant_id;
-        const amt = parseFloat(paid_amount) || 0;
+        const totalAmt = parseFloat(paid_amount) || 0;
 
-        if (!party_ledger_id || !paymode_ledger_id || amt <= 0) {
+        const hasModes = payment_modes && payment_modes.length > 0;
+        if (!party_ledger_id || (!hasModes && !paymode_ledger_id) || totalAmt <= 0) {
             await session.abortTransaction();
-            return res.status(400).json({ success: false, error: 'Party, Paymode and Amount are required' });
+            return res.status(400).json({ success: false, error: 'Party, Paymode/Modes and Amount are required' });
         }
 
         // 1. Verify party ledger
@@ -148,11 +149,13 @@ exports.createPayment = async (req, res) => {
             return res.status(404).json({ success: false, error: 'Party ledger not found' });
         }
 
-        // 2. Verify paymode ledger
-        const paymodeLedger = await Ledger.findOne({ _id: paymode_ledger_id, company_id }).session(session);
-        if (!paymodeLedger) {
-            await session.abortTransaction();
-            return res.status(404).json({ success: false, error: 'Paymode ledger not found' });
+        // 2. Verify paymode ledger (only if not using multi-modes)
+        if (!payment_modes || payment_modes.length === 0) {
+            const paymodeLedger = await Ledger.findOne({ _id: paymode_ledger_id, company_id }).session(session);
+            if (!paymodeLedger) {
+                await session.abortTransaction();
+                return res.status(404).json({ success: false, error: 'Paymode ledger not found' });
+            }
         }
 
         // 3. Try to find matching supplier and settle purchase bills
@@ -176,15 +179,17 @@ exports.createPayment = async (req, res) => {
 
         // 4. Update supplier balance
         if (supplier) {
-            supplier.opening_balance = Math.max(0, (supplier.opening_balance || 0) - amt);
+            supplier.opening_balance = Math.max(0, (supplier.opening_balance || 0) - totalAmt);
             await supplier.save({ session });
         }
 
         // 5. Update party ledger balance
-        await Ledger.findByIdAndUpdate(party_ledger_id, { $inc: { opening_balance: -amt } }, { session });
+        await Ledger.findByIdAndUpdate(party_ledger_id, { $inc: { opening_balance: -totalAmt } }, { session });
 
-        // 6. Deduct from paymode ledger (cash/bank goes out)
-        await Ledger.findByIdAndUpdate(paymode_ledger_id, { $inc: { opening_balance: -amt } }, { session });
+        // 6. Deduct from paymode ledgers (cash/bank goes out)
+        // Handled in loops below
+
+        const primaryLedgerId = (payment_modes && payment_modes.length > 0) ? payment_modes[0].ledger_id : paymode_ledger_id;
 
         // 7. Create Voucher (PAYMENT)
         const [voucher] = await Voucher.create([{
@@ -193,27 +198,49 @@ exports.createPayment = async (req, res) => {
             voucher_number: payment_no || `PAY-${Date.now().toString().slice(-6)}`,
             date: date || new Date(),
             debit_ledger: party_ledger_id,    // Supplier ledger is debited (liability decreases)
-            credit_ledger: paymode_ledger_id, // Cash/Bank is credited (asset decreases)
-            amount: amt,
+            credit_ledger: primaryLedgerId, // Cash/Bank is credited (asset decreases)
+            amount: totalAmt,
             party_id: supplier?._id || undefined,
             party_ledger_id,
             reference_no: reference_no || '',
             narration: narration || `Payment to ${partyLedger.name}`,
-            settled_bills: validSettledBills.map(b => ({ bill_id: b.bill_id, amount_settled: b.amount_settled }))
+            settled_bills: validSettledBills.map(b => ({ bill_id: b.bill_id, amount_settled: b.amount_settled })),
+            payment_modes: payment_modes || [{ mode: 'ONLINE', amount: totalAmt, ledger_id: paymode_ledger_id }]
         }], { session });
+
+        const vno = voucher.voucher_number;
+        const vdate = voucher.date;
+        const vnarration = voucher.narration;
 
         // 8. Generate Account Transactions
+        // DEBIT party (Liability decrease)
         await AccountTransaction.create([{
             company_id, ledger_id: party_ledger_id, type: 'DEBIT',
-            amount: amt, voucher_type: 'PAYMENT', voucher_number: voucher.voucher_number,
-            reference_id: voucher._id, narration: voucher.narration, date: voucher.date
+            amount: totalAmt, voucher_type: 'PAYMENT', voucher_number: vno,
+            reference_id: voucher._id, narration: vnarration, date: vdate
         }], { session });
 
-        await AccountTransaction.create([{
-            company_id, ledger_id: paymode_ledger_id, type: 'CREDIT',
-            amount: amt, voucher_type: 'PAYMENT', voucher_number: voucher.voucher_number,
-            reference_id: voucher._id, narration: voucher.narration, date: voucher.date
-        }], { session });
+        // CREDIT paymodes (Asset decrease)
+        if (payment_modes && payment_modes.length > 0) {
+            for (const pm of payment_modes) {
+                const pmAmt = parseFloat(pm.amount) || 0;
+                if (pmAmt <= 0) continue;
+
+                await AccountTransaction.create([{
+                    company_id, ledger_id: pm.ledger_id, type: 'CREDIT',
+                    amount: pmAmt, voucher_type: 'PAYMENT', voucher_number: vno,
+                    reference_id: voucher._id, narration: `${vnarration} (${pm.mode})`, date: vdate
+                }], { session });
+                await Ledger.findByIdAndUpdate(pm.ledger_id, { $inc: { opening_balance: -pmAmt } }, { session });
+            }
+        } else {
+            await AccountTransaction.create([{
+                company_id, ledger_id: paymode_ledger_id, type: 'CREDIT',
+                amount: totalAmt, voucher_type: 'PAYMENT', voucher_number: vno,
+                reference_id: voucher._id, narration: vnarration, date: vdate
+            }], { session });
+            await Ledger.findByIdAndUpdate(paymode_ledger_id, { $inc: { opening_balance: -totalAmt } }, { session });
+        }
 
         await session.commitTransaction();
         res.status(201).json({ success: true, data: voucher });
@@ -241,10 +268,19 @@ exports.deletePayment = async (req, res) => {
         voucher.is_deleted = true;
         await voucher.save({ session });
 
-        // Revert party ledger
+        // Revert party ledger (liability increase)
         if (voucher.debit_ledger) await Ledger.findByIdAndUpdate(voucher.debit_ledger, { $inc: { opening_balance: voucher.amount } }, { session });
-        // Revert paymode ledger
-        if (voucher.credit_ledger) await Ledger.findByIdAndUpdate(voucher.credit_ledger, { $inc: { opening_balance: voucher.amount } }, { session });
+        
+        // Revert paymode ledgers (asset increase)
+        if (voucher.payment_modes && voucher.payment_modes.length > 0) {
+            for (const pm of voucher.payment_modes) {
+                if (pm.ledger_id && pm.amount) {
+                    await Ledger.findByIdAndUpdate(pm.ledger_id, { $inc: { opening_balance: pm.amount } }, { session });
+                }
+            }
+        } else if (voucher.credit_ledger) {
+            await Ledger.findByIdAndUpdate(voucher.credit_ledger, { $inc: { opening_balance: voucher.amount } }, { session });
+        }
 
         // Revert supplier balance
         if (voucher.party_id) {

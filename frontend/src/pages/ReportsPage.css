@@ -1,6 +1,33 @@
-/* ================================================================
-   REPORTS PAGE — RestoBoard Theme
-   ================================================================ */
+/* ═══════════════════════════════════════════════════
+   PREMIUM SCROLLBAR
+   ═══════════════════════════════════════════════════ */
+.scrollbar-premium::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.scrollbar-premium::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scrollbar-premium::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+.scrollbar-premium::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* Ensure no double scrolling when embedded */
+.is-embedded .dashboard-content {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 2rem !important;
+}
+
+@media (max-width: 1024px) {
+    .is-embedded .dashboard-content {
+        padding: 1rem !important;
+    }
+}
 
 .reports-grid {
     display: grid;
@@ -115,13 +142,8 @@
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Refresh button */
@@ -143,85 +165,31 @@
    RESPONSIVE
    ---------------------------------------------------------------- */
 @media (max-width: 1200px) {
-    .reports-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .chart-container {
-        height: 240px;
-    }
-
-    .pie-container {
-        height: 240px;
-    }
-
-    .data-card {
-        overflow-x: auto;
-    }
+    .reports-grid { grid-template-columns: 1fr; }
+    .chart-container { height: 240px; }
+    .pie-container { height: 240px; }
+    .data-card { overflow-x: auto; }
 }
 
 @media (max-width: 768px) {
-    .date-filter {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-        width: 100%;
-    }
-
-    .date-filter .input-field {
-        width: 100%;
-    }
-
-    .date-filter .refresh-btn {
-        width: 100%;
-        margin-left: 0 !important;
-    }
-
-    .chart-container {
-        height: 200px;
-    }
-
-    .pie-container {
-        height: 200px;
-    }
-
-    .widgets-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.875rem;
-    }
-
-    .custom-table {
-        min-width: 650px;
-    }
+    .date-filter { flex-direction: column; align-items: flex-start; gap: 0.5rem; width: 100%; }
+    .date-filter .input-field { width: 100%; }
+    .date-filter .refresh-btn { width: 100%; margin-left: 0 !important; }
+    .chart-container { height: 200px; }
+    .pie-container { height: 200px; }
+    .widgets-grid { grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+    .custom-table { min-width: 650px; }
 }
 
 @media (max-width: 480px) {
-    .widgets-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .chart-container {
-        height: 180px;
-    }
-
-    .pie-container {
-        height: 180px;
-    }
-
-    .date-filter {
-        padding: 0.75rem;
-    }
-
-    .chart-card {
-        padding: 0.875rem;
-    }
-
-    .rank-badge {
-        width: 22px;
-        height: 22px;
-        font-size: 0.7rem;
-        }
+    .widgets-grid { grid-template-columns: 1fr; }
+    .chart-container { height: 180px; }
+    .pie-container { height: 180px; }
+    .date-filter { padding: 0.75rem; }
+    .chart-card { padding: 0.875rem; }
+    .rank-badge { width: 22px; height: 22px; font-size: 0.7rem; }
 }
+
 /* ================================================================
    DYNAMIC HUB SPECIFIC OVERRIDES
    ================================================================ */
@@ -231,4 +199,42 @@
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
-}
+}
+
+/* ═══════════════════════════════════════════════════
+   INTEGRATED NAVIGATION HUB
+   ═══════════════════════════════════════════════════ */
+
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.reports-nav-header button {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.reports-nav-header button:active {
+    transform: scale(0.95);
+}
+
+.reports-nav-header .bg-slate-900 {
+    position: relative;
+    overflow: hidden;
+}
+
+.reports-nav-header .bg-slate-900::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}

@@ -95,21 +95,23 @@ const AccountsPayable = ({ isEmbedded = false }) => {
 
     const content = (
         <div className={`master-content-layout fade-in ${isEmbedded ? 'p-0' : ''}`}>
-            <div className="master-header-premium">
-                <div className="master-title-premium">
-                    <div className="flex items-center gap-2 mb-2">
-                        <ArrowUpFromLine className="text-red-600" size={18} />
-                        <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-full">Payables</span>
+            {!isEmbedded && (
+                <div className="master-header-premium">
+                    <div className="master-title-premium">
+                        <div className="flex items-center gap-2 mb-2">
+                            <ArrowUpFromLine className="text-red-600" size={18} />
+                            <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-full">Payables</span>
+                        </div>
+                        <h2>Accounts Payable Aging</h2>
+                        <p>Detailed temporal analysis of pending capital outflow commitments.</p>
                     </div>
-                    <h2>Accounts Payable Aging</h2>
-                    <p>Detailed temporal analysis of pending capital outflow commitments.</p>
+                    <div className="flex gap-3">
+                        <button onClick={exportToCSV} className="btn-premium-outline">
+                            <Download size={18} /> EXPORT CSV
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-3">
-                    <button onClick={exportToCSV} className="btn-premium-outline">
-                        <Download size={18} /> EXPORT CSV
-                    </button>
-                </div>
-            </div>
+            )}
 
             <div className="toolbar-premium">
                 <div className="flex gap-4 items-center w-full justify-between">

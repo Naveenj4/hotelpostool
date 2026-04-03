@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
@@ -6,11 +6,13 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [permissions, setPermissions] = useState(null);
+    const [moduleSettings, setModuleSettings] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const savedUser = localStorage.getItem('user');
         const savedPermissions = localStorage.getItem('permissions');
+        const savedModules = localStorage.getItem('moduleSettings');
         if (savedUser) {
             try {
                 const parsedUser = JSON.parse(savedUser);
@@ -20,6 +22,11 @@ export const AuthProvider = ({ children }) => {
                     if (savedPermissions) {
                         setPermissions(JSON.parse(savedPermissions));
                     }
+                    if (savedModules) {
+                        setModuleSettings(JSON.parse(savedModules));
+                    }
+                    // Fetch fresh settings in background
+                    fetchModuleSettings(parsedUser.token);
                 } else {
                     localStorage.removeItem('user');
                     localStorage.removeItem('permissions');
@@ -32,6 +39,19 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
+    const fetchModuleSettings = async (token) => {
+        try {
+            const apiBase = import.meta.env.VITE_API_URL;
+            const res = await axios.get(`${apiBase}/settings`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.data.success && res.data.data.modules) {
+                setModuleSettings(res.data.data.modules);
+                localStorage.setItem('moduleSettings', JSON.stringify(res.data.data.modules));
+            }
+        } catch (e) { console.error("Failed to fetch module settings", e); }
+    };
+
     const register = async (userData) => {
         try {
             const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, userData);
@@ -40,7 +60,8 @@ export const AuthProvider = ({ children }) => {
                 _id: data.user.id,
                 token: data.token,
                 restaurant_type: data.restaurant.restaurant_type,
-                restaurant_name: data.restaurant.name
+                restaurant_name: data.restaurant.name,
+                logo_url: data.restaurant.logo_url
             };
             setUser(normalizedUser);
             setPermissions(null);
@@ -64,7 +85,8 @@ export const AuthProvider = ({ children }) => {
                 _id: data.user.id,
                 token: data.token,
                 restaurant_type: data.restaurant.restaurant_type,
-                restaurant_name: data.restaurant.name
+                restaurant_name: data.restaurant.name,
+                logo_url: data.restaurant.logo_url
             };
             setUser(normalizedUser);
             localStorage.setItem('user', JSON.stringify(normalizedUser));
@@ -161,19 +183,43 @@ export const AuthProvider = ({ children }) => {
         return '/login';
     };
 
+    // Check if a global module is enabled
+    const hasModuleAccess = (moduleName) => {
+        if (!moduleSettings) return true; // Default to true if not loaded
+        // Mapping internal keys to module setting keys
+        const map = {
+            kitchen: 'kitchen_enabled',
+            printer: 'printer_enabled',
+            counter: 'counter_enabled',
+            dashboard: 'dashboard_enabled',
+            reports: 'reports_enabled',
+            staff: 'staff_enabled',
+            table: 'table_enabled',
+            coupon: 'coupon_enabled',
+            loyalty: 'loyalty_enabled'
+        };
+        const key = map[moduleName] || `${moduleName}_enabled`;
+        return moduleSettings[key] !== false;
+    };
+
+    const contextValue = useMemo(() => ({
+        user,
+        permissions,
+        moduleSettings,
+        setModuleSettings,
+        loading,
+        register,
+        login,
+        logout,
+        hasPageAccess,
+        hasFeatureAccess,
+        hasModuleAccess,
+        isAdmin,
+        getLandingPage
+    }), [user, permissions, moduleSettings, loading]);
+
     return (
-        <AuthContext.Provider value={{
-            user,
-            permissions,
-            loading,
-            register,
-            login,
-            logout,
-            hasPageAccess,
-            hasFeatureAccess,
-            isAdmin,
-            getLandingPage
-        }}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

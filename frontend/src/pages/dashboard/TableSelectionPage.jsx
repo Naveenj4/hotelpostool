@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
@@ -54,6 +54,15 @@ const useLiveTimer = (since) => {
     return display;
 };
 
+const LiveTimer = memo(({ since }) => {
+    const display = useLiveTimer(since);
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 800, color: '#64748b' }}>
+            <Clock size={10} strokeWidth={3} /> {display || '00:00'}
+        </div>
+    );
+});
+
 // Inject readyPulse keyframe once
 if (typeof document !== 'undefined' && !document.getElementById('readyPulseStyle')) {
     const s = document.createElement('style');
@@ -63,7 +72,7 @@ if (typeof document !== 'undefined' && !document.getElementById('readyPulseStyle
 }
 
 /* ─── Single compact table card ─── */
-const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => {
+const TableCard = memo(({ table, onSelect, onReserve, onCancelReserve, onReset }) => {
     const isAvail = table.status === 'AVAILABLE';
     const isOccupied = table.status === 'OCCUPIED';
     const isPrinted = table.status === 'PRINTED';
@@ -80,7 +89,6 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                 : { border: '#e2e8f0', bg: '#ffffff', text: '#334155', glow: 'transparent' };
 
     const { border, bg, text, glow } = colorScheme;
-    const liveTimer = useLiveTimer(isActive ? table.occupied_since : null);
     const handleClick = () => onSelect(table);
 
     return (
@@ -136,9 +144,7 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                             <span style={{ fontSize: '15px', fontWeight: 900, color: text, lineHeight: 1 }}>
                                 ₹{Math.round(table.running_amount || 0)}
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 800, color: '#64748b' }}>
-                                <Clock size={10} strokeWidth={3} /> {liveTimer || '00:00'}
-                            </div>
+                            <LiveTimer since={isActive ? table.occupied_since : null} />
                         </div>
                     )}
                 </div>
@@ -191,8 +197,8 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                             onMouseLeave={e => e.currentTarget.style.background = '#10b981'}>PRNT</button>
                         <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ width: '26px', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                             title="RESET/FREE TABLE"
-                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}><RefreshCw size={12} strokeWidth={2.5} /></button>
+                            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#334155'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#64748b'; }}><RefreshCw size={12} strokeWidth={2.5} /></button>
                     </>
                 )}
                 {isPrinted && !isReserved && (
@@ -203,14 +209,14 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                             <CheckCircle2 size={12} strokeWidth={3} /> PAY
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ width: '26px', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}><RefreshCw size={12} strokeWidth={3} /></button>
+                            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#334155'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#64748b'; }}><RefreshCw size={12} strokeWidth={3} /></button>
                     </>
                 )}
             </div>
         </div>
     );
-};
+});
 
 /* ─── Reservation Modal ─── */
 const ReservationModal = ({ table, onClose, onConfirm, loading }) => {

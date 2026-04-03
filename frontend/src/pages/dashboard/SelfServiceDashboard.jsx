@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import {
@@ -53,7 +53,7 @@ ChartJS.register(
     Filler
 );
 
-const StatCard = ({ label, value, icon, color, trend, iconBg }) => (
+const StatCard = memo(({ label, value, icon, color, trend, iconBg }) => (
     <div className="group relative bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-500 overflow-hidden">
         {/* Subtle background decoration */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-110 opacity-50"></div>
@@ -79,9 +79,9 @@ const StatCard = ({ label, value, icon, color, trend, iconBg }) => (
             </div>
         </div>
     </div>
-);
+));
 
-const ReportSectionHeader = ({ icon, title, subtitle }) => (
+const ReportSectionHeader = memo(({ icon, title, subtitle }) => (
     <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-indigo-600 flex items-center justify-center rounded-2xl shadow-lg shadow-indigo-200 text-white">
@@ -94,7 +94,7 @@ const ReportSectionHeader = ({ icon, title, subtitle }) => (
         </div>
         <div className="h-px flex-1 bg-slate-100 hidden xl:block mx-8 opacity-50"></div>
     </div>
-);
+));
 
 const SelfServiceDashboard = () => {
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
@@ -149,6 +149,40 @@ const SelfServiceDashboard = () => {
     const handleDateChange = (e, field) => {
         setDateRange(prev => ({ ...prev, [field]: e.target.value }));
     };
+
+    const mainChartData = useMemo(() => ({
+        labels: dashboardData?.chartData?.labels || [],
+        datasets: [{
+            label: 'Sales Revenue',
+            data: dashboardData?.chartData?.sales || [],
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            borderWidth: 5,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#6366f1',
+            pointBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 8
+        }]
+    }), [dashboardData?.chartData]);
+
+    const inflowChartData = useMemo(() => ({
+        labels: dashboardData?.chartData?.labels || [],
+        datasets: [
+            { label: 'RECEIPTS', data: dashboardData?.chartData?.receipts || [], backgroundColor: '#10b981', borderRadius: 12, barThickness: 15 },
+            { label: 'PAYMENTS', data: dashboardData?.chartData?.payments || [], backgroundColor: '#f43f5e', borderRadius: 12, barThickness: 15 }
+        ]
+    }), [dashboardData?.chartData]);
+
+    const outstandingChartData = useMemo(() => ({
+        labels: ['Outstanding Balance'],
+        datasets: [
+            { label: 'RECEIVABLE', data: [dashboardData?.receivableAmount || 0], backgroundColor: '#8b5cf6', borderRadius: 15, barThickness: 45 },
+            { label: 'PAYABLE', data: [dashboardData?.payableAmount || 0], backgroundColor: '#f43f5e', borderRadius: 15, barThickness: 45 }
+        ]
+    }), [dashboardData?.receivableAmount, dashboardData?.payableAmount]);
 
     if (loading && !dashboardData.todaySales && dashboardData.todaySales !== 0) {
         return (
@@ -350,29 +384,7 @@ const SelfServiceDashboard = () => {
                             </div>
                             <div className="h-[400px]">
                                 <Line 
-                                    data={ {
-                                        labels: dashboardData?.chartData?.labels || [],
-                                        datasets: [{
-                                            label: 'Sales Revenue',
-                                            data: dashboardData?.chartData?.sales || [],
-                                            borderColor: '#6366f1',
-                                            backgroundColor: (context) => {
-                                                const ctx = context.chart.ctx;
-                                                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                                                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
-                                                gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
-                                                return gradient;
-                                            },
-                                            borderWidth: 5,
-                                            tension: 0.4,
-                                            fill: true,
-                                            pointBackgroundColor: '#fff',
-                                            pointBorderColor: '#6366f1',
-                                            pointBorderWidth: 3,
-                                            pointRadius: 6,
-                                            pointHoverRadius: 8
-                                        }]
-                                    }} 
+                                    data={mainChartData} 
                                     options={chartOptions} 
                                 />
                             </div>
@@ -383,13 +395,7 @@ const SelfServiceDashboard = () => {
                             <h4 className="text-xl font-black text-slate-900 tracking-tight mb-8">CASH / BANK LIQUIDITY</h4>
                             <div className="h-[350px]">
                                 <Bar 
-                                    data={{
-                                        labels: dashboardData?.chartData?.labels || [],
-                                        datasets: [
-                                            { label: 'RECEIPTS', data: dashboardData?.chartData?.receipts || [], backgroundColor: '#10b981', borderRadius: 12, barThickness: 15 },
-                                            { label: 'PAYMENTS', data: dashboardData?.chartData?.payments || [], backgroundColor: '#f43f5e', borderRadius: 12, barThickness: 15 }
-                                        ]
-                                    }} 
+                                    data={inflowChartData} 
                                     options={chartOptions} 
                                 />
                             </div>
@@ -400,13 +406,7 @@ const SelfServiceDashboard = () => {
                             <h4 className="text-xl font-black text-slate-900 tracking-tight mb-8">OUTSTANDING STANDING</h4>
                             <div className="h-[350px]">
                                 <Bar 
-                                    data={{
-                                        labels: ['Outstanding Balance'],
-                                        datasets: [
-                                            { label: 'RECEIVABLE', data: [dashboardData?.receivableAmount || 0], backgroundColor: '#8b5cf6', borderRadius: 15, barThickness: 45 },
-                                            { label: 'PAYABLE', data: [dashboardData?.payableAmount || 0], backgroundColor: '#f59e0b', borderRadius: 15, barThickness: 45 }
-                                        ]
-                                    }} 
+                                    data={outstandingChartData} 
                                     options={{
                                         ...chartOptions,
                                         indexAxis: 'y',
