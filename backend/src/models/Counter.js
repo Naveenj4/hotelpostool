@@ -25,6 +25,18 @@ const counterSchema = new mongoose.Schema({
     is_active: {
         type: Boolean,
         default: true
+    },
+    cash_ledger_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Ledger'
+    },
+    upi_ledger_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Ledger'
+    },
+    card_ledger_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Ledger'
     }
 }, {
     timestamps: true

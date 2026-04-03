@@ -31,7 +31,15 @@ exports.getUserSettings = async (req, res) => {
                 },
                 restaurant: {
                     restaurant_type: restaurant.restaurant_type,
-                    billing_layout: restaurant.billing_layout || 'SIDEBAR'
+                    billing_layout: restaurant.billing_layout || 'SIDEBAR',
+                    store_name: restaurant.store_name || '',
+                    print_name: restaurant.print_name || '',
+                    address: restaurant.address || '',
+                    fssai_no: restaurant.fssai_no || '',
+                    gstin: restaurant.gstin || '',
+                    financial_year_start: restaurant.financial_year_start,
+                    financial_year_end: restaurant.financial_year_end,
+                    books_from: restaurant.books_from
                 },
                 printer: {
                     enabled: restaurant.printer_enabled || false,
@@ -97,49 +105,95 @@ exports.updateAdvancedSettings = async (req, res) => {
 // @desc    Update profile information
 // @route   PUT /api/settings/profile
 // @access  Private (Admin, Owner)
+// @desc    Create a completely new profile (Restaurant)
+// @route   POST /api/settings/new-profile
+// @access  Private (Admin, Owner)
+exports.createNewProfile = async (req, res) => {
+    try {
+        const { 
+            ownerName, email, mobile, businessName, 
+            store_name, print_name, address, fssai_no, 
+            gstin, financial_year_start, financial_year_end, books_from 
+        } = req.body;
+
+        // Create new restaurant
+        const newRestaurant = await Restaurant.create({
+            company_name: businessName || 'New Business',
+            store_name: store_name || businessName || 'New Store',
+            print_name: print_name || businessName || 'New Business',
+            restaurant_type: 'SMART',
+            address: address || 'Not Set',
+            fssai_no: fssai_no || '',
+            gstin: gstin || '',
+            financial_year_start: financial_year_start || new Date(),
+            financial_year_end: financial_year_end || new Date(),
+            books_from: books_from || new Date()
+        });
+
+        // Update user's restaurant_id to point to the new one
+        await User.findByIdAndUpdate(req.user.id, { 
+            restaurant_id: newRestaurant._id,
+            name: ownerName || req.user.name,
+            email: email || req.user.email,
+            mobile: mobile || req.user.mobile
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'New profile created and switched successfully',
+            data: {
+                restaurant_id: newRestaurant._id
+            }
+        });
+    } catch (error) {
+        console.error('Create new profile error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 exports.updateProfile = async (req, res) => {
     try {
-        const { ownerName, email, mobile, phone, businessName, billingLayout, restaurantType } = req.body;
+        const { 
+            ownerName, email, mobile, phone, businessName, 
+            billingLayout, restaurantType, store_name, print_name,
+            address, fssai_no, gstin, financial_year_start, 
+            financial_year_end, books_from 
+        } = req.body;
         const mobileToUse = mobile || phone;
 
-        // Fetch existing data first to handle partial updates
+        // Fetch existing data first
         const existingUser = await User.findById(req.user.id);
         const existingRestaurant = await Restaurant.findById(req.user.restaurant_id);
 
         if (!existingUser || !existingRestaurant) {
-            return res.status(404).json({
-                success: false,
-                message: 'User or restaurant not found'
-            });
+            return res.status(404).json({ success: false, message: 'User or restaurant not found' });
         }
-
-        // Use incoming values if provided and NOT empty, otherwise keep existing
-        // This solves the "empty form" issue when saving from and Appearance tab
-        const nameToSave = (ownerName && ownerName.trim() !== "") ? ownerName : existingUser.name;
-        const emailToSave = (email && email.trim() !== "") ? email : existingUser.email;
-        const mobileToSaveFinal = (mobileToUse && mobileToUse.trim() !== "") ? mobileToUse : existingUser.mobile;
-        const businessToSave = (businessName && businessName.trim() !== "") ? businessName : existingRestaurant.company_name;
 
         // Update user
         const user = await User.findByIdAndUpdate(
             req.user.id,
             {
-                name: nameToSave,
-                email: emailToSave,
-                mobile: mobileToSaveFinal
+                name: ownerName || existingUser.name,
+                email: email || existingUser.email,
+                mobile: mobileToUse || existingUser.mobile
             },
             { new: true, runValidators: true }
         ).select('-password');
 
         // Update restaurant
         const restaurantUpdate = {
-            company_name: businessToSave,
-            billing_layout: billingLayout || existingRestaurant.billing_layout || 'SIDEBAR'
+            company_name: businessName || existingRestaurant.company_name,
+            store_name: store_name || existingRestaurant.store_name,
+            print_name: print_name || existingRestaurant.print_name,
+            billing_layout: billingLayout || existingRestaurant.billing_layout,
+            restaurant_type: restaurantType || existingRestaurant.restaurant_type,
+            address: address || existingRestaurant.address,
+            fssai_no: fssai_no || existingRestaurant.fssai_no,
+            gstin: gstin || existingRestaurant.gstin,
+            financial_year_start: financial_year_start || existingRestaurant.financial_year_start,
+            financial_year_end: financial_year_end || existingRestaurant.financial_year_end,
+            books_from: books_from || existingRestaurant.books_from
         };
-
-        if (restaurantType) {
-            restaurantUpdate.restaurant_type = restaurantType;
-        }
 
         const restaurant = await Restaurant.findByIdAndUpdate(
             req.user.restaurant_id,

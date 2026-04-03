@@ -24,7 +24,8 @@ const {
     getItemWiseSalesDetailed,
     getSalesTransactionSummary,
     getDaybookReport,
-    getCashBankReport
+    getCashBankReport,
+    getSalesSummary
 } = require('../controllers/reportsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -34,6 +35,9 @@ router.use(authorize('ADMIN', 'OWNER'));
 
 // Transaction-wise Sales Summary
 router.get('/sales/transaction-summary', getSalesTransactionSummary);
+
+// Sales Summary
+router.get('/sales/summary', getSalesSummary);
 
 // Sales/Stock Detailed Report
 router.get('/sales/item-detailed', getItemWiseSalesDetailed);

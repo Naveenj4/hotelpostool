@@ -3,6 +3,8 @@ import Sidebar from '../../components/dashboard/Sidebar';
 import Header from '../../components/dashboard/Header';
 import './Dashboard.css';
 import {
+    Bell,
+    Hash,
     PlusCircle,
     Minus,
     Search,
@@ -343,10 +345,10 @@ const ProductMaster = () => {
         reader.readAsText(file);
     };
 
-    // Live computed stock value — shown in disabled Asset Value field
+    // Live computed stock value â€” shown in disabled Asset Value field
     const computedStockValue = ((parseFloat(formData.purchase_price) || 0) * (parseFloat(formData.opening_stock) || 0)).toFixed(2);
 
-    // Simple handleInputChange — stores raw string for ALL fields.
+    // Simple handleInputChange â€” stores raw string for ALL fields.
     // Number fields are kept as strings during editing to prevent the
     // React controlled-input "stuck at 0" bug where typing '5' into a
     // field showing 0 produces no state change and the input won't update.
@@ -498,7 +500,7 @@ const ProductMaster = () => {
         const numFields = ['purchase_price','cost_price','selling_price','mrp','gst_sales','gst_purchase','opening_stock','min_stock','max_stock','reorder_level','urgent_order_level'];
         const productAsStrings = { ...product };
         numFields.forEach(f => {
-            // Convert number from DB to string for form (e.g. 150 → '150', 0 → '')
+            // Convert number from DB to string for form (e.g. 150 â†’ '150', 0 â†’ '')
             const v = product[f];
             productAsStrings[f] = (v === 0 || v === null || v === undefined) ? '' : String(v);
         });
@@ -699,10 +701,10 @@ const ProductMaster = () => {
                                             ) : <span className="text-slate-200">-</span>}
                                         </td>
                                         <td className="text-slate-600 font-black uppercase text-xs tracking-widest">{p.unit || '-'}</td>
-                                        <td className="font-black text-rose-500 text-sm">₹{p.purchase_price}</td>
-                                        <td className="font-black text-rose-500 text-sm">₹{p.cost_price}</td>
-                                        <td className="font-black text-slate-700 text-sm">₹{p.mrp}</td>
-                                        <td className="font-black text-indigo-600 text-sm">₹{p.selling_price}</td>
+                                        <td className="font-black text-rose-500 text-sm">â‚¹{p.purchase_price}</td>
+                                        <td className="font-black text-rose-500 text-sm">â‚¹{p.cost_price}</td>
+                                        <td className="font-black text-slate-700 text-sm">â‚¹{p.mrp}</td>
+                                        <td className="font-black text-indigo-600 text-sm">â‚¹{p.selling_price}</td>
                                         <td className="text-slate-600 font-bold text-xs">{p.gst_purchase}%</td>
                                         <td className="text-slate-600 font-bold text-xs">{p.gst_sales}%</td>
                                         <td className={`text-[10px] font-black uppercase ${p.serve_types?.dine_in ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.dine_in ? 'YES' : 'NO'}</td>
@@ -710,7 +712,7 @@ const ProductMaster = () => {
                                         <td className={`text-[10px] font-black uppercase ${p.serve_types?.delivery ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.delivery ? 'YES' : 'NO'}</td>
                                         <td className={`text-[10px] font-black uppercase ${p.serve_types?.party_order ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.party_order ? 'YES' : 'NO'}</td>
                                         <td className="text-slate-600 font-black text-xs text-center">{p.opening_stock}</td>
-                                        <td className="font-black text-emerald-600 text-xs text-center">₹{p.stock_value}</td>
+                                        <td className="font-black text-emerald-600 text-xs text-center">â‚¹{p.stock_value}</td>
                                         <td className="text-slate-500 font-black text-xs text-center">{p.max_stock}</td>
                                         <td className="text-slate-500 font-black text-xs text-center">{p.min_stock}</td>
                                         <td className="text-rose-400 font-black text-xs text-center">{p.reorder_level}</td>
@@ -718,14 +720,14 @@ const ProductMaster = () => {
                                         <td>
                                             <div className="flex flex-wrap gap-1 max-w-[300px]">
                                                 {p.variations?.map((v, i) => (
-                                                    <span key={i} className="text-[9px] font-black uppercase bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200">{v.name} (+₹{v.amount})</span>
+                                                    <span key={i} className="text-[9px] font-black uppercase bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200">{v.name} (+â‚¹{v.amount})</span>
                                                 )) || <span className="text-slate-200">No Variations</span>}
                                             </div>
                                         </td>
                                         <td>
                                             <div className="flex flex-wrap gap-1 max-w-[300px]">
                                                 {p.addons?.map((a, i) => (
-                                                    <span key={i} className="text-[9px] font-black uppercase bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100">{a.name} (₹{a.rate})</span>
+                                                    <span key={i} className="text-[9px] font-black uppercase bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100">{a.name} (â‚¹{a.rate})</span>
                                                 )) || <span className="text-slate-200">No Addons</span>}
                                             </div>
                                         </td>
@@ -754,24 +756,27 @@ const ProductMaster = () => {
                 </div>
 
                 {showDrawer && (
-                    <>
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[999] animate-in fade-in transition-all" onClick={() => setShowDrawer(false)}></div>
-                        <div className="drawer-premium !max-w-[1000px]">
-                            <div className="drawer-header">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="p-1 bg-indigo-100 rounded text-indigo-600">
-                                            <Package size={14} />
-                                        </div>
-                                        <span className="text-xs font-semibold text-indigo-600 uppercase tracking-widest">Item Architect</span>
+                    <div className="fullpage-form-overlay">
+                        <div className="fullpage-form-header">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-indigo-100 rounded-xl text-indigo-600">
+                                        <Package size={18} />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-slate-800">{isEditing ? 'Reconfigure Master' : 'Create New Item'}</h3>
+                                    <div>
+                                        <span className="text-xs font-semibold text-indigo-500 uppercase tracking-widest block">Item Architect</span>
+                                        <h2 className="text-xl font-black text-slate-800">{isEditing ? 'Reconfigure Master Item' : 'Create New Item'}</h2>
+                                    </div>
                                 </div>
-                                <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-all">
-                                    <XCircle size={24} />
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <button type="submit" form="product-form" disabled={submitting || uploading} className="btn-premium-primary !py-2 !px-6">
+                                        {submitting ? <Loader2 className="animate-spin" size={16} /> : (isEditing ? 'Save Changes' : 'Create Item')}
+                                    </button>
+                                    <button onClick={() => setShowDrawer(false)} className="w-10 h-10 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-all border border-slate-200">
+                                        <XCircle size={20} />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="drawer-body">
+                            <div className="fullpage-form-body">
                                 {error && (
                                     <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-3 text-rose-700 font-medium text-sm mb-6 shadow-sm">
                                         <AlertCircle size={20} />
@@ -779,364 +784,147 @@ const ProductMaster = () => {
                                     </div>
                                 )}
 
-                                <form id="product-form" onSubmit={handleSubmit} className="space-y-8 pb-10">
-                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
-                                        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                                            <Layers className="text-indigo-600" size={20} />
-                                            <h4 className="text-lg font-bold text-slate-800">Primary Product Configuration</h4>
+                                <form id="product-form" onSubmit={handleSubmit} className="mx-auto max-w-[900px] flex flex-col gap-8 pb-32">
+                                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><Package size={16} /></div>
+                                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">1. Identity & Classification</h4>
                                         </div>
-                                        <div className="flex flex-col lg:flex-row gap-8">
-                                            {/* Image Upload Column */}
-                                            <div className="flex flex-col items-center">
-                                                <div
-                                                    className="w-48 h-48 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center relative group overflow-hidden cursor-pointer hover:border-indigo-400 transition-all"
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                >
-                                                    {formData.image ? (
-                                                        <img src={`${getBaseUrl()}${formData.image}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                    ) : (
-                                                        <div className="text-center p-4">
-                                                            <ImageIcon size={40} className="text-slate-300 mx-auto mb-2" />
-                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tap to Upload<br />Product Photo</p>
-                                                        </div>
-                                                    )}
-                                                    <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                                                        <div className="text-center group-hover:translate-y-0 translate-y-2 transition-transform">
-                                                            <Upload size={24} className="text-white mx-auto mb-1" />
-                                                            <span className="text-white font-bold text-[10px] uppercase tracking-widest">Update Photo</span>
-                                                        </div>
+                                        <div className="p-8 flex flex-col gap-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="form-group-premium col-span-1 md:col-span-2 !mb-0">
+                                                    <label>Item Name <span className="text-rose-500">*</span></label>
+                                                    <div className="relative group">
+                                                        <Package size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                                        <input type="text" name="name" required className="input-premium-modern !pl-12 w-full font-bold" placeholder="e.g. Margherita Pizza" value={formData.name} onChange={handleInputChange} />
                                                     </div>
-                                                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                                                 </div>
-                                                <div className="mt-4 flex gap-4 w-full">
-                                                    <div className="flex-1 p-2 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
-                                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Online</span>
-                                                        <label className="relative inline-flex items-center cursor-pointer scale-75">
-                                                            <input type="checkbox" className="sr-only peer" checked={formData.online_order} onChange={(e) => setFormData(p => ({ ...p, online_order: e.target.checked }))} />
-                                                            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                                                        </label>
-                                                    </div>
-                                                    <div className="flex-1 p-2 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
-                                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Active</span>
-                                                        <label className="relative inline-flex items-center cursor-pointer scale-75">
-                                                            <input type="checkbox" className="sr-only peer" checked={formData.is_active} onChange={(e) => setFormData(p => ({ ...p, is_active: e.target.checked }))} />
-                                                            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                                                        </label>
+                                                <div className="form-group-premium !mb-0"><label>Category <span className="text-rose-500">*</span></label><select name="category" required className="input-premium-modern w-full font-bold text-slate-700" value={formData.category} onChange={handleInputChange}><option value="">Choose Class</option>{categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}</select></div>
+                                                <div className="form-group-premium !mb-0"><label>Brand</label><select name="brand" className="input-premium-modern w-full font-bold text-slate-700" value={formData.brand} onChange={handleInputChange}><option value="">Generic / Custom</option>{brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}</select></div>
+                                                <div className="form-group-premium !mb-0"><label>SKU / Code</label><div className="relative group"><Hash size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" /><input type="text" name="code" className="input-premium-modern !pl-11 w-full font-semibold" placeholder="AUTO" value={formData.code} onChange={handleInputChange} /></div></div>
+                                                <div className="form-group-premium !mb-0"><label>Barcode</label><div className="relative group"><Activity size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" /><input type="text" name="barcode" className="input-premium-modern !pl-11 w-full font-semibold" placeholder="SCAN" value={formData.barcode} onChange={handleInputChange} /></div></div>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-50">
+                                                <div className="form-group-premium !mb-0"><label>Food Type</label><div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100"><button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-black transition-all ${formData.food_type === 'VEG' ? 'bg-white text-emerald-600 shadow border border-emerald-100' : 'text-slate-400 hover:text-emerald-600'}`}><div className={`w-2 h-2 rounded-full ${formData.food_type === 'VEG' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div> VEG</button><button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'NON_VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-black transition-all ${formData.food_type === 'NON_VEG' ? 'bg-white text-rose-600 shadow border border-rose-100' : 'text-slate-400 hover:text-rose-600'}`}><div className={`w-2 h-2 rounded-full ${formData.food_type === 'NON_VEG' ? 'bg-rose-500' : 'bg-slate-300'}`}></div> NON</button></div></div>
+                                                <div className="form-group-premium !mb-0"><label>Item Nature</label><select name="item_nature" className="input-premium-modern w-full font-bold text-slate-700" value={formData.item_nature} onChange={handleInputChange}><option value="GOOD">Good</option><option value="SERVICE">Service</option></select></div>
+                                                <div className="form-group-premium !mb-0"><label>Product Type</label><select name="product_type" className="input-premium-modern w-full font-bold text-slate-700" value={formData.product_type} onChange={handleInputChange}><option value="BUY_SELL">Buy & Sell</option><option value="SERVICE">Service</option><option value="RAW_MATERIAL">Raw Material</option></select></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><ImageIcon size={16} /></div>
+                                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">2. Presentation & Status</h4>
+                                        </div>
+                                        <div className="p-8 flex flex-col md:flex-row gap-8 items-center">
+                                            <div className="w-48 h-48 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center relative group overflow-hidden cursor-pointer hover:border-indigo-400 transition-all shadow-inner" onClick={() => fileInputRef.current?.click()}>
+                                                {formData.image ? <img src={`${getBaseUrl()}${formData.image}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="text-center p-4"><ImageIcon size={40} className="text-slate-300 mx-auto mb-2" /><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Drop Photo Here<br />or Tap to Browse</p></div>}
+                                                <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none"><div className="text-center"><Upload size={24} className="text-white mx-auto mb-1" /><span className="text-white font-bold text-[10px] uppercase tracking-widest">Replace Photo</span></div></div>
+                                                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                                            </div>
+                                            <div className="flex-1 flex flex-col gap-4">
+                                                <div className="bg-indigo-50/50 rounded-2xl p-6 border border-indigo-100">
+                                                    <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-3">Settings</h5>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-100 shadow-sm"><span className="text-[11px] font-bold text-slate-600 uppercase">Online</span><label className="relative inline-flex items-center cursor-pointer scale-90"><input type="checkbox" className="sr-only peer" checked={formData.online_order} onChange={(e) => setFormData(p => ({ ...p, online_order: e.target.checked }))} /><div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div></label></div>
+                                                        <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-100 shadow-sm"><span className="text-[11px] font-bold text-slate-600 uppercase">Active</span><label className="relative inline-flex items-center cursor-pointer scale-90"><input type="checkbox" className="sr-only peer" checked={formData.is_active} onChange={(e) => setFormData(p => ({ ...p, is_active: e.target.checked }))} /><div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div></label></div>
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
 
-                                            {/* Form Fields Column */}
+                                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><Tag size={16} /></div>
+                                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">3. Pricing & TAX</h4>
+                                        </div>
+                                        <div className="p-8"><div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                            <div className="form-group-premium !mb-0"><label>Purchase Rate</label><div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all"><span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200 py-3">₹</span><input type="text" inputMode="decimal" name="purchase_price" placeholder="0" className="w-full py-3 px-3 text-sm font-black text-slate-700 bg-transparent outline-none" value={formData.purchase_price} onChange={handleInputChange} /></div></div>
+                                            <div className="form-group-premium !mb-0"><label>Net Cost</label><div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all"><span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200 py-3">₹</span><input type="text" inputMode="decimal" name="cost_price" placeholder="0" className="w-full py-3 px-3 text-sm font-black text-slate-700 bg-transparent outline-none" value={formData.cost_price} onChange={handleInputChange} /></div></div>
+                                            <div className="form-group-premium !mb-0"><label>MRP</label><div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all"><span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200 py-3">₹</span><input type="text" inputMode="decimal" name="mrp" placeholder="0" className="w-full py-3 px-3 text-sm font-black text-slate-700 bg-transparent outline-none" value={formData.mrp} onChange={handleInputChange} /></div></div>
+                                            <div className="form-group-premium !mb-0"><label className="!text-indigo-600">Sale Price *</label><div className="flex items-center bg-indigo-50/40 rounded-xl border border-indigo-200 overflow-hidden focus-within:border-indigo-500 transition-all shadow-sm"><span className="px-3 text-indigo-400 font-black bg-indigo-50 border-r border-indigo-100 py-3">₹</span><input type="text" inputMode="decimal" name="selling_price" required placeholder="0" className="w-full py-3 px-3 text-sm font-black text-indigo-600 bg-transparent outline-none" value={formData.selling_price} onChange={handleInputChange} /></div></div>
+                                            <div className="form-group-premium !mb-0"><label>TAX Buy %</label><input type="text" inputMode="decimal" name="gst_purchase" placeholder="0" className="input-premium-modern w-full font-bold" value={formData.gst_purchase} onChange={handleInputChange} /></div>
+                                            <div className="form-group-premium !mb-0"><label>TAX Sell %</label><input type="text" inputMode="decimal" name="gst_sales" placeholder="0" className="input-premium-modern w-full font-bold" value={formData.gst_sales} onChange={handleInputChange} /></div>
+                                            <div className="form-group-premium !mb-0"><label>HSN</label><input type="text" name="hsn_code" className="input-premium-modern w-full font-bold" placeholder="8821" value={formData.hsn_code} onChange={handleInputChange} /></div>
+                                            <div className="form-group-premium !mb-0"><label>UOM</label><input type="text" name="unit" className="input-premium-modern w-full font-bold uppercase" placeholder="PCS" value={formData.unit} onChange={handleInputChange} /></div>
+                                        </div></div>
+                                    </div>
+
+                                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><ShoppingCart size={16} /></div>
+                                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">4. Inventory</h4>
+                                        </div>
+                                        <div className="p-8"><div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                            <div className="form-group-premium !mb-0"><label>Opening Stock</label><input type="text" inputMode="decimal" name="opening_stock" placeholder="0" className="input-premium-modern w-full font-black text-slate-700" value={formData.opening_stock} onChange={handleInputChange} /></div>
+                                            <div className="form-group-premium !mb-0"><label className="!text-emerald-600">Stock Value</label><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold pointer-events-none z-10">₹</span><input type="text" disabled className="input-premium-modern w-full !bg-emerald-50/30 !text-emerald-700 !border-emerald-100 !pl-9 font-black shadow-inner" value={computedStockValue === '0.00' ? '0.00' : computedStockValue} /></div></div>
+                                            <div className="form-group-premium !mb-0"><label>Max</label><input type="text" inputMode="decimal" name="max_stock" placeholder="0" className="input-premium-modern w-full font-bold" value={formData.max_stock} onChange={handleInputChange} /></div>
+                                            <div className="form-group-premium !mb-0"><label>Min</label><input type="text" inputMode="decimal" name="min_stock" placeholder="0" className="input-premium-modern w-full font-bold" value={formData.min_stock} onChange={handleInputChange} /></div>
+                                            <div className="form-group-premium !mb-0 col-span-1 md:col-span-2"><div className="p-5 bg-rose-50/50 border border-rose-100 rounded-2xl flex flex-col gap-4"><div className="flex items-center gap-2"><Bell size={14} className="text-rose-500" /><span className="text-[10px] font-black uppercase text-rose-500 tracking-wider">Stock Alerts</span></div><div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Re-order</label><input type="text" inputMode="decimal" name="reorder_level" placeholder="0" className="w-full py-2.5 px-4 rounded-xl border border-rose-100 bg-white text-sm font-black text-rose-600 outline-none" value={formData.reorder_level} onChange={handleInputChange} /></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Crisis</label><input type="text" inputMode="decimal" name="urgent_order_level" placeholder="0" className="w-full py-2.5 px-4 rounded-xl border border-rose-200 bg-white text-sm font-black text-rose-800 outline-none" value={formData.urgent_order_level} onChange={handleInputChange} /></div></div></div></div>
+                                        </div></div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><Layers size={16} /></div><h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Variations</h4></div>
+                                                <button type="button" onClick={handleAddVariation} className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-md"><Plus size={16} /></button>
+                                            </div>
+                                            <div className="p-6 flex flex-col gap-4">{formData.variations?.map((v, idx) => (<div key={idx} className="flex gap-3 items-center p-3 bg-slate-50 rounded-2xl border border-slate-100 group"><div className="flex-[2]"><input type="text" placeholder="Size" className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-sm font-bold" value={v.name} onChange={(e) => handleVariationChange(idx, 'name', e.target.value)} /></div><div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span><input type="number" className="w-full bg-white border border-slate-200 pl-7 pr-3 py-2 rounded-xl text-sm font-bold" value={v.amount} onChange={(e) => handleVariationChange(idx, 'amount', parseFloat(e.target.value) || 0)} /></div><button type="button" onClick={() => handleRemoveVariation(idx)} className="w-8 h-8 rounded-xl bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button></div>)) || <div className="text-center py-10 opacity-40"><p className="text-[10px] font-black uppercase tracking-widest">No Variations</p></div>}</div>
+                                        </div>
+                                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><Plus size={16} /></div><h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Addons</h4></div>
+                                                <button type="button" onClick={handleAddAddon} className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-md"><Plus size={16} /></button>
+                                            </div>
+                                            <div className="p-6 flex flex-col gap-4">{formData.addons?.map((addon, idx) => (<div key={idx} className="flex gap-3 items-center p-3 bg-slate-50 rounded-2xl border border-slate-100 group"><div className="flex-[2]"><input type="text" placeholder="Extra" className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-sm font-bold" value={addon.name} onChange={(e) => handleAddonChange(idx, 'name', e.target.value)} /></div><div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span><input type="number" className="w-full bg-white border border-slate-200 pl-7 pr-3 py-2 rounded-xl text-sm font-bold" value={addon.rate} onChange={(e) => handleAddonChange(idx, 'rate', parseFloat(e.target.value) || 0)} /></div><button type="button" onClick={() => handleRemoveAddon(idx)} className="w-8 h-8 rounded-xl bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button></div>)) || <div className="text-center py-10 opacity-40"><p className="text-[10px] font-black uppercase tracking-widest">No Addons</p></div>}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><Clock size={16} /></div>
+                                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">6. Service & Timings</h4>
+                                        </div>
+                                        <div className="p-8 flex flex-col md:flex-row gap-10">
                                             <div className="flex-1">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
-                                                    <div className="form-group-premium">
-                                                        <label className="text-sm font-bold text-slate-700 mb-3 block flex items-center gap-2">
-                                                            <div className="w-1.5 h-4 bg-indigo-500 rounded-full"></div>
-                                                            Item Identity <span className="text-rose-500 font-bold">*</span>
+                                                <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Serve Types</h5>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {[{ id: 'dine_in', label: 'Dine In' }, { id: 'pickup', label: 'Pickup' }, { id: 'delivery', label: 'Delivery' }, { id: 'party_order', label: 'Party Order' }].map(type => (
+                                                        <label key={type.id} className="flex items-center gap-3 cursor-pointer p-3.5 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/40 transition-all shadow-sm">
+                                                            <div className="relative flex items-center"><input type="checkbox" className="sr-only peer" checked={formData.serve_types?.[type.id]} onChange={() => handleServeTypeChange(type.id)} /><div className="w-5 h-5 border-2 border-slate-300 rounded-lg peer-checked:bg-indigo-600 peer-checked:border-indigo-600 flex items-center justify-center"><Check size={12} className={`text-white ${formData.serve_types?.[type.id] ? 'opacity-100' : 'opacity-0'}`} /></div></div>
+                                                            <span className="text-[11px] font-black text-slate-700 uppercase">{type.label}</span>
                                                         </label>
-                                                        <div className="relative group">
-                                                            <Package size={22} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                            <input type="text" name="name" required className="input-premium-modern !pl-14 w-full text-lg font-bold" placeholder="Traditional Margherita" value={formData.name} onChange={handleInputChange} />
-                                                        </div>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-6">
-                                                        <div className="form-group-premium">
-                                                            <label className="text-sm font-bold text-slate-700 mb-3 block">SKU / Code</label>
-                                                            <div className="relative group">
-                                                                <Layers size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                                <input type="text" name="code" className="input-premium-modern !pl-12 w-full text-base font-semibold" placeholder="AUTO" value={formData.code} onChange={handleInputChange} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Availability</h5>
+                                                <div className="flex flex-col gap-4">
+                                                    {formData.available_timings.map((t, i) => (
+                                                        <div key={i} className={`p-4 rounded-2xl border ${t.enabled ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-100 bg-slate-50 opacity-60 grayscale'}`}>
+                                                            <div className="flex justify-between items-center mb-3">
+                                                                <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${t.enabled ? 'bg-emerald-500 shadow-sm' : 'bg-slate-300'}`}></div><span className={`text-[10px] font-black uppercase ${t.enabled ? 'text-emerald-700' : 'text-slate-400'}`}>{t.label}</span></div>
+                                                                <button type="button" onClick={() => { const nt = [...formData.available_timings]; nt[i].enabled = !nt[i].enabled; setFormData(p => ({ ...p, available_timings: nt })); }} className={`w-10 h-6 rounded-full relative transition-all ${t.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${t.enabled ? 'right-1' : 'left-1'}`}></div></button>
                                                             </div>
-                                                        </div>
-                                                        <div className="form-group-premium">
-                                                            <label className="text-sm font-bold text-slate-700 mb-3 block">Barcode Registry</label>
-                                                            <div className="relative group">
-                                                                <Activity size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                                <input type="text" name="barcode" className="input-premium-modern !pl-12 w-full text-base font-semibold" placeholder="SCAN" value={formData.barcode} onChange={handleInputChange} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                                                    <div className="form-group-premium">
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Category Selection <span className="text-rose-500">*</span></label>
-                                                        <select name="category" required className="input-premium-modern w-full text-base font-bold text-slate-700" value={formData.category} onChange={handleInputChange}>
-                                                            <option value="">Choose Class</option>
-                                                            {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
-                                                        </select>
-                                                    </div>
-                                                    <div className="form-group-premium">
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Brand Lineage</label>
-                                                        <select name="brand" className="input-premium-modern w-full text-base font-bold text-slate-700" value={formData.brand} onChange={handleInputChange}>
-                                                            <option value="">Generic / Custom</option>
-                                                            {brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}
-                                                        </select>
-                                                    </div>
-                                                    <div className="form-group-premium">
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Food Classification</label>
-                                                        <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
-                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'VEG' }))} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black transition-all ${formData.food_type === 'VEG' ? 'bg-white text-emerald-600 shadow-xl border border-emerald-100' : 'text-slate-400 hover:text-emerald-600'}`}>
-                                                                <div className={`w-2.5 h-2.5 rounded-full ${formData.food_type === 'VEG' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div> VEG
-                                                            </button>
-                                                            <button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'NON_VEG' }))} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black transition-all ${formData.food_type === 'NON_VEG' ? 'bg-white text-rose-600 shadow-xl border border-rose-100' : 'text-slate-400 hover:text-rose-600'}`}>
-                                                                <div className={`w-2.5 h-2.5 rounded-full ${formData.food_type === 'NON_VEG' ? 'bg-rose-500' : 'bg-slate-300'}`}></div> NON
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="form-group-premium">
-                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Fiscal HSN</label>
-                                                        <input type="text" name="hsn_code" className="input-premium-modern w-full text-base font-bold" placeholder="HSN-8821" value={formData.hsn_code} onChange={handleInputChange} />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8">
-                                        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                                            <Activity className="text-indigo-600" size={20} />
-                                            <h4 className="text-lg font-bold text-slate-800">Service Accessibility</h4>
-                                        </div>
-                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                                            {[
-                                                { id: 'dine_in', label: 'Dine In' },
-                                                { id: 'pickup', label: 'Pickup' },
-                                                { id: 'delivery', label: 'Delivery' },
-                                                { id: 'party_order', label: 'Party Order' }
-                                            ].map(type => (
-                                                <label key={type.id} className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl border border-slate-50 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all">
-                                                    <div className="relative flex items-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="sr-only peer"
-                                                            checked={formData.serve_types?.[type.id]}
-                                                            onChange={() => handleServeTypeChange(type.id)}
-                                                        />
-                                                        <div className="w-5 h-5 border-2 border-slate-300 rounded-md group-hover:border-indigo-400 peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-all flex items-center justify-center">
-                                                            <Check size={14} className={`text-white transition-opacity ${formData.serve_types?.[type.id] ? 'opacity-100' : 'opacity-0'}`} />
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">{type.label}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                                            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                                                <Tag className="text-indigo-600" size={20} />
-                                                <h4 className="text-lg font-bold text-slate-800">Pricing Details</h4>
-                                            </div>
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest">Rate (Buy)</label>
-                                                    <div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all">
-                                                        <span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200">₹</span>
-                                                        <input type="text" inputMode="decimal" name="purchase_price" placeholder="0" className="w-full py-3 px-3 text-base font-black text-slate-700 bg-transparent outline-none" value={formData.purchase_price} onChange={handleInputChange} />
-                                                    </div>
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest">Net Cost</label>
-                                                    <div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all">
-                                                        <span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200">₹</span>
-                                                        <input type="text" inputMode="decimal" name="cost_price" placeholder="0" className="w-full py-3 px-3 text-base font-black text-slate-700 bg-transparent outline-none" value={formData.cost_price} onChange={handleInputChange} />
-                                                    </div>
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest">Max (MRP)</label>
-                                                    <div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-400 transition-all">
-                                                        <span className="px-3 text-slate-400 font-bold bg-slate-100 border-r border-slate-200">₹</span>
-                                                        <input type="text" inputMode="decimal" name="mrp" placeholder="0" className="w-full py-3 px-3 text-base font-black text-slate-700 bg-transparent outline-none" value={formData.mrp} onChange={handleInputChange} />
-                                                    </div>
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest text-indigo-600">Sale Price *</label>
-                                                    <div className="flex items-center bg-indigo-50/30 rounded-xl border border-indigo-100 overflow-hidden focus-within:border-indigo-400 transition-all shadow-sm">
-                                                        <span className="px-3 text-indigo-400 font-black bg-indigo-50 border-r border-indigo-100">₹</span>
-                                                        <input type="text" inputMode="decimal" name="selling_price" required placeholder="0" className="w-full py-3 px-3 text-base font-black text-indigo-600 bg-transparent outline-none" value={formData.selling_price} onChange={handleInputChange} />
-                                                    </div>
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">TAX (P) %</label>
-                                                    <input type="text" inputMode="decimal" name="gst_purchase" placeholder="0" className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-600 outline-none focus:border-indigo-400" value={formData.gst_purchase} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">TAX (S) %</label>
-                                                    <input type="text" inputMode="decimal" name="gst_sales" placeholder="0" className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-600 outline-none focus:border-indigo-400" value={formData.gst_sales} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block tracking-wider">Measure (Unit)</label>
-                                                    <input type="text" name="unit" className="input-premium-modern w-full text-base font-bold uppercase" placeholder="PCS / KG" value={formData.unit} onChange={handleInputChange} />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                                            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                                                <ShoppingCart className="text-indigo-600" size={20} />
-                                                <h4 className="text-lg font-bold text-slate-800">Stock Details & Level</h4>
-                                            </div>
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-wide">Opening Vol.</label>
-                                                    <input type="text" inputMode="decimal" name="opening_stock" placeholder="0" className="input-premium-modern w-full text-base font-black relative z-10" value={formData.opening_stock} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-3 block uppercase tracking-wide">Asset Value</label>
-                                                    <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold pointer-events-none z-20">₹</span>
-                                                        <input type="text" disabled className="input-premium-modern w-full !bg-slate-50 !text-emerald-700 !border-dashed !pl-10 text-base font-black" value={computedStockValue === '0.00' ? '' : computedStockValue} />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block">Maximum</label>
-                                                    <input type="text" inputMode="decimal" name="max_stock" placeholder="0" className="input-premium-modern w-full text-base font-semibold relative z-10" value={formData.max_stock} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block">Minimum</label>
-                                                    <input type="text" inputMode="decimal" name="min_stock" placeholder="0" className="input-premium-modern w-full text-base font-semibold relative z-10" value={formData.min_stock} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block font-black text-rose-500">Alert Re-order</label>
-                                                    <input type="text" inputMode="decimal" name="reorder_level" placeholder="0" className="input-premium-modern w-full text-base font-black bg-rose-50/20 text-rose-600 border-rose-100 relative z-10" value={formData.reorder_level} onChange={handleInputChange} />
-                                                </div>
-                                                <div className="form-group-premium">
-                                                    <label className="text-xs font-bold text-slate-500 mb-2 block font-black text-rose-700">Crisis Alert</label>
-                                                    <input type="text" inputMode="decimal" name="urgent_order_level" placeholder="0" className="input-premium-modern w-full text-base font-black bg-rose-100/30 text-rose-800 border-rose-200 relative z-10" value={formData.urgent_order_level} onChange={handleInputChange} />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
-                                            <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <Layers className="text-indigo-600" size={20} />
-                                                    <h4 className="text-lg font-bold text-slate-800">Variations (e.g. Small, Medium, Large)</h4>
-                                                </div>
-                                                <button type="button" onClick={handleAddVariation} className="btn-premium-outline !py-1 !px-3 !text-xs">
-                                                    <Plus size={14} /> Add Variation
-                                                </button>
-                                            </div>
-                                            {formData.variations?.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {formData.variations.map((v, idx) => (
-                                                        <div key={idx} className="flex gap-6 items-end group/item">
-                                                            <div className="form-group-premium flex-[2] !mb-0">
-                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Descriptor (e.g. XL-Size)</label>
-                                                                <input type="text" placeholder="Variation Name" className="input-premium-modern w-full text-base font-bold" value={v.name} onChange={(e) => handleVariationChange(idx, 'name', e.target.value)} />
-                                                            </div>
-                                                            <div className="form-group-premium flex-1 !mb-0">
-                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Delta (₹)</label>
-                                                                <input type="number" placeholder="+ Amt" className="input-premium-modern w-full text-base font-bold" value={v.amount} onChange={(e) => handleVariationChange(idx, 'amount', parseFloat(e.target.value) || 0)} />
-                                                            </div>
-                                                            <button type="button" onClick={() => handleRemoveVariation(idx)} className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-sm">
-                                                                <Trash2 size={20} />
-                                                            </button>
+                                                            <div className="grid grid-cols-2 gap-3"><input type="time" className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-black" value={t.start_time} onChange={(e) => { const nt = [...formData.available_timings]; nt[i].start_time = e.target.value; setFormData(p => ({ ...p, available_timings: nt })); }} /><input type="time" className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-black" value={t.end_time} onChange={(e) => { const nt = [...formData.available_timings]; nt[i].end_time = e.target.value; setFormData(p => ({ ...p, available_timings: nt })); }} /></div>
                                                         </div>
                                                     ))}
                                                 </div>
-                                            ) : (
-                                                <div className="text-center py-6 text-slate-400 text-sm border-2 border-dashed border-slate-100 rounded-xl">
-                                                    No variations defined. Click 'Add Variation' for multiple sizes/types.
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
-                                            <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <Plus className="text-indigo-600" size={20} />
-                                                    <h4 className="text-lg font-bold text-slate-800">Addons (Extras like Cheese)</h4>
-                                                </div>
-                                                <button type="button" onClick={handleAddAddon} className="btn-premium-outline !py-1 !px-3 !text-xs">
-                                                    <Plus size={14} /> Add addon
-                                                </button>
-                                            </div>
-                                            {formData.addons.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {formData.addons.map((addon, idx) => (
-                                                        <div key={idx} className="flex gap-6 items-end group/item">
-                                                            <div className="form-group-premium flex-[2] !mb-0">
-                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Addon Identity</label>
-                                                                <input type="text" placeholder="e.g. Extra Dip" className="input-premium-modern w-full text-base font-bold" value={addon.name} onChange={(e) => handleAddonChange(idx, 'name', e.target.value)} />
-                                                            </div>
-                                                            <div className="form-group-premium flex-1 !mb-0">
-                                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Rate (₹)</label>
-                                                                <input type="number" placeholder="Rate" className="input-premium-modern w-full text-base font-bold" value={addon.rate} onChange={(e) => handleAddonChange(idx, 'rate', parseFloat(e.target.value) || 0)} />
-                                                            </div>
-                                                            <button type="button" onClick={() => handleRemoveAddon(idx)} className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover/item:opacity-100 shadow-sm">
-                                                                <Trash2 size={20} />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="text-center py-6 text-slate-400 text-sm border-2 border-dashed border-slate-100 rounded-xl">
-                                                    No addons configured. Click 'Add addon' to create.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-8">
-                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                                            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                                                <Clock className="text-indigo-600" size={20} />
-                                                <h4 className="text-lg font-bold text-slate-800">Temporal Availability</h4>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
-                                                {formData.available_timings.map((t, i) => (
-                                                    <div key={i} className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${t.enabled ? 'border-indigo-100 bg-white shadow-xl shadow-slate-100' : 'border-slate-100 bg-slate-50/50 grayscale opacity-60'}`}>
-                                                        <div className="flex justify-between items-center mb-6">
-                                                            <div>
-                                                                <span className={`text-xs font-bold uppercase tracking-wider ${t.enabled ? 'text-indigo-600' : 'text-slate-400'}`}>{t.label} Window</span>
-                                                            </div>
-                                                            <button type="button" onClick={() => {
-                                                                const nt = [...formData.available_timings];
-                                                                nt[i].enabled = !nt[i].enabled;
-                                                                setFormData(p => ({ ...p, available_timings: nt }));
-                                                            }} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${t.enabled ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100' : 'bg-slate-200 text-slate-500'}`}>
-                                                                {t.enabled ? <Check size={22} /> : <XCircle size={22} />}
-                                                            </button>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-6">
-                                                            <div>
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Activation</span>
-                                                                <input type="time" className="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-base font-black text-slate-700 focus:bg-white transition-colors" value={t.start_time} onChange={(e) => {
-                                                                    const nt = [...formData.available_timings];
-                                                                    nt[i].start_time = e.target.value;
-                                                                    setFormData(p => ({ ...p, available_timings: nt }));
-                                                                }} />
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Termination</span>
-                                                                <input type="time" className="w-full bg-slate-50 border-none px-4 py-3 rounded-2xl text-base font-black text-slate-700 focus:bg-white transition-colors" value={t.end_time} onChange={(e) => {
-                                                                    const nt = [...formData.available_timings];
-                                                                    nt[i].end_time = e.target.value;
-                                                                    setFormData(p => ({ ...p, available_timings: nt }));
-                                                                }} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
                                             </div>
                                         </div>
-
                                     </div>
                                 </form>
                             </div>
-                            <div className="drawer-footer">
+                            <div className="fullpage-form-footer">
                                 <button onClick={() => setShowDrawer(false)} className="btn-premium-outline">Cancel</button>
                                 <button type="submit" form="product-form" disabled={submitting || uploading} className="btn-premium-primary">
-                                    {submitting ? <Loader2 className="animate-spin" /> : (isEditing ? 'Save Changes' : 'Create Item')}
+                                    {submitting ? <Loader2 className="animate-spin" size={16} /> : (isEditing ? 'Save Changes' : 'Create Item')}
                                 </button>
                             </div>
                         </div>
-                    </>
                 )}
             </main>
         </div>

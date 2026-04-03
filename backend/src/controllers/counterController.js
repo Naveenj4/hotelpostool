@@ -11,7 +11,7 @@ exports.getCounters = async (req, res) => {
 
 exports.createCounter = async (req, res) => {
     try {
-        const { name, code, type } = req.body;
+        const { name, code, type, cash_ledger_id, upi_ledger_id, card_ledger_id } = req.body;
 
         // Validation for uniqueness
         const existingCounter = await Counter.findOne({
@@ -27,6 +27,9 @@ exports.createCounter = async (req, res) => {
             name,
             code,
             type,
+            cash_ledger_id,
+            upi_ledger_id,
+            card_ledger_id,
             company_id: req.user.restaurant_id
         });
 

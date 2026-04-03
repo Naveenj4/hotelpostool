@@ -280,30 +280,68 @@ export default function PurchaseEntryForm() {
         }
     };
 
-    const handleItemKeyDown = (e, idx, field) => {
+    const handleHeaderKeyDown = (e, nextId, prevId) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const fields = Object.keys(colConfig).filter(k => colConfig[k]);
-            const currentIdx = fields.indexOf(field);
-            
-            if (currentIdx < fields.indexOf('hsn_code') && currentIdx !== -1) {
-                // Find next visible field in same row
+            if (nextId === 'FIRST_ITEM') {
+                const fields = Object.keys(colConfig).filter(k => colConfig[k]);
+                const nextEl = document.querySelector(`[data-idx="0"][data-field="${fields[0]}"]`);
+                if (nextEl) nextEl.focus();
+            } else {
+                const nextEl = document.getElementById(nextId);
+                if (nextEl) nextEl.focus();
+            }
+        } else if (e.key === 'Backspace' && (!e.target.value || e.target.value === '')) {
+            if (prevId) {
+                e.preventDefault();
+                const prevEl = document.getElementById(prevId);
+                if (prevEl) prevEl.focus();
+            }
+        }
+    };
+
+    const handleItemKeyDown = (e, idx, field) => {
+        const fields = Object.keys(colConfig).filter(k => colConfig[k]);
+        const currentIdx = fields.indexOf(field);
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentIdx < fields.length - 1) {
                 const nextField = fields[currentIdx + 1];
                 const nextEl = document.querySelector(`[data-idx="${idx}"][data-field="${nextField}"]`);
                 if (nextEl) nextEl.focus();
             } else {
-                // Last field of row, add new item or go to next row
+                // Last field of row
                 if (idx === items.length - 1) {
                     addItem();
                     setTimeout(() => {
-                        const firstField = fields.find(k => colConfig[k]);
+                        const firstField = fields[0];
                         const nextEl = document.querySelector(`[data-idx="${idx + 1}"][data-field="${firstField}"]`);
                         if (nextEl) nextEl.focus();
                     }, 50);
                 } else {
-                    const firstField = fields.find(k => colConfig[k]);
+                    const firstField = fields[0];
                     const nextEl = document.querySelector(`[data-idx="${idx + 1}"][data-field="${firstField}"]`);
                     if (nextEl) nextEl.focus();
+                }
+            }
+        } else if (e.key === 'Backspace') {
+            const val = e.target.value;
+            // Only move back if the field is empty (or select element)
+            if (!val || val === '' || val === '0' || e.target.tagName === 'SELECT') {
+                e.preventDefault();
+                if (currentIdx > 0) {
+                    const prevField = fields[currentIdx - 1];
+                    const prevEl = document.querySelector(`[data-idx="${idx}"][data-field="${prevField}"]`);
+                    if (prevEl) prevEl.focus();
+                } else if (idx > 0) {
+                    const lastField = fields[fields.length - 1];
+                    const prevEl = document.querySelector(`[data-idx="${idx - 1}"][data-field="${lastField}"]`);
+                    if (prevEl) prevEl.focus();
+                } else {
+                    // Back to header
+                    const headerEl = document.getElementById('supplier-search-field');
+                    if (headerEl) headerEl.focus();
                 }
             }
         }
@@ -456,7 +494,9 @@ export default function PurchaseEntryForm() {
                                 <div style={{ flex: 1 }}>
                                     <label className="pef-label !mb-1">STORE ADDRESS</label>
                                     <textarea 
+                                        id="supplier-address-field"
                                         className="pef-input w-full !h-20 py-2 resize-none font-medium"
+                                        onKeyDown={e => handleHeaderKeyDown(e, 'FIRST_ITEM', 'supplier-search-field')}
                                         value={selectedSupplier?.address || ''}
                                         onChange={(e) => {
                                             if (selectedSupplier) {
@@ -474,12 +514,14 @@ export default function PurchaseEntryForm() {
                                     </div>
                                     <div className="flex items-center justify-between gap-4">
                                         <label className="pef-label !mb-0 min-w-[70px]">DUE DAYS</label>
-                                        <input type="number" className="pef-input !h-8 text-right font-bold" min="0"
+                                        <input id="due-days-field" type="number" className="pef-input !h-8 text-right font-bold" min="0"
+                                            onKeyDown={e => handleHeaderKeyDown(e, 'due-date-field', 'supplier-search-field')}
                                             value={dueDays} onChange={e => handleDueDaysChange(e.target.value)} />
                                     </div>
                                     <div className="flex items-center justify-between gap-4">
                                         <label className="pef-label !mb-0 min-w-[70px]">DUE DATE</label>
-                                        <input type="date" className="pef-input !h-8 text-right font-bold"
+                                        <input id="due-date-field" type="date" className="pef-input !h-8 text-right font-bold"
+                                            onKeyDown={e => handleHeaderKeyDown(e, 'FIRST_ITEM', 'due-days-field')}
                                             value={dueDate} onChange={e => setDueDate(e.target.value)} />
                                     </div>
                                 </div>
@@ -492,7 +534,9 @@ export default function PurchaseEntryForm() {
                                 <label className="pef-label">REG. TYPE</label>
                                 <div className="pef-select-wrap">
                                     <ChevronDown size={12} className="pef-chevron" />
-                                    <select className="pef-select" value={regType} onChange={e => setRegType(e.target.value)}>
+                                    <select id="reg-type-field" className="pef-select" value={regType} 
+                                        onKeyDown={e => handleHeaderKeyDown(e, 'state-name-field', 'supplier-search-field')}
+                                        onChange={e => setRegType(e.target.value)}>
                                         <option value="Regular">Regular</option>
                                         <option value="Composition">Composition</option>
                                         <option value="Unregistered">Unregistered</option>
@@ -502,7 +546,9 @@ export default function PurchaseEntryForm() {
                             </div>
                             <div className="pef-field-row">
                                 <label className="pef-label">STATE</label>
-                                <input className="pef-input font-bold" value={stateName} onChange={e => setStateName(e.target.value)} placeholder="State Name" />
+                                <input id="state-name-field" className="pef-input font-bold" value={stateName} 
+                                    onKeyDown={e => handleHeaderKeyDown(e, 'FIRST_ITEM', 'reg-type-field')}
+                                    onChange={e => setStateName(e.target.value)} placeholder="State Name" />
                             </div>
                         </div>
                     </div>
@@ -689,11 +735,6 @@ export default function PurchaseEntryForm() {
                                 </tbody>
                             </table>
                         </div>
-
-                        {/* Add row button */}
-                        <button className="pef-add-row" onClick={addItem}>
-                            <Plus size={14} /> ADD ITEM
-                        </button>
                     </div>
 
                     {/* ─── Footer ─── */}

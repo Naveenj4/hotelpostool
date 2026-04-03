@@ -138,7 +138,7 @@ const VoucherManagement = () => {
                                 </div>
                                 <span className="metric-pill-modern">Journal Ledger</span>
                             </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Voucher Management</h2>
+                            <h2 className="premium-page-title">Voucher Management</h2>
                             <p className="text-slate-500 font-bold mt-2 text-lg">Orchestrate journal entries, receipts, payments, and distributed fund transfers.</p>
                         </div>
                         <button className="btn-glow bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.1em] hover:bg-indigo-600 transition-all shadow-2xl flex items-center gap-4 group" onClick={() => { resetForm(); setShowDrawer(true); }}>
@@ -303,11 +303,15 @@ const VoucherManagement = () => {
                                                 <select required className="input-premium-modern appearance-none cursor-pointer w-full !text-indigo-600 border-indigo-100 bg-indigo-50/10" value={formData.debit_ledger} onChange={e => setFormData({ ...formData, debit_ledger: e.target.value })}>
                                                     <option value="">Select receiver...</option>
                                                     {(() => {
-                                                        const grouped = {};
-                                                        ledgers.forEach(l => { if(!grouped[l.group]) grouped[l.group]=[]; grouped[l.group].push(l); });
-                                                        return Object.entries(grouped).map(([grp, items]) => (
-                                                            <optgroup key={grp} label={grp}>
-                                                                {items.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                                        const grouped = ledgers.reduce((acc, l) => {
+                                                            const cat = l.group || 'OTHER';
+                                                            if(!acc[cat]) acc[cat] = [];
+                                                            acc[cat].push(l);
+                                                            return acc;
+                                                        }, {});
+                                                        return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, list]) => (
+                                                            <optgroup key={cat} label={`── ${cat.toUpperCase()} ──`}>
+                                                                {list.sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
                                                             </optgroup>
                                                         ));
                                                     })()}
@@ -322,11 +326,15 @@ const VoucherManagement = () => {
                                                 <select required className="input-premium-modern appearance-none cursor-pointer w-full !text-rose-600 border-rose-100 bg-rose-50/10" value={formData.credit_ledger} onChange={e => setFormData({ ...formData, credit_ledger: e.target.value })}>
                                                     <option value="">Select originator...</option>
                                                     {(() => {
-                                                        const grouped = {};
-                                                        ledgers.forEach(l => { if(!grouped[l.group]) grouped[l.group]=[]; grouped[l.group].push(l); });
-                                                        return Object.entries(grouped).map(([grp, items]) => (
-                                                            <optgroup key={grp} label={grp}>
-                                                                 {items.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                                        const grouped = ledgers.reduce((acc, l) => {
+                                                            const cat = l.group || 'OTHER';
+                                                            if(!acc[cat]) acc[cat] = [];
+                                                            acc[cat].push(l);
+                                                            return acc;
+                                                        }, {});
+                                                        return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, list]) => (
+                                                            <optgroup key={cat} label={`── ${cat.toUpperCase()} ──`}>
+                                                                {list.sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
                                                             </optgroup>
                                                         ));
                                                     })()}

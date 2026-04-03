@@ -144,7 +144,7 @@ const CashAndBank = () => {
                                 <Building2 size={24} strokeWidth={2.5} />
                                 <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-40">Financial Controller</span>
                             </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-[-0.04em] mb-3">Cash & Liquid Assets</h2>
+                            <h2 className="premium-page-title mb-3">Cash & Liquid Assets</h2>
                             <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-lg">Audit trail of monetary movement across banking hubs and physical cash reserves.</p>
                         </div>
 

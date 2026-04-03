@@ -21,7 +21,7 @@ const SettingsPage = () => {
     const navigate = useNavigate();
     
     // Read initial tab from URL or default to profile
-    const initialTab = new URLSearchParams(location.search).get('tab') || 'profile';
+    const initialTab = new URLSearchParams(location.search).get('tab') || 'printer';
     const [activeTab, setActiveTab] = useState(initialTab);
 
     // Sync tab changes when URL changes (e.g., clicking sidebar link)
@@ -54,11 +54,11 @@ const SettingsPage = () => {
     });
     const [editingCouponId, setEditingCouponId] = useState(null);
     const [billSeriesForm, setBillSeriesForm] = useState({
-        dine_in: { prefix: 'DI', next_number: 1 },
-        takeaway: { prefix: 'TA', next_number: 1 },
-        delivery: { prefix: 'DE', next_number: 1 },
-        parcel: { prefix: 'PA', next_number: 1 },
-        party: { prefix: 'PT', next_number: 1 }
+        dine_in: { numbering_method: 'Automatic', prefix: 'DI', suffix: '', starting_number: 1, next_number: 1, restart_after: 'Never' },
+        takeaway: { numbering_method: 'Automatic', prefix: 'TA', suffix: '', starting_number: 1, next_number: 1, restart_after: 'Never' },
+        delivery: { numbering_method: 'Automatic', prefix: 'DE', suffix: '', starting_number: 1, next_number: 1, restart_after: 'Never' },
+        parcel: { numbering_method: 'Automatic', prefix: 'PA', suffix: '', starting_number: 1, next_number: 1, restart_after: 'Never' },
+        party: { numbering_method: 'Automatic', prefix: 'PT', suffix: '', starting_number: 1, next_number: 1, restart_after: 'Never' }
     });
 
     // Bill History State
@@ -292,8 +292,6 @@ const SettingsPage = () => {
     };
 
     const TABS = [
-        { id: 'profile', icon: <User size={18} />, label: 'Profile', sub: 'Account info' },
-        { id: 'password', icon: <Key size={18} />, label: 'Security', sub: 'Access control' },
         { id: 'printer', icon: <Printer size={18} />, label: 'Printer', sub: 'Thermal setup' },
         { id: 'bill', icon: <FileText size={18} />, label: 'Bill Format', sub: 'Receipt style' },
         { id: 'coupons', icon: <Ticket size={18} />, label: 'Coupons', sub: 'Offers & BOGO' },
@@ -355,107 +353,7 @@ const SettingsPage = () => {
 
                         {/* Main Content Area */}
                         <div className="flex-1 min-w-0">
-                            {/* Profile Settings */}
-                            {activeTab === 'profile' && (
-                                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-10 fade-in">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <User size={20} className="text-indigo-600" />
-                                        <div>
-                                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Profile Information</h3>
-                                            <p className="text-xs font-bold text-slate-400 mt-0.5">Update your personal and business credentials</p>
-                                        </div>
-                                    </div>
 
-                                    {errors.profile && <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-6"><AlertCircle size={18} /> {errors.profile}</div>}
-                                    {success.profile && <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-3 text-emerald-700 font-bold text-sm mb-6"><CheckCircle size={18} /> Profile updated successfully!</div>}
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="form-group-premium">
-                                            <label>Owner Name *</label>
-                                            <div className="relative">
-                                                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                <input type="text" name="ownerName" className="input-premium !pl-12" value={profileForm.ownerName} onChange={handleProfileChange} placeholder="Enter owner name" />
-                                            </div>
-                                        </div>
-                                        <div className="form-group-premium">
-                                            <label>Email Address *</label>
-                                            <div className="relative">
-                                                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                <input type="email" name="email" className="input-premium !pl-12" value={profileForm.email} onChange={handleProfileChange} placeholder="email@domain.com" />
-                                            </div>
-                                        </div>
-                                        <div className="form-group-premium">
-                                            <label>Phone / Mobile *</label>
-                                            <div className="relative">
-                                                <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                <input type="tel" name="mobile" className="input-premium !pl-12" value={profileForm.mobile} onChange={handleProfileChange} placeholder="9876543210" />
-                                            </div>
-                                        </div>
-                                        <div className="form-group-premium">
-                                            <label>Business Name *</label>
-                                            <div className="relative">
-                                                <Building2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                <input type="text" name="businessName" className="input-premium !pl-12" value={profileForm.businessName} onChange={handleProfileChange} placeholder="RestoBoard Enterprise" />
-                                            </div>
-                                        </div>
-                                        {user?.role === 'SUPER_ADMIN' && (
-                                            <div className="form-group-premium md:col-span-2">
-                                                <label className="!text-indigo-600 flex items-center gap-2"><Shield size={14} /> Module Type (Admin Only)</label>
-                                                <select name="restaurantType" className="input-premium appearance-none cursor-pointer" value={profileForm.restaurantType} onChange={handleProfileChange}>
-                                                    <option value="SMART">SMART</option>
-                                                    <option value="EFFICIENT">EFFICIENT</option>
-                                                    <option value="ENTERPRISE">ENTERPRISE</option>
-                                                </select>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex justify-end pt-8 border-t border-slate-50 mt-8">
-                                        <button onClick={saveProfile} disabled={saving.profile} className="btn-premium-primary !py-4 !px-10">
-                                            {saving.profile ? <><Loader2 className="animate-spin" /> Saving...</> : <><Save size={18} /> Save Profile</>}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Security / Password */}
-                            {activeTab === 'password' && (
-                                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] p-10 fade-in">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <Lock size={20} className="text-indigo-600" />
-                                        <div>
-                                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Security & Access Control</h3>
-                                            <p className="text-xs font-bold text-slate-400 mt-0.5">Update your account authentication credentials</p>
-                                        </div>
-                                    </div>
-
-                                    {errors.password && <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold text-sm mb-6"><AlertCircle size={18} /> {errors.password}</div>}
-                                    {success.password && <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-3 text-emerald-700 font-bold text-sm mb-6"><CheckCircle size={18} /> Password updated successfully!</div>}
-
-                                    <div className="space-y-6 max-w-lg">
-                                        {[
-                                            { name: 'currentPassword', label: 'Current Password', placeholder: 'Enter current password', key: 'current' },
-                                            { name: 'newPassword', label: 'New Password', placeholder: 'Min 6 characters', key: 'new' },
-                                            { name: 'confirmPassword', label: 'Confirm New Password', placeholder: 'Repeat new password', key: 'confirm' },
-                                        ].map(({ name, label, placeholder, key }) => (
-                                            <div key={name} className="form-group-premium">
-                                                <label>{label} *</label>
-                                                <div className="relative">
-                                                    <Key size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                    <input type={showPasswords[key] ? 'text' : 'password'} name={name} className="input-premium !pl-12 !pr-12" value={passwordForm[name]} onChange={handlePasswordChange} placeholder={placeholder} />
-                                                    <button type="button" onClick={() => setShowPasswords(prev => ({ ...prev, [key]: !prev[key] }))} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                                                        {showPasswords[key] ? <EyeOff size={18} /> : <Eye size={18} />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex justify-end pt-8 border-t border-slate-50 mt-8">
-                                        <button onClick={changePassword} disabled={saving.password} className="btn-premium-primary !py-4 !px-10">
-                                            {saving.password ? <><Loader2 className="animate-spin" /> Updating...</> : <><Lock size={18} /> Change Password</>}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Printer Settings */}
                             {activeTab === 'printer' && (
@@ -824,11 +722,46 @@ const SettingsPage = () => {
                                                     <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
                                                     <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm">{key.replace('_', ' ')} Series</h4>
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    <div className="form-group-premium">
+                                                        <label>Numbering Method</label>
+                                                        <select className="input-premium" 
+                                                            value={billSeriesForm[key].numbering_method || 'Automatic'} 
+                                                            onChange={e => setBillSeriesForm({
+                                                                ...billSeriesForm,
+                                                                [key]: { ...billSeriesForm[key], numbering_method: e.target.value }
+                                                            })}>
+                                                            <option value="Automatic">Automatic</option>
+                                                            <option value="Manual">Manual</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Restart After</label>
+                                                        <select className="input-premium" 
+                                                            value={billSeriesForm[key].restart_after || 'Never'} 
+                                                            onChange={e => setBillSeriesForm({
+                                                                ...billSeriesForm,
+                                                                [key]: { ...billSeriesForm[key], restart_after: e.target.value }
+                                                            })}>
+                                                            <option value="Yearly">Yearly (1st April)</option>
+                                                            <option value="Monthly">Monthly</option>
+                                                            <option value="Daily">Daily</option>
+                                                            <option value="Never">Never</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Starting Number</label>
+                                                        <input type="number" className="input-premium" 
+                                                            value={billSeriesForm[key].starting_number || 1} 
+                                                            onChange={e => setBillSeriesForm({
+                                                                ...billSeriesForm,
+                                                                [key]: { ...billSeriesForm[key], starting_number: parseInt(e.target.value) || 1 }
+                                                            })} />
+                                                    </div>
                                                     <div className="form-group-premium">
                                                         <label>Prefix</label>
                                                         <input type="text" className="input-premium uppercase" 
-                                                            value={billSeriesForm[key].prefix} 
+                                                            value={billSeriesForm[key].prefix || ''} 
                                                             onChange={e => setBillSeriesForm({
                                                                 ...billSeriesForm,
                                                                 [key]: { ...billSeriesForm[key], prefix: e.target.value.toUpperCase() }
@@ -836,9 +769,19 @@ const SettingsPage = () => {
                                                             placeholder="e.g. DI" />
                                                     </div>
                                                     <div className="form-group-premium">
-                                                        <label>Next / Starting Number</label>
+                                                        <label>Suffix</label>
+                                                        <input type="text" className="input-premium uppercase" 
+                                                            value={billSeriesForm[key].suffix || ''} 
+                                                            onChange={e => setBillSeriesForm({
+                                                                ...billSeriesForm,
+                                                                [key]: { ...billSeriesForm[key], suffix: e.target.value.toUpperCase() }
+                                                            })} 
+                                                            placeholder="e.g. 24-25" />
+                                                    </div>
+                                                    <div className="form-group-premium">
+                                                        <label>Next Number (Current)</label>
                                                         <input type="number" className="input-premium" 
-                                                            value={billSeriesForm[key].next_number} 
+                                                            value={billSeriesForm[key].next_number || 1} 
                                                             onChange={e => setBillSeriesForm({
                                                                 ...billSeriesForm,
                                                                 [key]: { ...billSeriesForm[key], next_number: parseInt(e.target.value) || 1 }

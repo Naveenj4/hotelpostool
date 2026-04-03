@@ -5,9 +5,18 @@ const Restaurant = require('../models/Restaurant');
 const Customer = require('../models/Customer');
 
 // Helper to generate next Bill Number
-const generateBillNumber = async (companyId, type = 'SELF_SERVICE') => {
+const generateBillNumber = async (companyId, type = 'SELF_SERVICE', manualBillNumber = null) => {
     const restaurant = await Restaurant.findById(companyId);
-    if (!restaurant || !restaurant.bill_series) {
+
+    // Map Bill type to series key
+    let seriesKey = 'takeaway';
+    if (type === 'DINE_IN') seriesKey = 'dine_in';
+    else if (type === 'DELIVERY') seriesKey = 'delivery';
+    else if (type === 'PARCEL') seriesKey = 'parcel';
+    else if (type === 'PARTY' || type === 'PARTY_ORDER') seriesKey = 'party';
+
+    if (!restaurant || !restaurant.bill_series || !restaurant.bill_series[seriesKey]) {
+        if (manualBillNumber) return manualBillNumber;
         // Fallback to date-based if settings missing
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         const lastBill = await Bill.findOne({ company_id: companyId, bill_number: { $regex: `^${dateStr}` } }).sort({ bill_number: -1 });
@@ -19,19 +28,47 @@ const generateBillNumber = async (companyId, type = 'SELF_SERVICE') => {
         return `${dateStr}-${String(nextNum).padStart(4, '0')}`;
     }
 
-    // Map Bill type to series key
-    let seriesKey = 'takeaway';
-    if (type === 'DINE_IN') seriesKey = 'dine_in';
-    else if (type === 'DELIVERY') seriesKey = 'delivery';
-    else if (type === 'PARCEL') seriesKey = 'parcel';
-    else if (type === 'PARTY' || type === 'PARTY_ORDER') seriesKey = 'party';
+    const series = restaurant.bill_series[seriesKey];
 
-    const series = restaurant.bill_series[seriesKey] || { prefix: 'BILL', next_number: 1 };
-    const billNumber = `${series.prefix}-${series.next_number}`;
+    if (series.numbering_method === 'Manual') {
+        return manualBillNumber || `TEMP-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+    }
+
+    // Check if we need to reset
+    let shouldReset = false;
+    const now = new Date();
+    const lastReset = series.last_reset_date ? new Date(series.last_reset_date) : new Date(0);
+
+    if (series.restart_after === 'Yearly') {
+        const fyStart = restaurant.financial_year_start ? new Date(restaurant.financial_year_start) : new Date();
+        const startMonthStr = fyStart.toISOString().split('T')[0].split('-')[1]; // get month 04 for april
+        const startMonth = fyStart.getMonth();
+        let currentFyStart = new Date(now.getFullYear(), startMonth, 1);
+        if (now.getMonth() < startMonth) {
+            currentFyStart.setFullYear(now.getFullYear() - 1);
+        }
+        if (lastReset < currentFyStart) shouldReset = true;
+    } else if (series.restart_after === 'Monthly') {
+        if (now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) shouldReset = true;
+    } else if (series.restart_after === 'Daily') {
+        if (now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) shouldReset = true;
+    }
+
+    let currentNext = series.next_number;
+    if (shouldReset) {
+        currentNext = typeof series.starting_number === 'number' ? series.starting_number : 1;
+    }
+
+    const prefix = series.prefix || '';
+    const suffix = series.suffix || '';
+    const billNumber = `${prefix}${currentNext}${suffix}`;
 
     // Increment next_number in Restaurant
     await Restaurant.findByIdAndUpdate(companyId, {
-        $inc: { [`bill_series.${seriesKey}.next_number`]: 1 }
+        $set: { 
+            [`bill_series.${seriesKey}.next_number`]: currentNext + 1,
+            [`bill_series.${seriesKey}.last_reset_date`]: now
+        }
     });
 
     return billNumber;
@@ -221,7 +258,8 @@ exports.processPayment = async (req, res) => {
 
         // Generate final sequential bill number if not already generated
         if (!bill.bill_number || bill.bill_number.startsWith('TEMP-')) {
-            bill.bill_number = await generateBillNumber(req.user.restaurant_id, bill.type);
+            const manualBillNo = req.body.bill_number; // Get possible manual bill no
+            bill.bill_number = await generateBillNumber(req.user.restaurant_id, bill.type, manualBillNo);
         }
 
         // Update bill status and final financial values
@@ -304,28 +342,50 @@ exports.processPayment = async (req, res) => {
                 });
                 await Ledger.findByIdAndUpdate(salesL._id, { $inc: { opening_balance: -bill.grand_total } });
 
+                let counterData = null;
+                if (bill.counter_id) {
+                    const Counter = require('../models/Counter');
+                    counterData = await Counter.findById(bill.counter_id);
+                }
+
                 // 2. Debit Payment Method Ledgers for amount actually paid
                 let defaultBankL = null;
                 for (const pm of payment_modes) {
                     if (pm.amount <= 0) continue;
                     
                     let payL = null;
-                    if (pm.type === 'CASH') {
-                        payL = await getOrCreateLedger(
-                            { company_id: coId, name: 'Cash in Hand' },
-                            { group: 'Cash in Hand' }
-                        );
-                    } else { // UPI, CARD, ONLINE, SPLIT parts
-                        if (!defaultBankL) {
-                            defaultBankL = await Ledger.findOne({ company_id: coId, group: 'Bank Accounts' });
-                            if (!defaultBankL) {
-                                defaultBankL = await getOrCreateLedger(
-                                    { company_id: coId, name: 'Bank Account' },
-                                    { group: 'Bank Accounts' }
-                                );
-                            }
+                    if (pm.ledger_id) {
+                        payL = await Ledger.findOne({ _id: pm.ledger_id, company_id: coId });
+                    }
+
+                    if (!payL && counterData) {
+                        if (pm.type === 'CASH' && counterData.cash_ledger_id) {
+                            payL = await Ledger.findById(counterData.cash_ledger_id);
+                        } else if (pm.type === 'UPI' && counterData.upi_ledger_id) {
+                            payL = await Ledger.findById(counterData.upi_ledger_id);
+                        } else if (pm.type === 'CARD' && counterData.card_ledger_id) {
+                            payL = await Ledger.findById(counterData.card_ledger_id);
                         }
-                        payL = defaultBankL;
+                    }
+                    
+                    if (!payL) {
+                        if (pm.type === 'CASH') {
+                            payL = await getOrCreateLedger(
+                                { company_id: coId, name: 'Cash in Hand' },
+                                { group: 'Cash in Hand' }
+                            );
+                        } else { // UPI, CARD, ONLINE, SPLIT parts
+                            if (!defaultBankL) {
+                                defaultBankL = await Ledger.findOne({ company_id: coId, group: 'Bank Accounts' });
+                                if (!defaultBankL) {
+                                    defaultBankL = await getOrCreateLedger(
+                                        { company_id: coId, name: 'Bank Account' },
+                                        { group: 'Bank Accounts' }
+                                    );
+                                }
+                            }
+                            payL = defaultBankL;
+                        }
                     }
 
                     if (payL) {
@@ -473,21 +533,26 @@ exports.updateBill = async (req, res) => {
             bill.items = items;
 
             if (action_type === 'GENERATE_KOT' && currentKotItems.length > 0) {
-                // Generate a KOT number
-                const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                // Generate a continuous KOT number changing daily from 1
+                const startOfDay = new Date();
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date();
+                endOfDay.setHours(23, 59, 59, 999);
+
                 const todayKots = await Bill.find({
                     company_id: req.user.restaurant_id,
-                    'kots.kot_number': { $regex: `^KOT-${dateStr}` }
-                });
+                    'kots.created_at': { $gte: startOfDay, $lte: endOfDay }
+                }, { 'kots': 1 }); // only fetch kots
 
                 let nextNum = 1;
                 todayKots.forEach(b => {
                     if (b.kots) {
                         b.kots.forEach(k => {
-                            if (k.kot_number && k.kot_number.startsWith(`KOT-${dateStr}`)) {
-                                const parts = k.kot_number.split('-');
-                                if (parts.length === 3) {
-                                    const num = parseInt(parts[2], 10);
+                            const kDate = new Date(k.created_at);
+                            if (kDate >= startOfDay && kDate <= endOfDay && k.kot_number) {
+                                const numMatch = String(k.kot_number).match(/\d+/);
+                                if (numMatch) {
+                                    const num = parseInt(numMatch[0], 10);
                                     if (num >= nextNum) nextNum = num + 1;
                                 }
                             }
@@ -495,7 +560,7 @@ exports.updateBill = async (req, res) => {
                     }
                 });
 
-                const newKotNo = `KOT-${dateStr}-${String(nextNum).padStart(4, '0')}`;
+                const newKotNo = nextNum.toString();
                 newlyGeneratedKot = {
                     kot_number: newKotNo,
                     created_at: new Date(),
@@ -507,7 +572,8 @@ exports.updateBill = async (req, res) => {
         }
         
         if (action_type === 'GENERATE_BILL_NO' && (!bill.bill_number || bill.bill_number.startsWith('TEMP-'))) {
-            bill.bill_number = await generateBillNumber(req.user.restaurant_id, bill.type);
+            const manualBillNo = req.body.bill_number;
+            bill.bill_number = await generateBillNumber(req.user.restaurant_id, bill.type, manualBillNo);
         }
 
         if (status) bill.status = status;

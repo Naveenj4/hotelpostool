@@ -5,9 +5,28 @@
 }
 
 .ledg-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem 2.5rem;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 1.5rem 10rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.ledg-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ledg-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ledg-container::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+    border: 2px solid transparent;
 }
 
 .ledg-topbar {
@@ -69,6 +88,8 @@
 }
 
 .ledg-form {
+    width: 100%;
+    max-width: 900px;
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -76,8 +97,8 @@
 
 .ledg-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.75rem;
     align-items: start;
 }
 
@@ -90,17 +111,19 @@
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+    padding: 1.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
 }
 
 .ledg-sec-title {
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     font-weight: 800;
     color: #334155;
     margin-bottom: 1.5rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 2px solid #f1f5f9;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 /* Fields & Groups */
@@ -278,7 +301,13 @@
     color: #4f46e5;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1280px) {
+    .ledg-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 900px) {
     .ledg-grid {
         grid-template-columns: 1fr;
     }

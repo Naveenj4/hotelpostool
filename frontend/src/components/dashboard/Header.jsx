@@ -38,7 +38,7 @@ const Header = ({ toggleSidebar, restaurantName, title, actions }) => {
                     {title ? (
                         <div className="flex items-center gap-4">
                             <div className="w-[1px] h-6 bg-slate-200/50 mx-2 hidden md:block"></div>
-                            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">{title}</h2>
+                            <h2 className="premium-page-title">{title}</h2>
                         </div>
                     ) : (
                         <span className="restaurant-name">{restaurantName || "RestoSaaS Partner"}</span>

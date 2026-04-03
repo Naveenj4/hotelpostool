@@ -224,7 +224,7 @@ const AdvancedReports = () => {
                                 </div>
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Predictive Analytics</span>
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Enterprise Intelligence</h2>
+                            <h2 className="premium-page-title">Enterprise Intelligence</h2>
                             <p className="text-slate-500 font-bold text-sm">Multi-module financial health & real-time operational performance.</p>
                         </div>
 

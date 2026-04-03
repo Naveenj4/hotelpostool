@@ -147,7 +147,7 @@ const LedgerStatement = () => {
                                 <Database size={24} strokeWidth={2.5} />
                                 <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-40">Forensic Accounting Hub</span>
                             </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-[-0.04em] mb-3">Ledger Intelligence</h2>
+                            <h2 className="premium-page-title mb-3">Ledger Intelligence</h2>
                             <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-lg">Reconstruct fiscal history for any entity. Precision audit trail across all vouchers.</p>
                         </div>
 
@@ -160,7 +160,19 @@ const LedgerStatement = () => {
                                     onChange={(e) => setSelectedLedger(e.target.value)}
                                 >
                                     <option value="">SCAN ENTITY DATABASE...</option>
-                                    {ledgers.map(l => <option key={l._id} value={l._id}>{l.name} / {l.group}</option>)}
+                                    {(() => {
+                                        const grouped = ledgers.reduce((acc, l) => {
+                                            const cat = l.group || 'OTHER';
+                                            if(!acc[cat]) acc[cat] = [];
+                                            acc[cat].push(l);
+                                            return acc;
+                                        }, {});
+                                        return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, list]) => (
+                                            <optgroup key={cat} label={`── ${cat.toUpperCase()} ──`}>
+                                                {list.sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                            </optgroup>
+                                        ));
+                                    })()}
                                 </select>
                             </div>
                             <div className="flex items-center px-4 py-2 gap-4">

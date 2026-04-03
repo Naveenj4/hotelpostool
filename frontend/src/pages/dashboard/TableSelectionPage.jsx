@@ -84,13 +84,12 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
     const handleClick = () => onSelect(table);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', flexShrink: 0, width: '124px', height: '86px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0, width: '124px', height: '116px' }}>
             {/* Main Interactive Card */}
             <div
                 onClick={handleClick}
                 style={{
-                    flex: 1,
-                    height: '100%',
+                    height: '86px',
                     border: `1px solid ${border}`,
                     borderRadius: '12px',
                     background: bg,
@@ -160,19 +159,19 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                 </div>
             </div>
 
-            {/* Actions Column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '36px', height: '100%' }}>
+            {/* Actions Row */}
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '4px', width: '100%', height: '26px' }}>
                 {isAvail && (
-                    <button onClick={() => onReserve(table)} style={{ flex: 1, fontSize: '9px', fontWeight: 800, background: 'none', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', writingMode: 'vertical-rl', transform: 'rotate(180deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    <button onClick={() => onReserve(table)} style={{ flex: 1, fontSize: '9px', fontWeight: 800, background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#334155'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#64748b'; }}
                     >
                         RESERVE
                     </button>
                 )}
                 {isReserved && (
                     <>
-                        <button onClick={() => onCancelReserve(table)} style={{ height: '26px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                        <button onClick={() => onCancelReserve(table)} style={{ width: '26px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
                             onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}><X size={14} strokeWidth={3} /></button>
                         <button onClick={() => onSelect(table)} style={{ flex: 1, fontSize: '9px', fontWeight: 900, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
@@ -182,30 +181,30 @@ const TableCard = ({ table, onSelect, onReserve, onCancelReserve, onReset }) => 
                 )}
                 {isActive && !isPrinted && !isReserved && (
                     <>
-                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1.5, fontSize: '8.5px', fontWeight: 900, background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1.5, fontSize: '8.5px', fontWeight: 900, background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
                             title="VIEW TABLE"
                             onMouseEnter={e => e.currentTarget.style.background = '#4f46e5'}
                             onMouseLeave={e => e.currentTarget.style.background = '#6366f1'}>VIEW</button>
-                        <button onClick={(e) => { e.stopPropagation(); onSelect(table, true); }} style={{ flex: 1.5, fontSize: '8.5px', fontWeight: 900, background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table, true); }} style={{ flex: 1.5, fontSize: '8.5px', fontWeight: 900, background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
                             title="PRINT BILL"
                             onMouseEnter={e => e.currentTarget.style.background = '#059669'}
                             onMouseLeave={e => e.currentTarget.style.background = '#10b981'}>PRNT</button>
-                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ height: '24px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ width: '26px', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                             title="RESET/FREE TABLE"
                             onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} strokeWidth={2.5} /></button>
+                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}><RefreshCw size={12} strokeWidth={2.5} /></button>
                     </>
                 )}
                 {isPrinted && !isReserved && (
                     <>
-                        <button onClick={(e) => { e.stopPropagation(); onSelect(table); }} style={{ flex: 1, fontSize: '9px', fontWeight: 900, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', transition: 'background 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onSelect(table, true); }} style={{ flex: 1, fontSize: '9px', fontWeight: 900, background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
                             onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}>
                             <CheckCircle2 size={12} strokeWidth={3} /> PAY
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ height: '26px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                        <button onClick={(e) => { e.stopPropagation(); onReset(table); }} style={{ width: '26px', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}><RefreshCw size={12} strokeWidth={3} /></button>
+                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}><RefreshCw size={12} strokeWidth={3} /></button>
                     </>
                 )}
             </div>
@@ -407,7 +406,7 @@ const TableSelectionPage = () => {
     }, [fetchData]);
 
     /* ── Navigate to billing ── */
-    const handleSelect = (table) => {
+    const handleSelect = (table, printAction = false) => {
         navigate('/dashboard/self-service/billing', {
             state: {
                 fromTable: true,
@@ -418,7 +417,8 @@ const TableSelectionPage = () => {
                 tableType: table.table_type || '',
                 tableStatus: table.status,            // AVAILABLE | OCCUPIED | PRINTED | RESERVED
                 reservationName: table.reservation_name || '',
-                reservationPhone: table.reservation_phone || ''
+                reservationPhone: table.reservation_phone || '',
+                actionTrigger: printAction ? 'FINALIZE' : 'TENTATIVE_VIEW'
             }
         });
     };
@@ -549,6 +549,17 @@ const TableSelectionPage = () => {
             const key = (t.table_type || '').trim() || 'Other';
             if (!map[key]) map[key] = [];
             map[key].push(t);
+        });
+
+        // Sort tables naturally within each group
+        Object.keys(map).forEach(key => {
+            map[key].sort((a, b) => 
+                (a.table_number || '').toString().localeCompare(
+                    (b.table_number || '').toString(), 
+                    undefined, 
+                    { numeric: true, sensitivity: 'base' }
+                )
+            );
         });
         return Object.entries(map).filter(([, rows]) => rows.length > 0);
     };

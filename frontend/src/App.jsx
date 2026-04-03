@@ -28,6 +28,7 @@ import LedgerStatement from './pages/dashboard/LedgerStatement.jsx';
 import VoucherManagement from './pages/dashboard/VoucherManagement.jsx';
 import ReceiptEntry from './pages/dashboard/ReceiptEntry.jsx';
 import PaymentEntry from './pages/dashboard/PaymentEntry.jsx';
+import LedgerMaster from './pages/dashboard/LedgerMaster.jsx';
 import LedgerCreationForm from './pages/dashboard/LedgerCreationForm.jsx';
 import CounterMaster from './pages/dashboard/CounterMaster.jsx';
 import BillingPage from './pages/dashboard/BillingPage.jsx';
@@ -37,7 +38,9 @@ import BillsAndSalesPage from './pages/dashboard/BillsAndSalesPage.jsx';
 import StockPage from './pages/StockPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 import AccessControlPage from './pages/AccessControlPage.jsx';
+import GenericSummaryReport from './pages/dashboard/GenericSummaryReport.jsx';
 import GenericModulePlaceholder from './pages/dashboard/GenericModulePlaceholder.jsx';
 import DayWiseSales from './pages/dashboard/DayWiseSales.jsx';
 import MonthWiseSales from './pages/dashboard/MonthWiseSales.jsx';
@@ -54,8 +57,7 @@ import Daybook from './pages/dashboard/Daybook.jsx';
 import CashBalance from './pages/dashboard/CashBalance.jsx';
 import BankBalance from './pages/dashboard/BankBalance.jsx';
 import CashAndBank from './pages/dashboard/CashAndBank.jsx';
-import PrinterManagement from './pages/dashboard/PrinterManagement.jsx';
-import KitchenManagement from './pages/dashboard/KitchenManagement.jsx';
+import KitchenPrinterManagement from './pages/dashboard/KitchenPrinterManagement.jsx';
 import KitchenDisplay, { KitchenDisplayList } from './pages/dashboard/KitchenDisplay.jsx';
 import PrinterDisplay, { PrinterDisplayList } from './pages/dashboard/PrinterDisplay.jsx';
 import OrderIntegrationSettings from './pages/dashboard/OrderIntegrationSettings.jsx';
@@ -144,6 +146,9 @@ function AppRoutes() {
                             <Route path="customers" element={
                                 <PermissionRoute pageKey="customers"><CustomerMaster /></PermissionRoute>
                             } />
+                            <Route path="ledgers" element={
+                                <PermissionRoute pageKey="ledgers"><LedgerMaster /></PermissionRoute>
+                            } />
                             <Route path="ledgers/create" element={
                                 <PermissionRoute pageKey="ledgers"><LedgerCreationForm /></PermissionRoute>
                             } />
@@ -193,7 +198,10 @@ function AppRoutes() {
                                 <PermissionRoute pageKey="stock"><StockPage /></PermissionRoute>
                             } />
                             <Route path="reports" element={
-                                <PermissionRoute pageKey="reports"><ReportsPage /></PermissionRoute>
+                                <PermissionRoute pageKey="advanced_reports"><ReportsPage /></PermissionRoute>
+                            } />
+                            <Route path="profile" element={
+                                <PermissionRoute pageKey="settings"><ProfilePage /></PermissionRoute>
                             } />
                             <Route path="settings" element={
                                 <PermissionRoute pageKey="settings"><SettingsPage /></PermissionRoute>
@@ -210,9 +218,16 @@ function AppRoutes() {
                             <Route path="reports/sales/category" element={<PermissionRoute pageKey="sales_summary"><CategoryWiseSales /></PermissionRoute>} />
                             <Route path="reports/sales/transaction" element={<PermissionRoute pageKey="sales_summary"><TransactionWiseSales /></PermissionRoute>} />
                             <Route path="reports/sales/profit" element={<PermissionRoute pageKey="sales_summary"><SalesProfit /></PermissionRoute>} />
+                            <Route path="reports/sales/brand" element={<PermissionRoute pageKey="sales_summary"><GenericSummaryReport title="Brand Wise Sales" subtitle="Sales breakdown by brand." endpoint="/reports/sales-by-brand" /></PermissionRoute>} />
+                            <Route path="reports/sales/captain" element={<PermissionRoute pageKey="sales_summary"><GenericSummaryReport title="Captain Wise Sales" subtitle="Sales breakdown by captain." endpoint="/reports/sales-by-captain" /></PermissionRoute>} />
+                            <Route path="reports/sales/agent" element={<PermissionRoute pageKey="sales_summary"><GenericSummaryReport title="Agent Wise Sales" subtitle="Sales breakdown by agent." endpoint="/reports/sales-by-captain" /></PermissionRoute>} />
 
                             {/* Purchase Summary */}
                             <Route path="reports/purchase/day" element={<PermissionRoute pageKey="purchase_summary"><DayWisePurchase /></PermissionRoute>} />
+                            <Route path="reports/purchase/month" element={<PermissionRoute pageKey="purchase_summary"><GenericSummaryReport title="Month Wise Purchase" subtitle="Monthly purchase breakdown." endpoint="/reports/purchase/summary" groupBy="MONTH" /></PermissionRoute>} />
+                            <Route path="reports/purchase/item" element={<PermissionRoute pageKey="purchase_summary"><GenericSummaryReport title="Item Wise Purchase" subtitle="Purchase breakdown by item." endpoint="/reports/purchase/summary" groupBy="ITEM" /></PermissionRoute>} />
+                            <Route path="reports/purchase/category" element={<PermissionRoute pageKey="purchase_summary"><GenericSummaryReport title="Group Wise Purchase" subtitle="Purchase breakdown by group/category." endpoint="/reports/purchase/summary" groupBy="CATEGORY" /></PermissionRoute>} />
+                            <Route path="reports/purchase/brand" element={<PermissionRoute pageKey="purchase_summary"><GenericSummaryReport title="Brand Wise Purchase" subtitle="Purchase breakdown by brand." endpoint="/reports/purchase/summary" groupBy="BRAND" /></PermissionRoute>} />
                             <Route path="reports/purchase/supplier" element={<PermissionRoute pageKey="purchase_summary"><SupplierWisePurchase /></PermissionRoute>} />
 
                             {/* Outstanding */}
@@ -230,13 +245,11 @@ function AppRoutes() {
                             {/* Settings Extensions */}
                             <Route path="settings/integration" element={<PermissionRoute pageKey="settings"><OrderIntegrationSettings /></PermissionRoute>} />
 
-                            {/* Kitchen Management & Display (KDS) */}
-                            <Route path="kitchen-management" element={<PermissionRoute pageKey="settings"><KitchenManagement /></PermissionRoute>} />
+                            {/* Kitchen & Printer Management (Combined) */}
+                            <Route path="kitchen-management" element={<PermissionRoute pageKey="settings"><KitchenPrinterManagement /></PermissionRoute>} />
+                            <Route path="printer-management" element={<PermissionRoute pageKey="settings"><KitchenPrinterManagement /></PermissionRoute>} />
                             <Route path="kitchen-display" element={<PermissionRoute pageKey="settings"><KitchenDisplayList /></PermissionRoute>} />
                             <Route path="kitchen-display/:kitchenId" element={<PermissionRoute pageKey="settings"><KitchenDisplay /></PermissionRoute>} />
-
-                            {/* Printer Management & Display */}
-                            <Route path="printer-management" element={<PermissionRoute pageKey="settings"><PrinterManagement /></PermissionRoute>} />
                             <Route path="printer-display" element={<PermissionRoute pageKey="settings"><PrinterDisplayList /></PermissionRoute>} />
                             <Route path="printer-display/:id" element={<PermissionRoute pageKey="settings"><PrinterDisplay /></PermissionRoute>} />
 

@@ -138,7 +138,7 @@ const Daybook = () => {
                                 <FileText size={24} strokeWidth={2.5} />
                                 <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-40">Journal Registry</span>
                             </div>
-                            <h2 className="text-5xl font-black text-slate-900 tracking-[-0.04em] mb-3">Daily Ledger Audit</h2>
+                            <h2 className="premium-page-title mb-3">Daily Ledger Audit</h2>
                             <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-lg">Comprehensive chronological log of organizational financial movements. Every entry verified.</p>
                         </div>
 

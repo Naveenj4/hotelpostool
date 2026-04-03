@@ -82,16 +82,41 @@ export default function PaymentEntry() {
         if (view !== 'FORM') return;
         const load = async () => {
             const token = getToken();
-            const res = await fetch(`${API}/ledgers`, { headers: { Authorization: `Bearer ${token}` } });
-            const data = await res.json();
-            if (data.success) {
-                const all = data.data;
+            const [resLedgers, resGroups] = await Promise.all([
+                fetch(`${API}/ledgers`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API}/ledger-groups`, { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+            
+            const dataL = await resLedgers.json();
+            const dataG = await resGroups.json();
+
+            if (dataL.success) {
+                const all = dataL.data;
+                const groups = dataG.success ? dataG.data : [];
+
+                const getSubgroups = (targetGroups) => {
+                    let result = new Set(targetGroups);
+                    let added = true;
+                    while(added) {
+                        added = false;
+                        groups.forEach(g => {
+                            if (result.has(g.parent) && !result.has(g.name)) {
+                                result.add(g.name);
+                                added = true;
+                            }
+                        });
+                    }
+                    return Array.from(result);
+                };
+
                 setAllLedgers(all);
-                // Suppliers/party = Sundry Creditors group
-                const supplierGroups = ['Sundry Creditors'];
-                setPartyLedgers(all.filter(l => supplierGroups.some(g => l.group?.toLowerCase().includes(g.toLowerCase()))));
-                // Paymode = Cash / Bank
-                const paymodeGroups = ['Bank Accounts', 'Cash-in-Hand', 'Cash in Hand', 'Bank OD A/c'];
+                
+                // Suppliers/party = Sundry Creditors group + custom
+                const supplierGroups = getSubgroups(['Sundry Creditors']);
+                setPartyLedgers(all.filter(l => supplierGroups.some(g => l.group?.toLowerCase() === g.toLowerCase())));
+                
+                // Paymode = Cash / Bank + custom
+                const paymodeGroups = getSubgroups(['Bank Accounts', 'Cash-in-Hand', 'Cash in Hand', 'Bank OD A/c']);
                 setPaymodeLedgers(all.filter(l =>
                     paymodeGroups.some(g => l.group?.toLowerCase() === g.toLowerCase()) ||
                     l.name?.toLowerCase().includes('cash') ||
@@ -225,6 +250,20 @@ export default function PaymentEntry() {
             else alert(data.error || 'Failed to save payment');
         } catch { alert('Failed to save payment'); }
         finally { setSaving(false); }
+    };
+
+    const handleKeyDown = (e, nextId, prevId) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const nextEl = document.getElementById(nextId);
+            if (nextEl) nextEl.focus();
+        } else if (e.key === 'Backspace' && (!e.target.value || e.target.value === '')) {
+            if (prevId) {
+                e.preventDefault();
+                const prevEl = document.getElementById(prevId);
+                if (prevEl) prevEl.focus();
+            }
+        }
     };
 
     const handleDelete = async (id) => {
@@ -372,6 +411,7 @@ export default function PaymentEntry() {
                                 <label className="re-field-label">Party Name *</label>
                                 <div className="re-autocomplete-wrap">
                                     <input
+                                        id="pe_party_search"
                                         className="re-input"
                                         placeholder="Type to search supplier..."
                                         value={partySearch}
@@ -379,6 +419,9 @@ export default function PaymentEntry() {
                                             setPartySearch(e.target.value);
                                             setShowPartyDropdown(true);
                                             if (!e.target.value) setFormData(fd => ({ ...fd, party_ledger_id: '', party_name: '' }));
+                                        }}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' && !showPartyDropdown) handleKeyDown(e, 'pe_payment_no');
                                         }}
                                         onFocus={() => setShowPartyDropdown(true)}
                                         autoComplete="off"
@@ -405,36 +448,56 @@ export default function PaymentEntry() {
                             {/* PAYMENT NO */}
                             <div className="re-field-group">
                                 <label className="re-field-label">Payment No</label>
-                                <input className="re-input" value={formData.payment_no} onChange={e => setFormData(fd => ({ ...fd, payment_no: e.target.value }))} />
+                                <input id="pe_payment_no" className="re-input" value={formData.payment_no} 
+                                    onKeyDown={e => handleKeyDown(e, 'pe_date', 'pe_party_search')}
+                                    onChange={e => setFormData(fd => ({ ...fd, payment_no: e.target.value }))} />
                             </div>
 
                             {/* DATE */}
                             <div className="re-field-group">
                                 <label className="re-field-label">Date</label>
-                                <input type="date" className="re-input" value={formData.date} onChange={e => setFormData(fd => ({ ...fd, date: e.target.value }))} />
+                                <input id="pe_date" type="date" className="re-input" value={formData.date} 
+                                    onKeyDown={e => handleKeyDown(e, 'pe_amount', 'pe_payment_no')}
+                                    onChange={e => setFormData(fd => ({ ...fd, date: e.target.value }))} />
                             </div>
 
-                            {/* PAID AMOUNT */}
+                            {/* PAID AMOUNT * */}
                             <div className="re-field-group">
                                 <label className="re-field-label">Paid Amount *</label>
                                 <input
+                                    id="pe_amount"
                                     type="number" className="re-input re-pay-amt-input"
                                     placeholder="0.00"
                                     value={formData.paid_amount}
+                                    onKeyDown={e => handleKeyDown(e, 'pe_paymode', 'pe_date')}
                                     onChange={e => handlePaidAmountChange(e.target.value)}
                                 />
                             </div>
 
-                            {/* PAYMODE */}
+                            {/* PAYMODE * */}
                             <div className="re-field-group">
                                 <label className="re-field-label">Pay Mode *</label>
                                 <select
+                                    id="pe_paymode"
                                     className="re-input"
                                     value={formData.paymode_ledger_id}
+                                    onKeyDown={e => handleKeyDown(e, isBank ? 'pe_ref' : 'pe_narration', 'pe_amount')}
                                     onChange={e => setFormData(fd => ({ ...fd, paymode_ledger_id: e.target.value, reference_no: '' }))}
                                 >
                                     <option value="">— Select Account —</option>
-                                    {paymodeLedgers.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                    {(() => {
+                                        const grouped = paymodeLedgers.reduce((acc, l) => {
+                                            const cat = l.group || 'OTHER';
+                                            if(!acc[cat]) acc[cat] = [];
+                                            acc[cat].push(l);
+                                            return acc;
+                                        }, {});
+                                        return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, list]) => (
+                                            <optgroup key={cat} label={`── ${cat.toUpperCase()} ──`}>
+                                                {list.sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                            </optgroup>
+                                        ));
+                                    })()}
                                 </select>
                             </div>
 
@@ -443,9 +506,11 @@ export default function PaymentEntry() {
                                 <div className="re-field-group">
                                     <label className="re-field-label">Reference / Cheque No</label>
                                     <input
+                                        id="pe_ref"
                                         className="re-input"
                                         placeholder="Cheque / Transfer Ref No"
                                         value={formData.reference_no}
+                                        onKeyDown={e => handleKeyDown(e, 'pe_narration', 'pe_paymode')}
                                         onChange={e => setFormData(fd => ({ ...fd, reference_no: e.target.value }))}
                                     />
                                 </div>
@@ -455,10 +520,12 @@ export default function PaymentEntry() {
                             <div className="re-field-group re-narration-group">
                                 <label className="re-field-label">Narration</label>
                                 <textarea
+                                    id="pe_narration"
                                     className="re-textarea"
                                     rows={3}
                                     placeholder="Payment details / notes..."
                                     value={formData.narration}
+                                    onKeyDown={e => handleKeyDown(e, 'pe_save_btn', isBank ? 'pe_ref' : 'pe_paymode')}
                                     onChange={e => setFormData(fd => ({ ...fd, narration: e.target.value }))}
                                 />
                             </div>
@@ -535,7 +602,10 @@ export default function PaymentEntry() {
                             <button className="re-btn-print" onClick={() => { }} disabled={saving}>
                                 <Printer size={15} /> Save & Print
                             </button>
-                            <button className="re-btn-save re-btn-payment" onClick={handleSave} disabled={saving}>
+                            <button id="pe_save_btn" className="re-btn-save re-btn-payment" onClick={handleSave} disabled={saving}
+                                onKeyDown={e => {
+                                    if (e.key === 'Backspace') { e.preventDefault(); document.getElementById('pe_narration').focus(); }
+                                }}>
                                 {saving ? <Loader2 className="spin" size={16} /> : 'Save Payment'}
                             </button>
                         </div>

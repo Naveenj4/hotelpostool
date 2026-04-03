@@ -220,5 +220,15 @@
         width: 22px;
         height: 22px;
         font-size: 0.7rem;
-    }
+        }
 }
+/* ================================================================
+   DYNAMIC HUB SPECIFIC OVERRIDES
+   ================================================================ */
+
+@media (max-width: 1024px) {
+    .dashboard-layout.bg-slate-50 .fade-in.px-6 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}

@@ -242,7 +242,7 @@ const SelfServiceDashboard = () => {
                                 <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-wider border border-indigo-100">Live Analytics</span>
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                             </div>
-                            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">MAIN DASH BOARD</h2>
+                            <h2 className="premium-page-title mb-2">MAIN DASH BOARD</h2>
                             <p className="text-slate-400 font-bold text-sm tracking-wide">Enterprise Resource Analysis & Financial Forecasting</p>
                         </div>
                         

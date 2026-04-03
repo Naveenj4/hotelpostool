@@ -47,7 +47,13 @@ import {
     X,
     CalendarClock,
     Eye,
-    EyeOff
+    EyeOff,
+    Check,
+    CheckCircle2,
+    CheckCircle,
+    ClipboardList,
+    Calendar,
+    Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -93,6 +99,7 @@ const BillingPage = () => {
     const [extraCharges, setExtraCharges] = useState(0);
     const [discount, setDiscount] = useState(0);
     const [gstPercentage, setGstPercentage] = useState(5);
+    const [taxType, setTaxType] = useState('EXCLUSIVE');
     const [promoCode, setPromoCode] = useState('');
 
     // -- NEW POS ENHANCEMENT STATES --
@@ -148,7 +155,18 @@ const BillingPage = () => {
     const [redeemPointsInput, setRedeemPointsInput] = useState('');
     const [loyaltyRedeemedPoints, setLoyaltyRedeemedPoints] = useState(0);
     const [loyaltySettings, setLoyaltySettings] = useState({ enabled: false, target_points: 0, point_value: 1 });
+    const [billSeriesSettings, setBillSeriesSettings] = useState(null);
     const [partyData, setPartyData] = useState(null);
+
+    const getSeriesKey = (mode) => {
+        if (mode === 'DINE_IN') return 'dine_in';
+        if (mode === 'DELIVERY') return 'delivery';
+        if (mode === 'PARCEL') return 'parcel';
+        if (mode === 'PARTY' || mode === 'PARTY_ORDER') return 'party';
+        return 'takeaway';
+    };
+    const activeSeries = billSeriesSettings ? billSeriesSettings[getSeriesKey(orderMode)] : null;
+    const isManualNumbering = activeSeries?.numbering_method === 'Manual';
 
     // Prevent auto-create from firing while we are fetching an existing bill for a table
     const isRestoringTableBill = useRef(false);
@@ -181,6 +199,21 @@ const BillingPage = () => {
     };
     const [isOrderListCollapsed, setIsOrderListCollapsed] = useState(false);
     const [variationModalProduct, setVariationModalProduct] = useState(null);
+    const [addonModalProduct, setAddonModalProduct] = useState(null);
+    const [noteModalIdx, setNoteModalIdx] = useState(null);
+    const [tempNote, setTempNote] = useState('');
+    const [tempSelectedAddons, setTempSelectedAddons] = useState([]);
+    const [tempVariation, setTempVariation] = useState(null);
+    
+    // Party Order States
+    const [showPartyBookingModal, setShowPartyBookingModal] = useState(false);
+    const [bookedDates, setBookedDates] = useState([]);
+    const [currentCalDate, setCurrentCalDate] = useState(new Date());
+    const [showPartyCustomerForm, setShowPartyCustomerForm] = useState(false);
+    const [tempPartyBooking, setTempPartyBooking] = useState({ date: '', time: '12:00' });
+    const [showPartyManagement, setShowPartyManagement] = useState(false);
+    const [partyMgtDate, setPartyMgtDate] = useState(new Date().toISOString().split('T')[0]);
+    const [partyOrders, setPartyOrders] = useState([]);
 
     // -- SELECTION OVERLAYS --
     const [activeItemActions, setActiveItemActions] = useState(null);
@@ -193,6 +226,7 @@ const BillingPage = () => {
     const [kotSearchResults, setKotSearchResults] = useState([]);
     const [showKotDropdown, setShowKotDropdown] = useState(false);
     const [loadedBillMode, setLoadedBillMode] = useState('NONE'); // NONE, ALTER, RETURN, TRANSFER
+    const [pendingAutoAction, setPendingAutoAction] = useState(null);
 
     const [transferMode, setTransferMode] = useState('TABLE'); // TABLE or BILL
     const [transferBillQuery, setTransferBillQuery] = useState('');
@@ -239,12 +273,25 @@ const BillingPage = () => {
         // Loyalty Discount
         let loyaltyDisc = loyaltyRedeemedPoints * (loyaltySettings.point_value || 1);
 
-                const taxable = Math.max(0, sub - discAmt - couponDisc - loyaltyDisc);
-        const gstAmt = taxable * (parseFloat(gstPercentage) / 100);
+        const taxable = Math.max(0, sub - discAmt - couponDisc - loyaltyDisc);
+        const gstRate = parseFloat(gstPercentage) / 100;
+
+        let gstAmt = 0;
+        let finalTaxable = taxable;
+        let rawTotal = 0;
+
         const delivery = parseFloat(deliveryCharge) || 0;
         const container = parseFloat(containerCharge) || 0;
 
-        const rawTotal = taxable + gstAmt + delivery + container;
+        if (taxType === 'INCLUSIVE') {
+            finalTaxable = taxable / (1 + gstRate);
+            gstAmt = taxable - finalTaxable;
+            rawTotal = taxable + delivery + container;
+        } else {
+            gstAmt = taxable * gstRate;
+            rawTotal = taxable + gstAmt + delivery + container;
+        }
+
         const roundedTotal = Math.round(rawTotal);
         const rOff = roundedTotal - rawTotal;
 
@@ -259,7 +306,7 @@ const BillingPage = () => {
             roundOff: rOff,
             grandTotal: roundedTotal
         };
-    }, [previousItems, billItems, discount, gstPercentage, discountType, deliveryCharge, containerCharge, appliedCoupon, loyaltyRedeemedPoints, loyaltySettings]);
+    }, [previousItems, billItems, discount, gstPercentage, taxType, discountType, deliveryCharge, containerCharge, appliedCoupon, loyaltyRedeemedPoints, loyaltySettings]);
 
     const { subTotal, taxAmount, discountAmount, couponDiscount, loyaltyDiscount, roundOff, grandTotal } = billCalculations;
 
@@ -352,14 +399,19 @@ const BillingPage = () => {
                     if (coupData.success) setAvailableCoupons(coupData.data);
                 } catch (e) { console.error("Coupons fetch failed", e); }
 
-                // 4. Loyalty Settings
+                // 4. Settings (Loyalty & Bill Series)
                 try {
-                    const settingsData = await fetchWithAuth('/settings/loyalty');
-                    if (settingsData.success) {
-                        setLoyaltySettings(settingsData.data.loyalty);
-                        setLoyaltyEnabled(settingsData.data.loyalty.enabled);
+                    const settingsData = await fetchWithAuth('/settings');
+                    if (settingsData.success && settingsData.data) {
+                        if (settingsData.data.loyalty) {
+                            setLoyaltySettings(settingsData.data.loyalty);
+                            setLoyaltyEnabled(settingsData.data.loyalty.enabled);
+                        }
+                        if (settingsData.data.billSeries) {
+                            setBillSeriesSettings(settingsData.data.billSeries);
+                        }
                     }
-                } catch (e) { console.error("Loyalty settings fetch failed", e); }
+                } catch (e) { console.error("Settings fetch failed", e); }
 
                 // 5. Counters
                 try {
@@ -514,7 +566,9 @@ const BillingPage = () => {
                     }
                 }
             }
-
+            if (location.state.actionTrigger) {
+                setPendingAutoAction(location.state.actionTrigger);
+            }
             // Clear state so refresh doesn't re-apply
             window.history.replaceState({}, document.title);
         } else if (location.state && location.state.orderMode) {
@@ -529,6 +583,21 @@ const BillingPage = () => {
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
+
+    // Handle Auto Actions from TableSelectionPage
+    useEffect(() => {
+        if (pendingAutoAction && !loading && !isRestoringTableBill.current && currentBillId) {
+            const timer = setTimeout(() => {
+                if (pendingAutoAction === 'TENTATIVE_VIEW') {
+                    handleOrderAction('SAVE');
+                } else if (pendingAutoAction === 'FINALIZE') {
+                    toggleExpandableForm('PAYMODE');
+                }
+                setPendingAutoAction(null);
+            }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [pendingAutoAction, loading, currentBillId]);
 
     // Helper: update live amount on table whenever items change
     const updateTableLiveAmount = async (tableId, amount) => {
@@ -682,12 +751,46 @@ const BillingPage = () => {
         }
     };
 
-    const addToBill = async (product, selectedVariation = null) => {
+    const addToBill = async (productOrId, selectedVariation = null, selectedAddons = [], skipNext = false) => {
+        let product = productOrId;
+        
+        // If only ID passed, or it's just the shallow product from the list, 
+        // fetch full details to ensure we have current variants and addons
+        if (typeof productOrId === 'string' || (!selectedVariation && selectedAddons.length === 0)) {
+            try {
+                const id = typeof productOrId === 'string' ? productOrId : productOrId._id;
+                const savedUser = localStorage.getItem('user');
+                const { token } = JSON.parse(savedUser);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/products/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await res.json();
+                if (result.success) {
+                    product = result.data;
+                }
+            } catch (err) {
+                console.error("Failed to fetch product details for selection", err);
+                // Continue with the shallow product if fetch fails
+            }
+        }
+
         // If product has variations and none selected yet, show selection modal
-        if (product.variations?.length > 0 && !selectedVariation) {
+        if (product.variations?.length > 0 && !selectedVariation && !skipNext) {
             setVariationModalProduct(product);
             return;
         }
+
+        // If product has addons and hasn't been through the addon modal yet
+        if (product.addons?.length > 0 && selectedAddons.length === 0 && !addonModalProduct && !skipNext) {
+            setTempVariation(selectedVariation);
+            setAddonModalProduct(product);
+            setVariationModalProduct(null); // Clear variants modal if moving to addons
+            return;
+        }
+        
+        // Special case: if skipNext was true, we might have arrived here from a specific badge click.
+        // If we want ONLY variants, we'd call with skipNext=true but selectedVariation=null initially? No.
+        // Let's refine the badge triggers.
 
         // Fix: Automatically try to create a bill if one is missing (e.g. initial load failed)
         let activeId = currentBillId;
@@ -703,8 +806,18 @@ const BillingPage = () => {
             }
         }
 
-        const itemName = selectedVariation ? `${product.name} - ${selectedVariation.name}` : product.name;
-        const itemUnitPrice = selectedVariation ? (product.selling_price + selectedVariation.amount) : product.selling_price;
+        let itemName = selectedVariation ? `${product.name} - ${selectedVariation.name}` : product.name;
+        let basePrice = parseFloat(product.selling_price) || 0;
+        let variationPrice = selectedVariation ? (parseFloat(selectedVariation.amount) || 0) : 0;
+        let itemUnitPrice = basePrice + variationPrice;
+
+        // Add addon details to name and price if they exist
+        if (selectedAddons.length > 0) {
+            const addonNames = selectedAddons.map(a => a.name).join(', ');
+            itemName += ` (${addonNames})`;
+            const addonTotal = selectedAddons.reduce((sum, a) => sum + (parseFloat(a.rate) || 0), 0);
+            itemUnitPrice += addonTotal;
+        }
 
         const existingItem = billItems.find(item => item.product_id === product._id && item.name === itemName);
         if (existingItem) {
@@ -727,11 +840,19 @@ const BillingPage = () => {
                 await fetch(`${import.meta.env.VITE_API_URL}/bills/${activeId}/items`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ product_id: product._id, quantity: 1, variation: selectedVariation })
+                    body: JSON.stringify({ 
+                        product_id: product._id, 
+                        quantity: 1, 
+                        variation: selectedVariation,
+                        addons: selectedAddons 
+                    })
                 });
             } catch (e) { console.error(e); }
 
             setVariationModalProduct(null);
+            setAddonModalProduct(null);
+            setTempSelectedAddons([]);
+            setTempVariation(null);
             return;
         }
 
@@ -741,7 +862,9 @@ const BillingPage = () => {
             category: product.category || '',
             quantity: 1,
             unit_price: itemUnitPrice,
-            total_price: itemUnitPrice
+            total_price: itemUnitPrice,
+            variation: selectedVariation,
+            addons: selectedAddons
         }];
         setBillItems(newItems);
 
@@ -760,12 +883,20 @@ const BillingPage = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ product_id: product._id, quantity: 1, variation: selectedVariation })
+                body: JSON.stringify({ 
+                    product_id: product._id, 
+                    quantity: 1, 
+                    variation: selectedVariation,
+                    addons: selectedAddons
+                })
             });
         } catch (error) {
             console.error("Add item failed", error);
         }
         setVariationModalProduct(null);
+        setAddonModalProduct(null);
+        setTempSelectedAddons([]);
+        setTempVariation(null);
     };
 
     const removeFromBill = async (index) => {
@@ -819,7 +950,7 @@ const BillingPage = () => {
         setCheckoutActive(true);
     };
 
-    const handlePaymentSubmit = async (paymentModes, tipAmount = 0, isPartial = false) => {
+    const handlePaymentSubmit = async (paymentModes, tipAmount = 0, isPartial = false, vesselAmount = 0, options = {}) => {
         setPaymentLoading(true);
         try {
             const savedUser = localStorage.getItem('user');
@@ -839,9 +970,10 @@ const BillingPage = () => {
                     container_charge: containerCharge,
                     round_off: roundOff,
                     tip_amount: tipAmount,
-                    grand_total: grandTotal + tipAmount,
-                    customer_name: customerName,
-                    customer_phone: customerPhone,
+                    vessel_amount: vesselAmount,
+                    grand_total: grandTotal + tipAmount + vesselAmount,
+                    customer_name: customerName || partyData?.customer_name,
+                    customer_phone: customerPhone || partyData?.customer_phone,
                     customer_address: customerAddress || partyData?.customer_address,
                     delivery_date: partyData?.delivery_date,
                     delivery_time: partyData?.delivery_time,
@@ -851,8 +983,9 @@ const BillingPage = () => {
                     captain_name: captainName,
                     waiter_name: waiterName,
                     type: orderMode,
-                    is_partial: isPartial,
-                    redeem_loyalty_points: loyaltyRedeemedPoints
+                    is_partial: (grandTotal > paymentModes.reduce((s,p)=>s+(parseFloat(p.amount)||0),0) + 0.01),
+                    redeem_loyalty_points: loyaltyRedeemedPoints,
+                    bill_number: billNumber
                 })
             });
             const data = await res.json();
@@ -863,6 +996,8 @@ const BillingPage = () => {
                 setLastBillId(currentBillId);
                 setLastPaymentModes(paymentModes);
                 setShowBillPreview(true);
+                
+                // Reset state
                 setTableNo("");
                 setPersons("");
                 setSelectedTableId("");
@@ -874,9 +1009,15 @@ const BillingPage = () => {
                 setDeliveryCharge(0);
                 setContainerCharge(0);
                 setBillItems([]);
+                setPreviousItems([]);
                 setStepProceeded(false);
                 setCheckoutActive(false);
                 setPromoCode('');
+                setLoyaltyRedeemedPoints(0);
+                
+                // If options.shouldPrint is TRUE, you could trigger auto-print here
+                // if the modal supports it, but for now showing preview is the standard.
+                
                 createNewBill();
             } else {
                 alert(data.message || "Payment failed");
@@ -919,16 +1060,27 @@ const BillingPage = () => {
                     table_no: tableNo,
                     persons: persons,
                     order_mode: orderMode,
-                    customer_name: customerName,
-                    customer_phone: customerPhone,
+                    type: orderMode,
+                    customer_name: customerName || partyData?.customer_name,
+                    customer_phone: customerPhone || partyData?.customer_phone,
+                    customer_address: customerAddress || partyData?.customer_address,
+                    delivery_date: partyData?.delivery_date,
+                    delivery_time: partyData?.delivery_time,
+                    vessel_amount: partyData?.vessel_amount || 0,
+                    status: (type === 'SAVE' || type === 'PRINT') ? 'OPEN' : undefined,
                     captain_name: captainName,
                     waiter_name: waiterName,
-                    redeem_loyalty_points: loyaltyRedeemedPoints
+                    redeem_loyalty_points: loyaltyRedeemedPoints,
+                    bill_number: billNumber
                 })
             });
             const data = await res.json();
             if (data.success) {
                 if (type === 'KOT') {
+                    if (data.bill && data.bill.kots) {
+                        const newKot = data.bill.kots[data.bill.kots.length - 1];
+                        handleKOTPrint(newKot);
+                    }
                     if (selectedTableId) {
                         updateTableLiveAmount(selectedTableId, grandTotal);
                         try {
@@ -985,7 +1137,10 @@ const BillingPage = () => {
         if (!kotData || !kotData.items || kotData.items.length === 0) return;
         const rowsHtml = kotData.items.map(item => `
             <tr>
-                <td class="item-name">${item.name}</td>
+                <td class="item-name">
+                    ${item.name}
+                    ${item.notes ? `<div style="font-size:11px; font-style:italic; color:#000; margin-top:2px;">[Note: ${item.notes}]</div>` : ''}
+                </td>
                 <td class="item-qty">x${item.quantity}</td>
             </tr>
         `).join('');
@@ -1331,6 +1486,31 @@ const BillingPage = () => {
         alert("System notifications: Backend connected successfully.");
     };
 
+    const fetchPartyOrders = async (date = partyMgtDate) => {
+        try {
+            const { token } = JSON.parse(localStorage.getItem('user'));
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/bills?type=PARTY_ORDER&delivery_date=${date}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setPartyOrders(data.data);
+            }
+        } catch (e) { console.error("Party orders fetch failed", e); }
+    };
+
+    const handleModeChange = (newMode) => {
+        if (newMode === 'PARTY_ORDER') {
+            fetchBookedDates();
+            setShowPartyBookingModal(true);
+        } else {
+            setOrderMode(newMode);
+            setPartyData(null);
+            setTableNo('');
+            setSelectedTableId('');
+        }
+    };
+
     const resetForm = () => {
         setTableNo("");
         setPersons("");
@@ -1551,7 +1731,18 @@ const BillingPage = () => {
                         {showBillNumber && (
                             <div className="bill-no-badge animate-in fade-in zoom-in duration-300">
                                 <span className="label">BILL NO:</span>
-                                <span className="number">{billNumber}</span>
+                                {isManualNumbering && (!currentBillId || billNumber.startsWith('TEMP-') || currentBillId) ? (
+                                    <input 
+                                        type="text" 
+                                        className="number" 
+                                        style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px dashed rgba(255,255,255,0.5)', outline: 'none', width: '130px', padding: '2px 8px', borderRadius: '4px', textAlign: 'center', fontWeight: '900' }}
+                                        value={billNumber.startsWith('TEMP-') ? '' : billNumber}
+                                        onChange={(e) => setBillNumber(e.target.value)}
+                                        placeholder="Enter Bill No"
+                                    />
+                                ) : (
+                                    <span className="number">{billNumber}</span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -1576,6 +1767,9 @@ const BillingPage = () => {
                         </button>
                         <button type="button" className={`nav-action-btn ${heldBills.length > 0 ? 'has-items' : ''}`} onClick={() => navigate('/dashboard/self-service/hold')} title="Manage held transactions">
                             HOLD {heldBills.length > 0 && <span className="hold-badge">{heldBills.length}</span>}
+                        </button>
+                        <button type="button" className={`nav-action-btn ${showPartyManagement ? 'active' : ''}`} onClick={() => { fetchPartyOrders(); setShowPartyManagement(!showPartyManagement); }} title="Manage Party Bookings">
+                            PARTY MGT
                         </button>
                         <button type="button" className="nav-action-btn" onClick={handleNotificationClick} title="System Alerts">
                             NOTIFICATION
@@ -1764,12 +1958,12 @@ const BillingPage = () => {
                             { id: 'DINE_IN', label: 'Dine In', icon: <TableLogo size={16} /> },
                             { id: 'PARCEL', label: 'Parcel', icon: <Package size={16} /> },
                             { id: 'DELIVERY', label: 'Delivery', icon: <Truck size={16} /> },
-                            { id: 'PARTY', label: 'Party', icon: <Gift size={16} /> }
+                            { id: 'PARTY_ORDER', label: 'Party', icon: <Gift size={16} /> }
                         ].map(mode => (
                             <button
                                 key={mode.id}
                                 className={`mode-pill ${orderMode === mode.id ? 'active' : ''}`}
-                                onClick={() => setOrderMode(mode.id)}
+                                onClick={() => handleModeChange(mode.id)}
                             >
                                 {mode.icon}
                                 <span>{mode.label}</span>
@@ -1863,8 +2057,26 @@ const BillingPage = () => {
                                 >
                                     <div className="p-image-container">
                                         {product.variations?.length > 0 && (
-                                            <div className="absolute top-2 right-2 z-10 bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg border border-white/20 uppercase tracking-tighter">
-                                                <Layers size={10} className="inline mr-1" /> Multi-Size
+                                            <div 
+                                                className="absolute top-2 right-2 z-10 bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg border border-white/20 uppercase tracking-tighter cursor-pointer hover:bg-white hover:text-indigo-600 transition-all active:scale-95"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setVariationModalProduct(product);
+                                                }}
+                                            >
+                                                <Layers size={10} className="inline mr-1" /> VARIANTS
+                                            </div>
+                                        )}
+                                        {product.addons?.length > 0 && (
+                                            <div 
+                                                className="absolute top-7 right-2 z-10 bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg border border-white/20 uppercase tracking-tighter cursor-pointer hover:bg-white hover:text-emerald-600 transition-all active:scale-95"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setAddonModalProduct(product);
+                                                    setVariationModalProduct(null); // Ensure variants modal is closed
+                                                }}
+                                            >
+                                                <Plus size={10} className="inline mr-1" /> ADD ON
                                             </div>
                                         )}
                                         {product.image ? (
@@ -2242,16 +2454,59 @@ const BillingPage = () => {
                     {/* Scrollable area: items list + scrollable summary details */}
                     <div className="bill-scroll-area">
                         <div className={`order-items-list ${isOrderListCollapsed ? 'hidden' : ''}`}>
-                            {billItems.length === 0 ? (
+                            {billItems.length === 0 && previousItems.length === 0 ? (
                                 <div className="empty-cart">
                                     <ShoppingBag size={48} />
                                     <p>Order is empty</p>
                                 </div>
-                            ) : billItems.map((item, idx) => (
-                                <div key={idx} className={`order-item-row ${showRateColumn ? 'with-rate' : 'no-rate'} ${item.is_complementary ? 'complementary' : ''}`}>
-                                    <div className="item-name-cell">
-                                        <div className="item-name-wrap">
+                            ) : (
+                                <>
+                                    {/* PREVIOUS ITEMS (Already in KOT) */}
+                                    {previousItems.map((item, prevIdx) => (
+                                        <div key={`prev-${prevIdx}`} className={`order-item-row ${showRateColumn ? 'with-rate' : 'no-rate'} ${item.is_complementary ? 'complementary' : ''}`} style={{ opacity: 0.85, background: '#f8fafc', borderLeft: '3px solid #cbd5e1' }}>
+                                            <div className="item-name-cell">
+                                                <div className="item-name-wrap">
+                                                    <span style={{ color: '#475569' }}>{item.name}</span>
+                                                    {item.notes && (
+                                                        <div className="text-[10px] text-emerald-600 font-bold italic mt-0.5">
+                                                            * {item.notes}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="item-qty-cell" style={{ justifyContent: 'center' }}>
+                                                <span style={{ fontWeight: 800, color: '#334155' }}>{item.quantity}</span>
+                                                <span style={{ fontSize: '9px', backgroundColor: '#e2e8f0', color: '#64748b', padding: '2px 4px', borderRadius: '4px', marginLeft: '6px', fontWeight: 900 }}>KOT</span>
+                                            </div>
+                                            {showRateColumn && (
+                                                <div className="item-rate">
+                                                    {item.is_complementary ? 0 : item.unit_price}
+                                                </div>
+                                            )}
+                                            <div className="item-amt">{item.is_complementary ? 0 : item.total_price}</div>
+                                            <div className="item-actions-cell" style={{ justifyContent: 'center' }}>
+                                                <CheckCircle2 size={16} color="#64748b" opacity={0.5} />
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* NEW ITEMS (Unsaved KOT) */}
+                                    {billItems.map((item, idx) => (
+                                        <div key={idx} className={`order-item-row ${showRateColumn ? 'with-rate' : 'no-rate'} ${item.is_complementary ? 'complementary' : ''}`}>
+                                            <div className="item-name-cell">
+                                        <div 
+                                            className="item-name-wrap cursor-pointer hover:text-indigo-600 transition-colors"
+                                            onClick={() => {
+                                                setNoteModalIdx(idx);
+                                                setTempNote(item.notes || '');
+                                            }}
+                                        >
                                             <span>{item.name}</span>
+                                            {item.notes && (
+                                                <div className="text-[10px] text-emerald-600 font-bold italic mt-0.5 animate-in fade-in slide-in-from-left-1">
+                                                    * {item.notes}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="item-qty-cell">
@@ -2291,6 +2546,17 @@ const BillingPage = () => {
                                             <div className="extra-actions-layer">
                                                 <button className="row-action-btn" onClick={() => handleTransferItem(idx)} title="Transfer Item"><ArrowLeftRight size={14} /></button>
                                                 <button className="row-action-btn" onClick={() => handleReturnItem(idx)} title="Return Item"><Undo2 size={14} /></button>
+                                                <button 
+                                                    className="row-action-btn" 
+                                                    onClick={() => {
+                                                        setNoteModalIdx(idx);
+                                                        setTempNote(item.notes || '');
+                                                        setActiveItemActions(null);
+                                                    }} 
+                                                    title="Add Notes/Instructions"
+                                                >
+                                                    <Edit size={14} />
+                                                </button>
                                                 <button
                                                     className={`comp-toggle-sm ${item.is_complementary ? 'active' : ''}`}
                                                     onClick={() => toggleComplementary(idx)}
@@ -2310,6 +2576,7 @@ const BillingPage = () => {
                                     </div>
                                 </div>
                             ))}
+                        </>)}
                         </div>
 
                         {/* Scrollable Summary Section */}
@@ -2361,9 +2628,18 @@ const BillingPage = () => {
                                             </div>
 
                                             <div className="sum-detail-row">
-                                                <label>Tax ({gstPercentage}%)</label>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    Tax ({gstPercentage}%)
+                                                    <select 
+                                                        value={taxType} 
+                                                        onChange={e => setTaxType(e.target.value)}
+                                                        style={{ border: 'none', background: '#f1f5f9', fontSize: '9px', padding: '2px 4px', borderRadius: '4px', maxWidth: '80px', color: '#64748b', fontWeight: 'bold', outline: 'none', appearance: 'none', textAlign: 'center', cursor: 'pointer' }}>
+                                                        <option value="EXCLUSIVE">Exclusive</option>
+                                                        <option value="INCLUSIVE">Inclusive</option>
+                                                    </select>
+                                                </label>
                                                 <div className="empty-input"></div>
-                                                <span className="calc-val">+ ₹{taxAmount.toFixed(2)}</span>
+                                                <span className="calc-val">{taxType === 'EXCLUSIVE' ? '+' : '(Inc)'} ₹{taxAmount.toFixed(2)}</span>
                                             </div>
 
                                             {loyaltyRedeemedPoints > 0 && (
@@ -2547,7 +2823,7 @@ const BillingPage = () => {
                             <button type="button" className="action-btn save-bill" onClick={() => handleOrderAction('SAVE')} title="Save draft bill">
                                 <Save size={18} /> SAVE
                             </button>
-                            <button type="button" className="action-btn print-bill" onClick={() => handleOrderAction('PRINT')} title="Save and print final bill">
+                            <button type="button" className="action-btn print-bill" onClick={() => !stepProceeded ? toggleExpandableForm('PAYMODE') : handleOrderAction('PRINT')} title="Save and print final bill">
                                 <Printer size={18} /> SAVE & PRINT
                             </button>
                             <button type="button" className="action-btn kot-print" onClick={() => handleOrderAction('KOT')} title="Send KOT to kitchen">
@@ -2567,7 +2843,7 @@ const BillingPage = () => {
                         <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 animate-in zoom-in duration-200">
                             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select Size / Type</h3>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select VARIANTS</h3>
                                     <p className="text-xs text-indigo-600 font-black uppercase tracking-widest mt-1.5 flex items-center gap-2">
                                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
                                         {variationModalProduct.name}
@@ -2582,12 +2858,12 @@ const BillingPage = () => {
                                 {(variationModalProduct.variations || []).map((v, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => addToBill(variationModalProduct, v)}
+                                        onClick={() => addToBill(variationModalProduct, v, [], true)}
                                         className="w-full flex items-center justify-between p-5 border-2 border-slate-100 rounded-2xl hover:border-indigo-600 hover:bg-indigo-50/50 transition-all group hover:shadow-lg hover:shadow-indigo-500/10"
                                     >
                                         <div className="text-left">
                                             <div className="font-black text-lg text-slate-800 group-hover:text-indigo-700 tracking-tight">{v.name}</div>
-                                            <div className="text-[10px] text-slate-400 font-black uppercase tracking-wider mt-1.5">Variation Price</div>
+                                            <div className="text-[10px] text-slate-400 font-black uppercase tracking-wider mt-1.5">Variant Price</div>
                                         </div>
                                         <div className="flex flex-col items-end">
                                             <div className="text-2xl font-black text-indigo-600 tracking-tighter">
@@ -2607,6 +2883,72 @@ const BillingPage = () => {
                     </div>
                 )}
 
+                {addonModalProduct && (
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 animate-in zoom-in duration-200">
+                            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Choice of ADD ON</h3>
+                                    <p className="text-xs text-emerald-600 font-black uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                                        {addonModalProduct.name} {tempVariation ? `(${tempVariation.name})` : ''}
+                                    </p>
+                                </div>
+                                <button onClick={() => { setAddonModalProduct(null); setTempSelectedAddons([]); setTempVariation(null); }} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                                    <X size={24} className="text-slate-400" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto">
+                                {(addonModalProduct.addons || []).map((addon, i) => {
+                                    const isSelected = tempSelectedAddons.some(a => a.name === addon.name);
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setTempSelectedAddons(tempSelectedAddons.filter(a => a.name !== addon.name));
+                                                } else {
+                                                    setTempSelectedAddons([...tempSelectedAddons, addon]);
+                                                }
+                                            }}
+                                            className={`w-full flex items-center justify-between p-4 border-2 rounded-2xl transition-all group ${isSelected ? 'border-emerald-600 bg-emerald-50' : 'border-slate-100 hover:border-emerald-200 hover:bg-slate-50'}`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-slate-200'}`}>
+                                                    {isSelected && <Check size={14} className="text-white" />}
+                                                </div>
+                                                <div className="text-left">
+                                                    <div className={`font-black text-base tracking-tight ${isSelected ? 'text-emerald-900' : 'text-slate-800'}`}>{addon.name}</div>
+                                                    <div className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Extra Sub-Asset</div>
+                                                </div>
+                                            </div>
+                                            <div className={`text-xl font-black tracking-tighter ${isSelected ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                                +₹{addon.rate}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="p-6 bg-slate-50 flex flex-col gap-4 border-t border-slate-100">
+                                <button 
+                                    onClick={() => addToBill(addonModalProduct, tempVariation, tempSelectedAddons, true)}
+                                    className="w-full bg-slate-900 text-white rounded-2xl py-4 font-black text-sm uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3"
+                                >
+                                    <Plus size={18} /> Confirm & Add {tempSelectedAddons.length > 0 && `(+₹${tempSelectedAddons.reduce((s,a) => s + a.rate, 0)})`}
+                                </button>
+                                <button 
+                                    onClick={() => addToBill(addonModalProduct, tempVariation, [], true)}
+                                    className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors"
+                                >
+                                    No Thanks, Skip Extras
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {showBillPreview && (
                     <BillPreviewModal
                         isOpen={showBillPreview}
@@ -2614,6 +2956,444 @@ const BillingPage = () => {
                         billId={lastBillId}
                         paymentModes={lastPaymentModes}
                     />
+                )}
+                {noteModalIdx !== null && (
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden border border-white/20 animate-in zoom-in duration-200">
+                            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Custom Instruction</h3>
+                                    <p className="text-xs text-indigo-600 font-black uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                                        {billItems[noteModalIdx]?.name}
+                                    </p>
+                                </div>
+                                <button onClick={() => setNoteModalIdx(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                                    <X size={24} className="text-slate-400" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes (e.g. Spicy, Less Oil)</label>
+                                    <textarea
+                                        autoFocus
+                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 focus:border-indigo-600 focus:bg-white transition-all outline-none"
+                                        rows="3"
+                                        placeholder="Add specific instructions for the chef..."
+                                        value={tempNote}
+                                        onChange={(e) => setTempNote(e.target.value)}
+                                    ></textarea>
+                                </div>
+                                
+                                <div className="flex gap-2 p-1 overflow-x-auto pb-2 scrollbar-none">
+                                    {['Spicy', 'Less Oil', 'Sugar Free', 'Creamy', 'No Onions', 'Extra Hot'].map(suggest => (
+                                        <button 
+                                            key={suggest}
+                                            onClick={() => setTempNote(suggest)}
+                                            className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-[10px] font-black text-slate-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all"
+                                        >
+                                            {suggest}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="p-6 bg-slate-50 flex gap-4 border-t border-slate-100">
+                                <button 
+                                    onClick={() => setNoteModalIdx(null)}
+                                    className="flex-1 px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-slate-400 bg-white border border-slate-200 hover:bg-slate-100 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={async () => {
+                                        const newItems = [...billItems];
+                                        newItems[noteModalIdx].notes = tempNote;
+                                        setBillItems(newItems);
+                                        
+                                        // Update in backend if active bill exists
+                                        if (currentBillId && !billNumber.startsWith('TEMP-')) {
+                                            try {
+                                                const savedUser = localStorage.getItem('user');
+                                                const { token } = JSON.parse(savedUser);
+                                                await fetch(`${import.meta.env.VITE_API_URL}/bills/${currentBillId}`, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                                    body: JSON.stringify({ items: newItems })
+                                                });
+                                            } catch (e) { console.error("Notes save failed", e); }
+                                        }
+                                        
+                                        setNoteModalIdx(null);
+                                    }}
+                                    className="flex-1 bg-indigo-600 text-white rounded-2xl py-4 font-black text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 flex items-center justify-center gap-2"
+                                >
+                                    Save Note
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* ── PARTY BOOKING MODAL ── */}
+                {showPartyBookingModal && (
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[2000] flex items-center justify-center p-4 overflow-y-auto">
+                        <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden border border-white/20 animate-in zoom-in duration-300">
+                            <div className="flex flex-col md:flex-row h-full">
+                                {/* Left Side: Calendar and Date/Time */}
+                                <div className="flex-1 p-8 bg-slate-50 border-r border-slate-100">
+                                    <div className="flex justify-between items-center mb-8">
+                                        <div>
+                                            <h3 className="text-2xl font-black text-slate-800 tracking-tight">Party Date & Time</h3>
+                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Select delivery schedule</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setCurrentCalDate(new Date(currentCalDate.getFullYear(), currentCalDate.getMonth() - 1))} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm"><ChevronLeft size={20} /></button>
+                                            <button onClick={() => setCurrentCalDate(new Date(currentCalDate.getFullYear(), currentCalDate.getMonth() + 1))} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm"><ChevronRight size={20} /></button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-7 gap-1 mb-8">
+                                        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+                                            <div key={d} className="text-center text-[10px] font-black text-slate-300 tracking-widest pb-4">{d}</div>
+                                        ))}
+                                        {(() => {
+                                            const days = [];
+                                            const first = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth(), 1);
+                                            const last = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth() + 1, 0);
+                                            const startPadding = first.getDay();
+                                            const today = new Date();
+                                            today.setHours(0,0,0,0);
+
+                                            for (let i = 0; i < startPadding; i++) days.push(<div key={`p-${i}`} />);
+
+                                            for (let d = 1; d <= last.getDate(); d++) {
+                                                const dateObj = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth(), d);
+                                                const dateStr = dateObj.toISOString().split('T')[0];
+                                                const isPast = dateObj < today;
+                                                const isBooked = bookedDates.includes(dateStr);
+                                                const isSelected = tempPartyBooking.date === dateStr;
+
+                                                days.push(
+                                                    <button
+                                                        key={d}
+                                                        disabled={isPast}
+                                                        onClick={() => setTempPartyBooking(p => ({ ...p, date: dateStr }))}
+                                                        style={{
+                                                            padding: '12px 2px',
+                                                            borderRadius: '16px',
+                                                            fontSize: '14px',
+                                                            fontWeight: 900,
+                                                            transition: 'all 0.2s',
+                                                            background: isSelected ? '#ea580c' : (isBooked ? '#ef4444' : (isPast ? 'transparent' : '#fff')),
+                                                            color: isSelected ? '#fff' : (isBooked ? '#fff' : (isPast ? '#cbd5e1' : '#1e293b')),
+                                                            border: isPast ? 'none' : '1px solid #f1f5f9',
+                                                            opacity: isPast ? 0.3 : 1
+                                                        }}
+                                                        className={`relative ${isSelected ? 'shadow-lg shadow-orange-500/30' : (isBooked ? 'shadow-md shadow-red-500/20' : 'hover:border-orange-200 hover:shadow-sm')}`}
+                                                    >
+                                                        {d}
+                                                        {isBooked && !isSelected && <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                                                    </button>
+                                                );
+                                            }
+                                            return days;
+                                        })()}
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+                                            <div className="flex items-center gap-4 text-slate-800">
+                                                <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl"><Clock size={20} /></div>
+                                                <div>
+                                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Delivery Time</div>
+                                                    <input 
+                                                        type="time" 
+                                                        value={tempPartyBooking.time}
+                                                        onChange={(e) => setTempPartyBooking(p => ({ ...p, time: e.target.value }))}
+                                                        className="font-black text-xl bg-transparent border-none outline-none focus:ring-0 p-0 text-slate-900"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Date</div>
+                                                <div className="text-lg font-black text-slate-800">{tempPartyBooking.date || 'Choose Date'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Side: Next Actions */}
+                                <div className="w-full md:w-[350px] p-8 flex flex-col justify-between">
+                                    <div className="space-y-8">
+                                        <div>
+                                            <h4 className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-4">Confirm <span className="text-orange-600">Booking</span></h4>
+                                            <p className="text-sm text-slate-500 font-bold leading-relaxed">Please select an available date (white) or current date. Booked dates (red) may already have scheduled deliveries.</p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3 text-slate-600 text-xs font-bold bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                                <div className="w-3 h-3 rounded-full bg-white border border-slate-200"></div>
+                                                Available Dates
+                                            </div>
+                                            <div className="flex items-center gap-3 text-red-600 text-xs font-bold bg-red-50 p-3 rounded-2xl border border-red-100">
+                                                <div className="w-3 h-3 rounded-full bg-red-500 shadow-md shadow-red-200"></div>
+                                                Already Booked
+                                            </div>
+                                            <div className="flex items-center gap-3 text-orange-600 text-xs font-bold bg-orange-50 p-3 rounded-2xl border border-orange-100">
+                                                <div className="w-3 h-3 rounded-full bg-orange-600 shadow-md shadow-orange-200"></div>
+                                                Your Selection
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4 pt-12">
+                                        <button 
+                                            disabled={!tempPartyBooking.date}
+                                            onClick={() => setShowPartyCustomerForm(true)}
+                                            className="w-full bg-slate-900 text-white rounded-[1.5rem] py-5 font-black text-sm uppercase tracking-widest hover:bg-orange-600 transition-all shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 disabled:opacity-50"
+                                        >
+                                            CONTINUE <ArrowRight size={18} />
+                                        </button>
+                                        <button onClick={() => setShowPartyBookingModal(false)} className="w-full text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] py-2 hover:text-rose-500 transition-colors">
+                                            CANCEL BOOKING
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── PARTY CUSTOMER FORM ── */}
+                {showPartyCustomerForm && (
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[2100] flex items-center justify-center p-4 overflow-y-auto">
+                        <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-white/20 animate-in slide-in-from-bottom-5 duration-400">
+                            <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <div>
+                                    <h3 className="text-3xl font-black text-slate-800 tracking-tight">Customer <span className="text-orange-600">Details</span></h3>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
+                                        FOR PARTY ON {new Date(tempPartyBooking.date).toLocaleDateString()} AT {tempPartyBooking.time}
+                                    </p>
+                                </div>
+                                <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 text-orange-600">
+                                    <User size={24} />
+                                </div>
+                            </div>
+
+                            <div className="p-10 space-y-8">
+                                <div className="grid grid-cols-1 gap-8">
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                                        <div className="relative group">
+                                            <input 
+                                                type="text" 
+                                                autoFocus
+                                                value={partyData?.customer_name || ''}
+                                                onChange={(e) => setPartyData(p => ({ ...p, customer_name: e.target.value }))}
+                                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 pl-12 text-sm font-black text-slate-800 focus:border-orange-600 focus:bg-white transition-all outline-none"
+                                                placeholder="e.g. John Doe"
+                                            />
+                                            <User size={18} className="absolute left-4 top-4 text-slate-300 group-focus-within:text-orange-600 transition-colors" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
+                                        <div className="relative group">
+                                            <input 
+                                                type="text" 
+                                                value={partyData?.customer_phone || ''}
+                                                onChange={(e) => setPartyData(p => ({ ...p, customer_phone: e.target.value }))}
+                                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 pl-12 text-sm font-black text-slate-800 focus:border-orange-600 focus:bg-white transition-all outline-none"
+                                                placeholder="10-digit mobile number"
+                                            />
+                                            <Smartphone size={18} className="absolute left-4 top-4 text-slate-300 group-focus-within:text-orange-600 transition-colors" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Delivery Location</label>
+                                        <div className="relative group">
+                                            <textarea 
+                                                rows="2"
+                                                value={partyData?.customer_address || ''}
+                                                onChange={(e) => setPartyData(p => ({ ...p, customer_address: e.target.value }))}
+                                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 pl-12 text-sm font-black text-slate-800 focus:border-orange-600 focus:bg-white transition-all outline-none"
+                                                placeholder="Complete delivery address..."
+                                            />
+                                            <MapPin size={18} className="absolute left-4 top-4 text-slate-300 group-focus-within:text-orange-600 transition-colors" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 pt-4">
+                                    <button 
+                                        onClick={() => setShowPartyCustomerForm(false)}
+                                        className="flex-1 px-8 py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest text-slate-400 bg-white border border-slate-200 hover:bg-slate-50 transition-all"
+                                    >
+                                        BACK
+                                    </button>
+                                    <button 
+                                        disabled={!partyData?.customer_name || !partyData?.customer_phone}
+                                        onClick={() => {
+                                            setPartyData(p => ({ 
+                                                ...p, 
+                                                delivery_date: tempPartyBooking.date, 
+                                                delivery_time: tempPartyBooking.time 
+                                            }));
+                                            setOrderMode('PARTY_ORDER');
+                                            setShowPartyCustomerForm(false);
+                                            setShowPartyBookingModal(false);
+                                        }}
+                                        className="flex-2 bg-orange-600 text-white rounded-[1.5rem] py-5 font-black text-sm uppercase tracking-widest hover:bg-slate-900 transition-all shadow-2xl shadow-orange-200 flex items-center justify-center gap-3 disabled:opacity-50"
+                                        style={{ flex: 2 }}
+                                    >
+                                        SAVE & CONTINUE <Plus size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* ── PARTY MANAGEMENT DASHBOARD (KDS) ── */}
+                {showPartyManagement && (
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[2500] flex items-center justify-center p-4">
+                        <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-[95vw] h-[90vh] overflow-hidden border border-white/20 animate-in slide-in-from-bottom-10 duration-500 flex flex-col">
+                            {/* Header */}
+                            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <div className="flex items-center gap-6">
+                                    <div className="p-4 bg-orange-600 text-white rounded-[1.5rem] shadow-lg shadow-orange-200">
+                                        <ClipboardList size={28} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-3xl font-black text-slate-800 tracking-tighter">Party Order Management</h2>
+                                        <div className="flex items-center gap-4 mt-1.5">
+                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse"></span>
+                                                KITCHEN PRODUCTION DISPLAY
+                                            </p>
+                                            <div className="h-3 w-[1px] bg-slate-200" />
+                                            <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">
+                                                <Calendar size={12} className="text-orange-600" />
+                                                <input 
+                                                    type="date" 
+                                                    value={partyMgtDate}
+                                                    onChange={(e) => { setPartyMgtDate(e.target.value); fetchPartyOrders(e.target.value); }}
+                                                    className="text-[11px] font-black text-slate-700 bg-transparent border-none outline-none p-0 w-24"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowPartyManagement(false)} className="p-4 hover:bg-rose-50 hover:text-rose-600 text-slate-400 rounded-full transition-all group">
+                                    <X size={32} className="group-hover:rotate-90 transition-transform duration-300" />
+                                </button>
+                            </div>
+
+                            {/* Main Grid */}
+                            <div className="flex-1 flex overflow-hidden">
+                                {/* Left Side: Aggregated Production View */}
+                                <div className="w-[350px] border-r border-slate-100 bg-slate-50/30 p-8 flex flex-col">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em]">Production View</h4>
+                                        <div className="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full">TOTAL ITEMS</div>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-premium">
+                                        {(() => {
+                                            const totalItems = {};
+                                            partyOrders.forEach(order => {
+                                                order.items.forEach(item => {
+                                                    totalItems[item.name] = (totalItems[item.name] || 0) + item.quantity;
+                                                });
+                                            });
+                                            return Object.entries(totalItems).length > 0 ? Object.entries(totalItems).map(([name, qty]) => (
+                                                <div key={name} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm group hover:border-orange-200 transition-all">
+                                                    <span className="font-black text-slate-800 text-sm tracking-tight">{name}</span>
+                                                    <span className="bg-slate-900 text-white px-3 py-1 rounded-xl text-xs font-black min-w-[45px] text-center shadow-lg group-hover:bg-orange-600 transition-colors">
+                                                        {qty} nos
+                                                    </span>
+                                                </div>
+                                            )) : <div className="text-center py-20 text-slate-300 font-bold italic text-sm">No orders for this date.</div>;
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* Main Area: Orders List */}
+                                <div className="flex-1 p-8 overflow-y-auto scrollbar-premium bg-white">
+                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                                        {partyOrders.map(order => (
+                                            <div key={order._id} className="bg-white rounded-[2rem] border-2 border-slate-50 shadow-xl overflow-hidden hover:border-orange-100 transition-all flex flex-col">
+                                                <div className="p-6 border-b border-slate-50 flex justify-between items-start bg-slate-50/30">
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <h5 className="font-black text-lg text-slate-800 tracking-tight">{order.customer_name}</h5>
+                                                            <div className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${order.status === 'PAID' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>{order.status}</div>
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-400 font-bold flex items-center gap-1.5 mt-1">
+                                                            <Smartphone size={10} /> {order.customer_phone || 'No phone'}
+                                                            <span className="mx-2 text-slate-200">|</span>
+                                                            <Clock size={10} /> {order.delivery_time || '12:00'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-sm font-black text-slate-800 tracking-tighter">₹{(order.grand_total || 0).toFixed(2)}</div>
+                                                        <div className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Total Bill</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-1 p-6 space-y-3">
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {order.items.map((item, i) => (
+                                                            <div key={i} className="flex justify-between items-center text-xs' p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                                                                <span className="font-bold text-slate-700">{item.name}</span>
+                                                                <span className="font-black text-slate-900">x{item.quantity}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-6 bg-slate-50/50 border-t border-slate-50 grid grid-cols-2 gap-4">
+                                                    <div className="bg-white p-3 rounded-2xl border border-slate-100">
+                                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance Due</div>
+                                                        <div className={`text-sm font-black ${order.grand_total - (order.partial_payments?.reduce((s,p)=>s+p.amount,0)||0) > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                                            ₹{(order.grand_total - (order.partial_payments?.reduce((s,p)=>s+p.amount,0)||0) || 0).toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm border-orange-100">
+                                                        <div className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1">Vessel Amt</div>
+                                                        <div className="text-sm font-black text-orange-600">₹{(order.vessel_amount || 0).toFixed(2)}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-6 flex gap-3">
+                                                    <button className="flex-1 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all flex items-center justify-center gap-2">
+                                                        <CheckCircle size={14} /> Ready
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            // Logic for delivery - Collect payment if balance exists
+                                                            const balance = order.grand_total - (order.partial_payments?.reduce((s,p)=>s+p.amount,0)||0);
+                                                            if (balance > 0.01) {
+                                                                // Load this bill into the main screen for payment
+                                                                loadBillForAlter(order, 'PAYMODE');
+                                                                setShowPartyManagement(false);
+                                                            } else {
+                                                                alert("Marking as Delivered...");
+                                                                // Update status to DELIVERED effectively
+                                                            }
+                                                        }}
+                                                        className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+                                                    >
+                                                        <Truck size={14} /> Deliver
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {partyOrders.length === 0 && <div className="col-span-full py-20 text-center text-slate-300 font-bold italic">No bookings found for this selection.</div>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
     );

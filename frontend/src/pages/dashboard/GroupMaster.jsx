@@ -59,7 +59,10 @@ const GroupMaster = () => {
         setError('');
         
         // Auto-assign nature based on selected parent group
-        const groupNature = formData.parent ? getNatureForGroup(formData.parent) : 'ASSETS';
+        const parentGroupObj = groups.find(g => g.name === formData.parent);
+        const groupNature = formData.parent 
+                ? (parentGroupObj?.nature || getNatureForGroup(formData.parent) || 'ASSETS')
+                : 'ASSETS';
         const payload = { ...formData, nature: groupNature };
         try {
             const url = isEditing ? `${API}/ledger-groups/${formData._id}` : `${API}/ledger-groups`;
@@ -312,17 +315,25 @@ const GroupMaster = () => {
                                                 onChange={e => setFormData({ ...formData, parent: e.target.value })}
                                             >
                                                 <option value="" disabled>-- Select Standard Group --</option>
-                                                {Object.entries(STANDARD_GROUPS).map(([nature, groups]) => (
-                                                    <optgroup key={nature} label={`── ${nature} ──`}>
-                                                        {groups.map(g => <option key={g} value={g}>{g}</option>)}
-                                                    </optgroup>
-                                                ))}
-                                                {/* Allow selecting custom primary groups if any exist and aren't standard */}
-                                                {(primaryGroups && primaryGroups.length > 0) && (
-                                                    <optgroup label="── CUSTOM GROUPS ──">
-                                                        {primaryGroups.filter(g => !getNatureForGroup(g.name)).map(g => <option key={g._id} value={g.name}>{g.name}</option>)}
-                                                    </optgroup>
-                                                )}
+                                                {(() => {
+                                                    const grouped = {};
+                                                    Object.entries(STANDARD_GROUPS).forEach(([nat, gList]) => {
+                                                        if (!grouped[nat]) grouped[nat] = new Set();
+                                                        gList.forEach(g => grouped[nat].add(g));
+                                                    });
+                                                    if (groups && groups.length > 0) {
+                                                        groups.forEach(g => {
+                                                            const nat = g.nature || getNatureForGroup(g.name) || 'ASSETS';
+                                                            if (!grouped[nat]) grouped[nat] = new Set();
+                                                            grouped[nat].add(g.name);
+                                                        });
+                                                    }
+                                                    return Object.entries(grouped).map(([nature, gSet]) => (
+                                                        <optgroup key={nature} label={`── ${nature.toUpperCase()} ──`}>
+                                                            {Array.from(gSet).sort().map(g => <option key={g} value={g}>{g}</option>)}
+                                                        </optgroup>
+                                                    ));
+                                                })()}
                                             </select>
                                             <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                         </div>

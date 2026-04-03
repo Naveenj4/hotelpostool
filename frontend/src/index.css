@@ -982,10 +982,11 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 1.75rem 2rem;
+  padding: 1.75rem 2rem 4rem 2rem;
   overflow-y: auto;
   flex: 1;
   height: 0;
+  min-height: 0;
   background: var(--slate-100);
 }
 
@@ -1211,6 +1212,60 @@ a:hover {
   background: #fff;
 }
 
+/* --- Full-Page Form Overlay --- */
+@keyframes fullpageFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fullpage-form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  animation: fullpageFadeSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.fullpage-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.fullpage-form-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem 2.5rem 3rem 2.5rem;
+  background: #f1f5f9;
+}
+
+.fullpage-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -1px 8px rgba(15, 23, 42, 0.06);
+  flex-shrink: 0;
+}
+
 /* --- Form Elements --- */
 .form-group-premium {
   margin-bottom: 1.125rem;
@@ -1259,6 +1314,17 @@ select.input-premium {
   background-repeat: no-repeat;
   background-position: right 0.875rem center;
   padding-right: 2.5rem;
+}
+
+/* --- Typography Premium --- */
+.premium-page-title {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 900;   /* font-black */
+  color: #0f172a;    /* text-slate-900 */
+  text-transform: uppercase;
+  letter-spacing: -0.025em; /* tracking-tight */
+  line-height: 1.25;
+  font-family: inherit;
 }
 
 /* --- Buttons Premium --- */

@@ -1,148 +1,39 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
-import './ReportsPage.css';
-import {
-    TrendingUp,
-    FileText,
-    CreditCard,
-    XCircle,
-    ArrowUpRight,
-    Calendar,
-    BarChart3,
-    PieChart
-} from 'lucide-react';
-import { Skeleton, TableSkeleton } from '@/components/Skeleton';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title,
-    Tooltip,
-    Legend
-} from 'chart.js';
-import { Line, Bar, Pie } from 'react-chartjs-2';
+import ReportNavigationDropdown from '@/components/dashboard/ReportNavigationDropdown';
+import StockPage from './StockPage';
+import GenericSummaryReport from './dashboard/GenericSummaryReport';
 
-// Register Chart.js components
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title,
-    Tooltip,
-    Legend
-);
+// Sales Reports
+import DayWiseSales from './dashboard/DayWiseSales';
+import MonthWiseSales from './dashboard/MonthWiseSales';
+import ItemWiseSales from './dashboard/ItemWiseSales';
+import CategoryWiseSales from './dashboard/CategoryWiseSales';
+import TransactionWiseSales from './dashboard/TransactionWiseSales';
+import SalesProfit from './dashboard/SalesProfit';
+
+// Purchase Reports
+import DayWisePurchase from './dashboard/DayWisePurchase';
+import SupplierWisePurchase from './dashboard/SupplierWisePurchase';
+
+// Outstanding Reports
+import SupplierOutstanding from './dashboard/SupplierOutstanding';
+import CustomerOutstanding from './dashboard/CustomerOutstanding';
+import AccountsReceivable from './dashboard/AccountsReceivable';
+import AccountsPayable from './dashboard/AccountsPayable';
+
+import './ReportsPage.css';
 
 const ReportsPage = () => {
-    const navigate = useNavigate();
+    const location = useLocation();
+    const searchParams = new URLSearchParams(location.search);
+    const category = searchParams.get('category') || 'stock';
+    const filter = searchParams.get('filter') || 'all';
+
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-    const [dailyData, setDailyData] = useState(null);
-    const [weeklyData, setWeeklyData] = useState(null);
-    const [monthlyData, setMonthlyData] = useState(null);
-    const [categoryData, setCategoryData] = useState(null);
-    const [topProducts, setTopProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [dateRange, setDateRange] = useState('7'); // 0 (today), 7, 30, 60, 90
-    const [autoRefresh, setAutoRefresh] = useState(true);
-
-    // Helper function to format local date to YYYY-MM-DD
-    const formatLocalDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    // Helper function to calculate date range
-    const getDateRange = (days) => {
-        const endDate = new Date();
-        const startDate = new Date();
-
-        if (days === '0') {
-            // Today only
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
-        } else {
-            startDate.setDate(startDate.getDate() - parseInt(days));
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
-        }
-
-        return { startDate, endDate };
-    };
-
-    // Fetch all report data
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            const savedUser = localStorage.getItem('user');
-            if (!savedUser) return;
-            const { token } = JSON.parse(savedUser);
-            const headers = { 'Authorization': `Bearer ${token}` };
-
-            // Calculate date range
-            const { startDate, endDate } = getDateRange(dateRange);
-            const startDateStr = formatLocalDate(startDate);
-            const endDateStr = formatLocalDate(endDate);
-
-            const queryParams = `?startDate=${startDateStr}&endDate=${endDateStr}`;
-
-            const [
-                dailyRes,
-                weeklyRes,
-                monthlyRes,
-                categoryRes,
-                topProductsRes
-            ] = await Promise.all([
-                fetch(`${import.meta.env.VITE_API_URL}/reports/daily${queryParams}`, { headers }),
-                fetch(`${import.meta.env.VITE_API_URL}/reports/weekly${queryParams}`, { headers }),
-                fetch(`${import.meta.env.VITE_API_URL}/reports/monthly${queryParams}`, { headers }),
-                fetch(`${import.meta.env.VITE_API_URL}/reports/sales-by-category${queryParams}`, { headers }),
-                fetch(`${import.meta.env.VITE_API_URL}/reports/top-products${queryParams}`, { headers })
-            ]);
-
-            const dailyData = await dailyRes.json();
-            const weeklyData = await weeklyRes.json();
-            const monthlyData = await monthlyRes.json();
-            const categoryData = await categoryRes.json();
-            const topProductsData = await topProductsRes.json();
-
-            if (dailyData.success) setDailyData(dailyData.data);
-            if (weeklyData.success) setWeeklyData(weeklyData.data);
-            if (monthlyData.success) setMonthlyData(monthlyData.data);
-            if (categoryData.success) setCategoryData(categoryData.data);
-            if (topProductsData.success) setTopProducts(topProductsData.data);
-        } catch (err) {
-            console.error("Failed to fetch report data", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Initial fetch and setup auto-refresh
-    useEffect(() => {
-        fetchData();
-    }, [dateRange]);
-
-    // Auto-refresh every 30 seconds if enabled
-    useEffect(() => {
-        if (!autoRefresh) return;
-
-        const interval = setInterval(() => {
-            fetchData();
-        }, 30000); // Refresh every 30 seconds
-
-        return () => clearInterval(interval);
-    }, [autoRefresh, dateRange]);
 
     const toggleSidebar = () => {
         if (window.innerWidth <= 768) {
@@ -154,382 +45,134 @@ const ReportsPage = () => {
         }
     };
 
-    // Chart data configurations
-    const dailySalesData = weeklyData ? {
-        labels: weeklyData.dailyBreakdown.map(day => new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })),
-        datasets: [
-            {
-                label: 'Daily Sales (₹)',
-                data: weeklyData.dailyBreakdown.map(day => day.totalSales),
-                borderColor: '#7ea1c4',
-                backgroundColor: 'rgba(126, 161, 196, 0.1)',
-                tension: 0.4,
-                fill: true
-            }
-        ]
-    } : null;
-
-    const categorySalesData = categoryData ? {
-        labels: categoryData.slice(0, 6).map(cat => cat.category),
-        datasets: [
-            {
-                label: 'Sales (₹)',
-                data: categoryData.slice(0, 6).map(cat => cat.totalSales),
-                backgroundColor: [
-                    'rgba(126, 161, 196, 0.7)',
-                    'rgba(126, 161, 196, 0.7)',
-                    'rgba(16, 185, 129, 0.7)',
-                    'rgba(139, 92, 246, 0.7)',
-                    'rgba(239, 68, 68, 0.7)',
-                    'rgba(245, 158, 11, 0.7)'
-                ],
-                borderColor: [
-                    '#7ea1c4',
-                    '#7ea1c4',
-                    '#10b981',
-                    '#8b5cf6',
-                    '#ef4444',
-                    '#f59e0b'
-                ],
-                borderWidth: 1
-            }
-        ]
-    } : null;
-
-    const paymentModeData = dailyData ? {
-        labels: dailyData.paymentSummary.map(p => p.mode),
-        datasets: [
-            {
-                data: dailyData.paymentSummary.map(p => p.amount),
-                backgroundColor: [
-                    '#10b981',
-                    '#7ea1c4',
-                    '#8b5cf6'
-                ],
-                borderColor: [
-                    '#059669',
-                    '#2563eb',
-                    '#7c3aed'
-                ],
-                borderWidth: 1
-            }
-        ]
-    } : null;
-
-    const chartOptions = {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-            title: {
-                display: false
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
+    const getHeaderTitle = () => {
+        switch(category) {
+            case 'stock': return 'Inventory Master Hub';
+            case 'sales': return 'Sales Summary Hub';
+            case 'purchase': return 'Purchase Audit Hub';
+            case 'outstanding': return 'Financial Outstanding Hub';
+            default: return 'Dynamic Reports Hub';
         }
     };
 
-    const pieOptions = {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'right',
-            }
-        }
-    };
+    const renderActiveReport = () => {
+        // Use a composite key of category and filter to ensure clean remounts.
+        const componentKey = `${category}-${filter}`;
 
-    if (loading) {
-        return (
-            <div className="dashboard-layout">
-                <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
-                {isMobileSidebarOpen && window.innerWidth <= 768 && (
-                    <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
-                )}
-                <main className="dashboard-main">
-                    <Header
-                        toggleSidebar={toggleSidebar}
-                        title="Sales Reports"
-                        actions={
-                            <div className="relative">
-                                <select
-                                    className="input-premium-modern text-xs font-bold appearance-none pr-8 cursor-pointer"
-                                    defaultValue=""
-                                    onChange={(e) => e.target.value && navigate(e.target.value)}
-                                >
-                                    <option value="" disabled>Go to Specific Report...</option>
-                                    <option value="/dashboard/self-service/stock">Stock Master</option>
-                                    <optgroup label="Sales Summary">
-                                        <option value="/dashboard/self-service/reports/sales/day">Day Wise</option>
-                                        <option value="/dashboard/self-service/reports/sales/month">Month Wise</option>
-                                        <option value="/dashboard/self-service/reports/sales/item">Item Wise</option>
-                                        <option value="/dashboard/self-service/reports/sales/category">Category Wise</option>
-                                        <option value="/dashboard/self-service/reports/sales/transaction">Transaction Wise</option>
-                                        <option value="/dashboard/self-service/reports/sales/profit">Sales Profit</option>
-                                    </optgroup>
-                                    <optgroup label="Purchase Summary">
-                                        <option value="/dashboard/self-service/reports/purchase/day">Day Wise</option>
-                                        <option value="/dashboard/self-service/reports/purchase/supplier">Supplier Wise</option>
-                                    </optgroup>
-                                </select>
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    ▼
-                                </span>
-                            </div>
-                        }
+        // ── STOCK ─────────────────────────────────────────────────────────────
+        if (category === 'stock') {
+            if (filter === 'valuation') {
+                return (
+                    <GenericSummaryReport 
+                        key={componentKey} 
+                        isEmbedded={true} 
+                        title="Stock Valuation Report" 
+                        endpoint="/reports/stock-valuation" 
                     />
-                    <div className="dashboard-content">
-                        <div className="page-header">
-                            <div className="page-title">
-                                <Skeleton width="200px" height="32px" className="mb-2" />
-                                <Skeleton width="300px" height="20px" />
-                            </div>
-                        </div>
+                );
+            }
+            return <StockPage key={componentKey} isEmbedded={true} embeddedFilter={filter} />;
+        }
 
-                        <div className="widgets-grid">
-                            {[...Array(4)].map((_, i) => (
-                                <div key={i} className="stat-card">
-                                    <Skeleton height="20px" width="100px" className="mb-4" />
-                                    <Skeleton height="32px" width="150px" />
-                                </div>
-                            ))}
-                        </div>
+        // ── SALES ─────────────────────────────────────────────────────────────
+        if (category === 'sales') {
+            switch (filter) {
+                case 'day': return <DayWiseSales key={componentKey} isEmbedded={true} />;
+                case 'month': return <MonthWiseSales key={componentKey} isEmbedded={true} />;
+                case 'item': return <ItemWiseSales key={componentKey} isEmbedded={true} />;
+                case 'group': return <CategoryWiseSales key={componentKey} isEmbedded={true} />;
+                case 'transaction': return <TransactionWiseSales key={componentKey} isEmbedded={true} />;
+                case 'profit': return <SalesProfit key={componentKey} isEmbedded={true} />;
+                case 'brand': 
+                    return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Brand Wise Sales" endpoint="/reports/sales-by-brand" />;
+                case 'captain':
+                    return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Captain Wise Sales" endpoint="/reports/sales-by-captain" />;
+                case 'agent':
+                    return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Personnel Sales" endpoint="/reports/sales/summary" groupBy="WAITER" />;
+                default: 
+                    return <DayWiseSales key={componentKey} isEmbedded={true} />;
+            }
+        }
 
-                        <div className="reports-grid">
-                            {[...Array(3)].map((_, i) => (
-                                <div key={i} className="data-card chart-card">
-                                    <Skeleton height="24px" width="150px" className="mb-6" />
-                                    <Skeleton height="250px" width="100%" />
-                                </div>
-                            ))}
-                        </div>
+        // ── PURCHASE ──────────────────────────────────────────────────────────
+        if (category === 'purchase') {
+            switch (filter) {
+                case 'day': return <DayWisePurchase key={componentKey} isEmbedded={true} />;
+                case 'supplier': return <SupplierWisePurchase key={componentKey} isEmbedded={true} />;
+                case 'month':
+                    return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Month Wise Purchase" endpoint="/reports/purchase-summary" groupBy="MONTH" />;
+                case 'item':
+                    return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Item Wise Purchase" endpoint="/reports/purchase-summary" groupBy="ITEM" />;
+                case 'group':
+                    return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Group Wise Purchase" endpoint="/reports/purchase-summary" groupBy="CATEGORY" />;
+                case 'brand':
+                    return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Brand Wise Purchase" endpoint="/reports/purchase-summary" groupBy="BRAND" />;
+                default:
+                    return <DayWisePurchase key={componentKey} isEmbedded={true} />;
+            }
+        }
 
-                        <div className="data-card">
-                            <h3 className="card-title">Top Selling Products</h3>
-                            <table className="custom-table">
-                                <thead><tr><th>Name</th><th>Qty</th><th>Revenue</th></tr></thead>
-                                <tbody><TableSkeleton rows={5} cols={3} /></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </main>
-            </div>
-        );
-    }
+        // ── OUTSTANDING ───────────────────────────────────────────────────────
+        if (category === 'outstanding') {
+            switch (filter) {
+                case 'customer': return <CustomerOutstanding key={componentKey} isEmbedded={true} />;
+                case 'supplier': return <SupplierOutstanding key={componentKey} isEmbedded={true} />;
+                case 'receivable':
+                    return <AccountsReceivable key={componentKey} isEmbedded={true} />;
+                case 'payable':
+                    return <AccountsPayable key={componentKey} isEmbedded={true} />;
+                default:
+                    return <CustomerOutstanding key={componentKey} isEmbedded={true} />;
+            }
+        }
+
+        // ── FALLBACK ──────────────────────────────────────────────────────────
+        return <StockPage key={componentKey} isEmbedded={true} embeddedFilter={filter} />;
+    };
 
     return (
-        <div className="dashboard-layout">
+        <div className="dashboard-layout bg-slate-50">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
+
             {isMobileSidebarOpen && window.innerWidth <= 768 && (
                 <div className="mobile-overlay" onClick={() => setIsMobileSidebarOpen(false)}></div>
             )}
-            <main className="dashboard-main">
-                <Header
-                    toggleSidebar={toggleSidebar}
-                    title="Sales Reports"
-                    actions={
-                        <div className="relative">
-                            <select
-                                className="input-premium-modern text-xs font-bold appearance-none pr-8 cursor-pointer"
-                                defaultValue=""
-                                onChange={(e) => e.target.value && navigate(e.target.value)}
-                            >
-                                <option value="" disabled>Go to Specific Report...</option>
-                                <option value="/dashboard/self-service/stock">Stock Master</option>
-                                <optgroup label="Sales Summary">
-                                    <option value="/dashboard/self-service/reports/sales/day">Day Wise</option>
-                                    <option value="/dashboard/self-service/reports/sales/month">Month Wise</option>
-                                    <option value="/dashboard/self-service/reports/sales/item">Item Wise</option>
-                                    <option value="/dashboard/self-service/reports/sales/category">Category Wise</option>
-                                    <option value="/dashboard/self-service/reports/sales/transaction">Transaction Wise</option>
-                                    <option value="/dashboard/self-service/reports/sales/profit">Sales Profit</option>
-                                </optgroup>
-                                <optgroup label="Purchase Summary">
-                                    <option value="/dashboard/self-service/reports/purchase/day">Day Wise</option>
-                                    <option value="/dashboard/self-service/reports/purchase/supplier">Supplier Wise</option>
-                                </optgroup>
-                            </select>
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                ▼
-                            </span>
-                        </div>
-                    }
-                />
 
-                <div className="dashboard-content">
-                    <div className="page-header">
-                        <div className="page-title">
-                            <h2>Sales Reports</h2>
-                            <p>Comprehensive business analytics and insights</p>
+            <main className="dashboard-main overflow-hidden font-sans flex flex-col">
+                <Header toggleSidebar={toggleSidebar} title={getHeaderTitle()} />
+                
+                <div className="fade-in px-6 lg:px-10 py-6 max-w-[2000px] mx-auto w-full flex-1 flex flex-col min-h-0 overflow-hidden">
+                    
+                    {/* Navigation Control Bar */}
+                    <div className="bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-2xl p-3 mb-6 flex flex-col lg:flex-row lg:items-center justify-between z-20 relative gap-3 flex-shrink-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <ReportNavigationDropdown />
+                            <div className="h-6 w-px bg-slate-100 hidden lg:block mx-2"></div>
+                            <div className="flex items-center gap-2">
+                                <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
+                                    category === 'sales'       ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                    category === 'purchase'    ? 'bg-indigo-50  text-indigo-600  border-indigo-100'  :
+                                    category === 'outstanding' ? 'bg-rose-50    text-rose-600    border-rose-100'    :
+                                                                 'bg-amber-50   text-amber-600   border-amber-100'
+                                }`}>
+                                    {category}
+                                </span>
+                                <span className="text-slate-200 font-bold">/</span>
+                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                                    {filter.replace(/-/g, ' ')}
+                                </span>
+                            </div>
                         </div>
-                        <div className="date-filter">
-                            <label htmlFor="dateRange">Period:</label>
-                            <select
-                                id="dateRange"
-                                className="input-field"
-                                value={dateRange}
-                                onChange={(e) => setDateRange(e.target.value)}
-                            >
-                                <option value="0">Today</option>
-                                <option value="7">Last 7 Days</option>
-                                <option value="30">Last 30 Days</option>
-                                <option value="60">Last 60 Days</option>
-                                <option value="90">Last 90 Days</option>
-                            </select>
-                            <button
-                                className="refresh-btn"
-                                onClick={fetchData}
-                                title="Refresh data"
-                                style={{
-                                    marginLeft: '10px',
-                                    padding: '8px 16px',
-                                    backgroundColor: '#7ea1c4',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500'
-                                }}
-                            >
-                                ↻ Refresh
-                            </button>
-                            <label style={{ marginLeft: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={autoRefresh}
-                                    onChange={(e) => setAutoRefresh(e.target.checked)}
-                                    style={{ cursor: 'pointer' }}
-                                />
-                                <span>Auto-refresh (30s)</span>
-                            </label>
+                        {/* Live indicator */}
+                        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Live System Feed</span>
                         </div>
                     </div>
 
-                    {/* Summary Cards */}
-                    <div className="widgets-grid">
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Today's Sales</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#7ea1c415', color: '#7ea1c4' }}>
-                                    <TrendingUp size={24} />
-                                </div>
-                            </div>
-                            <div className="stat-value">₹{dailyData?.totalSales?.toLocaleString() || '0'}</div>
-                            <div className="stat-trend trend-up">+12.5% <span style={{ color: 'var(--galaxy-muted)', fontSize: '0.75rem' }}>vs yesterday</span></div>
-                        </div>
-
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Total Bills</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#7ea1c415', color: '#7ea1c4' }}>
-                                    <FileText size={24} />
-                                </div>
-                            </div>
-                            <div className="stat-value">{dailyData?.totalBills || 0}</div>
-                        </div>
-
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">Cash Collection</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#10b98115', color: '#10b981' }}>
-                                    <CreditCard size={24} />
-                                </div>
-                            </div>
-                            <div className="stat-value">
-                                ₹{dailyData?.paymentSummary?.find(p => p.mode === 'CASH')?.amount?.toLocaleString() || '0'}
-                            </div>
-                        </div>
-
-                        <div className="stat-card">
-                            <div className="stat-header">
-                                <span className="stat-label">UPI/Online</span>
-                                <div className="stat-icon" style={{ backgroundColor: '#8b5cf615', color: '#8b5cf6' }}>
-                                    <CreditCard size={24} />
-                                </div>
-                            </div>
-                            <div className="stat-value">
-                                ₹{(
-                                    (dailyData?.paymentSummary?.find(p => p.mode?.toUpperCase() === 'UPI')?.amount || 0) +
-                                    (dailyData?.paymentSummary?.find(p => p.mode?.toUpperCase() === 'ONLINE')?.amount || 0) +
-                                    (dailyData?.paymentSummary?.find(p => p.mode?.toUpperCase() === 'CARD')?.amount || 0) +
-                                    (dailyData?.paymentSummary?.find(p => p.mode?.toUpperCase() === 'DIGITAL')?.amount || 0)
-                                ).toLocaleString() || '0'}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Charts Section */}
-                    <div className="reports-grid">
-                        <div className="data-card chart-card">
-                            <h3 className="card-title">
-                                <Calendar size={20} color="var(--primary-500)" />
-                                Daily Sales Trend
-                            </h3>
-                            <div className="chart-container">
-                                {dailySalesData && <Line data={dailySalesData} options={chartOptions} />}
-                            </div>
-                        </div>
-
-                        <div className="data-card chart-card">
-                            <h3 className="card-title">
-                                <BarChart3 size={20} color="var(--primary-500)" />
-                                Category-wise Sales
-                            </h3>
-                            <div className="chart-container">
-                                {categorySalesData && <Bar data={categorySalesData} options={chartOptions} />}
-                            </div>
-                        </div>
-
-                        <div className="data-card chart-card">
-                            <h3 className="card-title">
-                                <PieChart size={20} color="var(--primary-500)" />
-                                Payment Modes
-                            </h3>
-                            <div className="chart-container pie-container">
-                                {paymentModeData && <Pie data={paymentModeData} options={pieOptions} />}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Top Products */}
-                    <div className="data-card">
-                        <h3 className="card-title">
-                            <ArrowUpRight size={20} color="var(--primary-500)" />
-                            Top Selling Products
-                        </h3>
-                        <table className="custom-table">
-                            <thead>
-                                <tr>
-                                    <th>Product Name</th>
-                                    <th>Quantity Sold</th>
-                                    <th>Revenue Generated</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {topProducts.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="3" className="empty-state">
-                                            <p>No sales data available for the selected period</p>
-                                        </td>
-                                    </tr>
-                                ) : topProducts.map((product, index) => (
-                                    <tr key={product.productId}>
-                                        <td style={{ fontWeight: 600 }}>
-                                            <span className="rank-badge">#{index + 1}</span>
-                                            {product.name}
-                                        </td>
-                                        <td>
-                                            <span className="quantity-badge">{product.quantity}</span>
-                                        </td>
-                                        <td style={{ fontWeight: 700 }}>₹{product.revenue.toLocaleString()}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    {/* Report Content Container */}
+                    <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden relative min-h-0 flex flex-col">
+                        {renderActiveReport()}
                     </div>
                 </div>
             </main>
@@ -538,3 +181,4 @@ const ReportsPage = () => {
 };
 
 export default ReportsPage;
+

@@ -454,6 +454,51 @@ exports.getSalesByCaptain = async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
 };
 
+// @desc    Get generic sales summary (Universal grouping)
+exports.getSalesSummary = async (req, res) => {
+    try {
+        const { startDate, endDate, groupBy = 'CATEGORY' } = req.query;
+        let start = new Date(startDate || new Date().setMonth(new Date().getMonth() - 1));
+        let end = new Date(endDate || new Date());
+        end.setHours(23, 59, 59, 999);
+
+        const bills = await Bill.find({
+            company_id: req.user.restaurant_id,
+            status: 'PAID',
+            createdAt: { $gte: start, $lte: end }
+        });
+
+        const summary = {};
+        bills.forEach(bill => {
+            if (groupBy === 'CAPTAIN' || groupBy === 'WAITER' || groupBy === 'TYPE' || groupBy === 'PAYMENT_MODE') {
+                const key = (groupBy === 'CAPTAIN') ? (bill.captain_name || 'Direct') : 
+                            (groupBy === 'WAITER') ? (bill.waiter_name || 'Standard') :
+                            (groupBy === 'TYPE') ? (bill.type || 'N/A') :
+                            (bill.payment_mode || 'N/A');
+                
+                if (!summary[key]) summary[key] = { [groupBy.toLowerCase()]: key, amount: 0, count: 0 };
+                summary[key].amount += bill.grand_total;
+                summary[key].count += 1;
+            } else if (groupBy === 'CATEGORY' || groupBy === 'BRAND' || groupBy === 'ITEM') {
+                bill.items.forEach(item => {
+                    const subKey = (groupBy === 'ITEM') ? (item.name || 'Unnamed') :
+                                 (groupBy === 'CATEGORY') ? (item.category || 'Uncategorized') :
+                                 ('No Brand'); // Brand might not be in Bill items, aggregate if needed
+                    
+                    if (!summary[subKey]) summary[subKey] = { [groupBy.toLowerCase()]: subKey, qty: 0, amount: 0 };
+                    summary[subKey].qty += item.quantity;
+                    summary[subKey].amount += item.total_price;
+                });
+            } else if (groupBy === 'BRAND') {
+                // If brand is needed specifically, we already have getSalesByBrand, 
+                // but for consistency we can use it here if we join products
+            }
+        });
+
+        res.status(200).json({ success: true, data: Object.values(summary).sort((a, b) => b.amount - a.amount) });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+};
+
 // @desc    Get purchase summary (Grouped by various filters)
 exports.getPurchaseSummary = async (req, res) => {
     try {
@@ -469,18 +514,30 @@ exports.getPurchaseSummary = async (req, res) => {
 
         const summary = {};
         purchases.forEach(p => {
+            let key = 'Unknown';
+            
             if (groupBy === 'SUPPLIER') {
-                const name = p.supplier_id?.name || 'Unknown';
-                if (!summary[name]) summary[name] = { name, amount: 0, paid: 0, due: 0 };
-                summary[name].amount += p.grand_total;
-                summary[name].paid += p.paid_amount;
-                summary[name].due += p.due_amount;
-            } else if (groupBy === 'ITEM') {
+                key = p.supplier_id?.name || 'Walk-in / Unknown';
+                if (!summary[key]) summary[key] = { name: key, amount: 0, paid: 0, due: 0, count: 0 };
+                summary[key].amount += p.grand_total;
+                summary[key].paid += p.paid_amount;
+                summary[key].due += p.due_amount;
+                summary[key].count += 1;
+            } else if (groupBy === 'MONTH') {
+                const d = new Date(p.purchase_date);
+                key = `${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+                if (!summary[key]) summary[key] = { month: key, amount: 0, count: 0 };
+                summary[key].amount += p.grand_total;
+                summary[key].count += 1;
+            } else if (groupBy === 'ITEM' || groupBy === 'CATEGORY' || groupBy === 'BRAND') {
                 p.items.forEach(item => {
-                    const name = item.product_id; // Need proper name if possible, or just ID
-                    if (!summary[name]) summary[name] = { name, qty: 0, amount: 0 };
-                    summary[name].qty += item.quantity;
-                    summary[name].amount += item.total_amount;
+                    const subKey = (groupBy === 'ITEM') ? (item.item_name || 'Unnamed') : 
+                                 (groupBy === 'CATEGORY') ? (item.category || 'Uncategorized') : 
+                                 (item.brand || 'No Brand');
+                    
+                    if (!summary[subKey]) summary[subKey] = { [groupBy.toLowerCase()]: subKey, qty: 0, amount: 0 };
+                    summary[subKey].qty += item.quantity;
+                    summary[subKey].amount += item.total_amount;
                 });
             }
         });
@@ -1384,6 +1441,26 @@ exports.getDaybookReport = async (req, res) => {
         let end = new Date(endDate || new Date().toISOString().split('T')[0]);
         end.setHours(23, 59, 59, 999);
 
+        const LedgerGroup = require('../models/LedgerGroup');
+        const groups = await LedgerGroup.find({ company_id: hotelId }).lean();
+        const getSubgroups = (targetGroups) => {
+            let result = new Set(targetGroups);
+            let added = true;
+            while(added) {
+                added = false;
+                groups.forEach(g => {
+                    if (result.has(g.parent) && !result.has(g.name)) {
+                        result.add(g.name);
+                        added = true;
+                    }
+                });
+            }
+            return Array.from(result);
+        };
+        const cashBankGroups = getSubgroups(['Cash-in-Hand', 'Cash in Hand', 'Bank Accounts', 'Bank OD A/c']);
+        const sundryGroups = getSubgroups(['Sundry Debtors', 'Sundry Creditors', 'Customers', 'Suppliers']);
+
+
         // Fetch transactions
         const txs = await AccountTransaction.find({
             company_id: hotelId,
@@ -1418,23 +1495,25 @@ exports.getDaybookReport = async (req, res) => {
                 const group = l.ledger_id?.group || '';
                 const name = l.ledger_id?.name || '';
 
-                // Logic: 
                 // PAYMENT IN: Debit to Cash/Bank
-                if (l.type === 'DEBIT' && (group.includes('Cash') || group.includes('Bank'))) {
+                const isCashBank = cashBankGroups.includes(group) || group.includes('Cash') || group.includes('Bank');
+                const isSundry = sundryGroups.includes(group) || group.includes('Sundry') || group.includes('Customer') || group.includes('Supplier');
+
+                if (l.type === 'DEBIT' && isCashBank) {
                     g.payment_in += l.amount;
                 }
                 // PAYMENT OUT: Credit to Cash/Bank
-                else if (l.type === 'CREDIT' && (group.includes('Cash') || group.includes('Bank'))) {
+                else if (l.type === 'CREDIT' && isCashBank) {
                     g.payment_out += l.amount;
                 }
                 // CREDIT AMT: If it's a SALES/PURCHASE and involves a Customer/Supplier ledger
-                else if ((g.type === 'SALES' || g.type === 'PURCHASE') && (group.includes('Sundry') || group.includes('Customer') || group.includes('Supplier'))) {
+                else if ((g.type === 'SALES' || g.type === 'PURCHASE') && isSundry) {
                     g.credit_amt += l.amount;
                     if (!partySet) { g.party = name; partySet = true; }
                 }
 
                 // If party not set yet, pick a non-cash/bank ledger as party
-                if (!partySet && !(group.includes('Cash') || group.includes('Bank'))) {
+                if (!partySet && !isCashBank) {
                     g.party = name;
                     partySet = true;
                 }
@@ -1579,19 +1658,35 @@ exports.getCashBankReport = async (req, res) => {
         end.setHours(23, 59, 59, 999);
 
         // 1. Identify all Cash and Bank Ledgers
-        const cbLedgers = await Ledger.find({
-            company_id: hotelId,
-            $or: [
-                { group: { $regex: /Cash/i } },
-                { group: { $regex: /Bank/i } },
-                { name: { $regex: /Cash/i } },
-                { name: { $regex: /Bank/i } }
-            ]
-        }).lean();
+        const LedgerGroup = require('../models/LedgerGroup');
+        const groups = await LedgerGroup.find({ company_id: hotelId }).lean();
+        const getSubgroups = (targetGroups) => {
+            let result = new Set(targetGroups);
+            let added = true;
+            while(added) {
+                added = false;
+                groups.forEach(g => {
+                    if (result.has(g.parent) && !result.has(g.name)) {
+                        result.add(g.name);
+                        added = true;
+                    }
+                });
+            }
+            return Array.from(result);
+        };
+        const cashGroups = getSubgroups(['Cash-in-Hand', 'Cash in Hand']);
+        const bankGroups = getSubgroups(['Bank Accounts', 'Bank OD A/c']);
+        
+        const allLedgers = await Ledger.find({ company_id: hotelId }).lean();
+        const cbLedgers = allLedgers.filter(l => 
+            cashGroups.includes(l.group) || bankGroups.includes(l.group) ||
+            l.group?.match(/Cash/i) || l.group?.match(/Bank/i) ||
+            l.name?.match(/Cash/i) || l.name?.match(/Bank/i)
+        );
 
         const cbIds = cbLedgers.map(l => l._id);
-        const cashIds = cbLedgers.filter(l => l.group?.toLowerCase().includes('cash') || l.name?.toLowerCase().includes('cash')).map(l => l._id.toString());
-        const bankIds = cbLedgers.filter(l => l.group?.toLowerCase().includes('bank') || l.name?.toLowerCase().includes('bank')).map(l => l._id.toString());
+        const cashIds = cbLedgers.filter(l => cashGroups.includes(l.group) || l.group?.toLowerCase().includes('cash') || l.name?.toLowerCase().includes('cash')).map(l => l._id.toString());
+        const bankIds = cbLedgers.filter(l => bankGroups.includes(l.group) || l.group?.toLowerCase().includes('bank') || l.name?.toLowerCase().includes('bank')).map(l => l._id.toString());
 
         // 2. Calculate Opening Balance before Start Date
         let openingCash = cbLedgers.filter(l => cashIds.includes(l._id.toString())).reduce((s, l) => s + (l.initial_opening_balance || 0), 0);

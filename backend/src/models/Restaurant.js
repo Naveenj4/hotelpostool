@@ -89,11 +89,51 @@ const restaurantSchema = new mongoose.Schema({
     loyalty_target_points: { type: Number, default: 0 },
     loyalty_point_value: { type: Number, default: 1 },
     bill_series: {
-        dine_in: { prefix: { type: String, default: 'DI' }, next_number: { type: Number, default: 1 } },
-        takeaway: { prefix: { type: String, default: 'TA' }, next_number: { type: Number, default: 1 } },
-        delivery: { prefix: { type: String, default: 'DE' }, next_number: { type: Number, default: 1 } },
-        parcel: { prefix: { type: String, default: 'PA' }, next_number: { type: Number, default: 1 } },
-        party: { prefix: { type: String, default: 'PT' }, next_number: { type: Number, default: 1 } }
+        dine_in: { 
+            numbering_method: { type: String, enum: ['Automatic', 'Manual'], default: 'Automatic' },
+            prefix: { type: String, default: 'DI' }, 
+            suffix: { type: String, default: '' }, 
+            starting_number: { type: Number, default: 1 }, 
+            next_number: { type: Number, default: 1 },
+            restart_after: { type: String, enum: ['Yearly', 'Monthly', 'Daily', 'Never'], default: 'Never' },
+            last_reset_date: { type: Date }
+        },
+        takeaway: { 
+            numbering_method: { type: String, enum: ['Automatic', 'Manual'], default: 'Automatic' },
+            prefix: { type: String, default: 'TA' }, 
+            suffix: { type: String, default: '' }, 
+            starting_number: { type: Number, default: 1 }, 
+            next_number: { type: Number, default: 1 },
+            restart_after: { type: String, enum: ['Yearly', 'Monthly', 'Daily', 'Never'], default: 'Never' },
+            last_reset_date: { type: Date }
+        },
+        delivery: { 
+            numbering_method: { type: String, enum: ['Automatic', 'Manual'], default: 'Automatic' },
+            prefix: { type: String, default: 'DE' }, 
+            suffix: { type: String, default: '' }, 
+            starting_number: { type: Number, default: 1 }, 
+            next_number: { type: Number, default: 1 },
+            restart_after: { type: String, enum: ['Yearly', 'Monthly', 'Daily', 'Never'], default: 'Never' },
+            last_reset_date: { type: Date }
+        },
+        parcel: { 
+            numbering_method: { type: String, enum: ['Automatic', 'Manual'], default: 'Automatic' },
+            prefix: { type: String, default: 'PA' }, 
+            suffix: { type: String, default: '' }, 
+            starting_number: { type: Number, default: 1 }, 
+            next_number: { type: Number, default: 1 },
+            restart_after: { type: String, enum: ['Yearly', 'Monthly', 'Daily', 'Never'], default: 'Never' },
+            last_reset_date: { type: Date }
+        },
+        party: { 
+            numbering_method: { type: String, enum: ['Automatic', 'Manual'], default: 'Automatic' },
+            prefix: { type: String, default: 'PT' }, 
+            suffix: { type: String, default: '' }, 
+            starting_number: { type: Number, default: 1 }, 
+            next_number: { type: Number, default: 1 },
+            restart_after: { type: String, enum: ['Yearly', 'Monthly', 'Daily', 'Never'], default: 'Never' },
+            last_reset_date: { type: Date }
+        }
     }
 }, {
     timestamps: true

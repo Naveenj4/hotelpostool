@@ -9,8 +9,13 @@ const {
     updateBillingLayout,
     updateAdvancedSettings,
     updateLoyaltySettings,
-    updateBillSeries
+    updateBillSeries,
+    createNewProfile
 } = require('../controllers/settingsController');
+const {
+    createBackup,
+    restoreBackup
+} = require('../controllers/backupController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // All routes require authentication and admin/owner access
@@ -43,5 +48,12 @@ router.put('/layout', updateBillingLayout);
 
 // Update bill series settings
 router.put('/bill-series', updateBillSeries);
+
+// New profile creation
+router.post('/new-profile', createNewProfile);
+
+// Backup & Restore
+router.post('/backup', createBackup);
+router.post('/restore', restoreBackup);
 
 module.exports = router;

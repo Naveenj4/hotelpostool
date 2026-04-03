@@ -27,8 +27,12 @@ const CounterMaster = () => {
     const [formData, setFormData] = useState({
         name: '',
         code: '',
-        type: 'BILLING'
+        type: 'BILLING',
+        cash_ledger_id: '',
+        upi_ledger_id: '',
+        card_ledger_id: ''
     });
+    const [ledgers, setLedgers] = useState({ cash: [], bank: [] });
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -48,12 +52,21 @@ const CounterMaster = () => {
             if (!savedUser) return;
             const { token } = JSON.parse(savedUser);
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/counters`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (data.success) {
-                setCounters(data.data);
+            const [countersResponse, ledgersResponse] = await Promise.all([
+                fetch(`${import.meta.env.VITE_API_URL}/counters`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${import.meta.env.VITE_API_URL}/ledgers`, { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+            const countersData = await countersResponse.json();
+            const ledgersData = await ledgersResponse.json();
+            
+            if (countersData.success) {
+                setCounters(countersData.data);
+            }
+            if (ledgersData.success) {
+                setLedgers({
+                    cash: ledgersData.data.filter(l => l.group === 'Cash in Hand'),
+                    bank: ledgersData.data.filter(l => l.group === 'Bank Accounts')
+                });
             }
         } catch (err) {
             console.error("Failed to fetch counters", err);
@@ -113,7 +126,7 @@ const CounterMaster = () => {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', code: '', type: 'BILLING' });
+        setFormData({ name: '', code: '', type: 'BILLING', cash_ledger_id: '', upi_ledger_id: '', card_ledger_id: '' });
         setIsEditing(false);
         setError('');
     };
@@ -291,6 +304,39 @@ const CounterMaster = () => {
                                                 </button>
                                             ))}
                                         </div>
+                                    </div>
+                                    <div className="form-group-premium">
+                                        <label>Associated Cash Ledger (Optional)</label>
+                                        <select 
+                                            value={formData.cash_ledger_id || ''} 
+                                            onChange={(e) => setFormData({ ...formData, cash_ledger_id: e.target.value })}
+                                            className="input-premium"
+                                        >
+                                            <option value="">-- Select Cash Account --</option>
+                                            {ledgers.cash.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="form-group-premium">
+                                        <label>Associated UPI Bank Ledger (Optional)</label>
+                                        <select 
+                                            value={formData.upi_ledger_id || ''} 
+                                            onChange={(e) => setFormData({ ...formData, upi_ledger_id: e.target.value })}
+                                            className="input-premium"
+                                        >
+                                            <option value="">-- Select Bank Account --</option>
+                                            {ledgers.bank.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="form-group-premium">
+                                        <label>Associated CARD Bank Ledger (Optional)</label>
+                                        <select 
+                                            value={formData.card_ledger_id || ''} 
+                                            onChange={(e) => setFormData({ ...formData, card_ledger_id: e.target.value })}
+                                            className="input-premium"
+                                        >
+                                            <option value="">-- Select Bank Account --</option>
+                                            {ledgers.bank.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
+                                        </select>
                                     </div>
                                 </form>
                             </div>

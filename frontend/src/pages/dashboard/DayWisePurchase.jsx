@@ -18,7 +18,7 @@ import './Dashboard.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const DayWisePurchase = () => {
+const DayWisePurchase = ({ isEmbedded = false }) => {
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -123,124 +123,137 @@ const DayWisePurchase = () => {
         }
     };
 
+    const content = (
+        <div className={`${isEmbedded ? 'master-content-layout p-0 pb-32' : 'master-content-layout'} fade-in`}>
+            <div className="master-header-premium">
+                <div className="master-title-premium">
+                    <div className="flex items-center gap-2 mb-2">
+                        <ShoppingCart className="text-red-600" size={18} />
+                        <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-full">Purchase Summary</span>
+                    </div>
+                    <h2 className={`${isEmbedded ? 'text-3xl' : ''}`}>Day-wise Purchase Archive</h2>
+                    <p>Daily breakdown of procurements and supply inflow expenses.</p>
+                </div>
+                <div className="flex gap-3">
+                    <button onClick={exportToCSV} className="btn-premium-outline">
+                        <Download size={18} /> EXPORT CSV
+                    </button>
+                </div>
+            </div>
+
+            <div className="toolbar-premium">
+                <div className="flex flex-wrap items-center gap-4">
+                    {!isEmbedded && <ReportNavigationDropdown />}
+                    <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="date"
+                            value={dateRange.start}
+                            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                            className="input-premium pl-11"
+                            style={{ width: '180px' }}
+                        />
+                    </div>
+                    <span className="text-slate-400 font-bold px-2">TO</span>
+                    <div className="relative">
+                        <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="date"
+                            value={dateRange.end}
+                            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                            className="input-premium pl-11"
+                            style={{ width: '180px' }}
+                        />
+                    </div>
+                    </div>
+                </div>
+                <div className="flex gap-4 items-center">
+                    <div className="text-right">
+                        <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Aggregate Purchase</div>
+                        <div className={`${isEmbedded ? 'text-lg' : 'text-xl'} font-black text-red-600`}>₹{summary.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                    </div>
+                    <div className="h-10 w-px bg-slate-200"></div>
+                    <div className="text-right">
+                        <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Logged Invoices</div>
+                        <div className={`${isEmbedded ? 'text-lg' : 'text-xl'} font-black text-slate-800`}>{summary.totalDocs}</div>
+                    </div>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex flex-col items-center justify-center p-20">
+                    <Loader2 className="animate-spin text-red-600 mb-4" size={48} />
+                    <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Assembling Procurement Matrix...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-100/50">
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Capital Outflow Trajectory</h3>
+                            <div style={{ height: '400px' }}>
+                                <Bar data={chartData} options={chartOptions} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="md:col-span-1">
+                        <div className="table-container-premium max-h-[500px] overflow-y-auto">
+                            <table className="table-premium w-full text-left border-collapse">
+                                <thead className="sticky top-0 bg-white z-10 shadow-sm">
+                                    <tr>
+                                        <th className="p-4 border-b">Chronology</th>
+                                        <th className="p-4 border-b" style={{ textAlign: 'center' }}>Invoices</th>
+                                        <th className="p-4 border-b" style={{ textAlign: 'right' }}>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.length === 0 ? (
+                                        <tr><td colSpan="3" className="text-center py-10 text-slate-400 font-bold">No procurement data found</td></tr>
+                                    ) : (
+                                        data.map((day, ix) => (
+                                            <tr key={ix}
+                                                onClick={() => navigate('/dashboard/self-service/purchase-invoices', { state: { date: day.date } })}
+                                                style={{ cursor: 'pointer' }}
+                                                className="hover:bg-slate-50 transition-colors"
+                                            >
+                                                <td className="p-4 font-bold text-slate-700">{day.date}</td>
+                                                <td className="p-4 text-center">
+                                                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-black">
+                                                        {day.billCount} DOCS
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-right font-black text-red-600">
+                                                    ₹{day.totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    if (isEmbedded) {
+        return (
+            <div className="fade-in flex-1 flex flex-col min-h-0 overflow-hidden w-full">
+                {content}
+            </div>
+        );
+    }
+
     return (
         <div className="dashboard-layout">
             <Sidebar isCollapsed={isCollapsed} isMobileOpen={isMobileSidebarOpen} onMobileClose={() => setIsMobileSidebarOpen(false)} />
 
-            <main className="dashboard-main">
+            <main className="dashboard-main overflow-hidden flex flex-col">
                 <Header toggleSidebar={toggleSidebar} />
-
-                <div className="master-content-layout fade-in">
-                    <div className="master-header-premium">
-                        <div className="master-title-premium">
-                            <div className="flex items-center gap-2 mb-2">
-                                <ShoppingCart className="text-red-600" size={18} />
-                                <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-full">Purchase Summary</span>
-                            </div>
-                            <h2>Day-wise Purchase Archive</h2>
-                            <p>Daily breakdown of procurements and supply inflow expenses.</p>
-                        </div>
-                        <div className="flex gap-3">
-                            <button onClick={exportToCSV} className="btn-premium-outline">
-                                <Download size={18} /> EXPORT CSV
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="toolbar-premium">
-                        <div className="flex flex-wrap items-center gap-4">
-                            <ReportNavigationDropdown />
-                            <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="date"
-                                    value={dateRange.start}
-                                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                                    className="input-premium pl-11"
-                                    style={{ width: '180px' }}
-                                />
-                            </div>
-                            <span className="text-slate-400 font-bold px-2">TO</span>
-                            <div className="relative">
-                                <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="date"
-                                    value={dateRange.end}
-                                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                                    className="input-premium pl-11"
-                                    style={{ width: '180px' }}
-                                />
-                            </div>
-                            </div>
-                        </div>
-                        <div className="flex gap-4 items-center">
-                            <div className="text-right">
-                                <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Aggregate Purchase</div>
-                                <div className="text-xl font-black text-red-600">₹{summary.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                            </div>
-                            <div className="h-10 w-px bg-slate-200"></div>
-                            <div className="text-right">
-                                <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Logged Invoices</div>
-                                <div className="text-xl font-black text-slate-800">{summary.totalDocs}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center p-20">
-                            <Loader2 className="animate-spin text-red-600 mb-4" size={48} />
-                            <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">Assembling Procurement Matrix...</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-2">
-                                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-100/50">
-                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Capital Outflow Trajectory</h3>
-                                    <div style={{ height: '400px' }}>
-                                        <Bar data={chartData} options={chartOptions} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="md:col-span-1">
-                                <div className="table-container-premium max-h-[500px] overflow-y-auto">
-                                    <table className="table-premium">
-                                        <thead className="sticky top-0 bg-white z-10 shadow-sm">
-                                            <tr>
-                                                <th>Chronology</th>
-                                                <th style={{ textAlign: 'center' }}>Invoices</th>
-                                                <th style={{ textAlign: 'right' }}>Amount</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.length === 0 ? (
-                                                <tr><td colSpan="3" className="text-center py-10 text-slate-400 font-bold">No procurement data found</td></tr>
-                                            ) : (
-                                                data.map((day, ix) => (
-                                                    <tr key={ix}
-                                                        onClick={() => navigate('/dashboard/self-service/purchase-invoices', { state: { date: day.date } })}
-                                                        style={{ cursor: 'pointer' }}
-                                                        className="hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        <td className="font-bold text-slate-700">{day.date}</td>
-                                                        <td className="text-center">
-                                                            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-black">
-                                                                {day.billCount} DOCS
-                                                            </span>
-                                                        </td>
-                                                        <td className="text-right font-black text-red-600">
-                                                            ₹{day.totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                <div className="flex-1 overflow-auto">
+                    {content}
                 </div>
             </main>
         </div>
@@ -248,3 +261,4 @@ const DayWisePurchase = () => {
 };
 
 export default DayWisePurchase;
+
