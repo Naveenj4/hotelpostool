@@ -97,6 +97,7 @@ exports.getPaymentStats = async (req, res) => {
         const suppliers = await Supplier.find({ company_id });
         const total_payable = suppliers.reduce((acc, s) => acc + (s.opening_balance || 0), 0);
 
+        // 2. Paid / Unpaid calculations with Breakdown
         const [paymentAgg] = await Voucher.aggregate([
             {
                 $match: {
@@ -106,7 +107,42 @@ exports.getPaymentStats = async (req, res) => {
                     party_id: { $exists: true }
                 }
             },
-            { $group: { _id: null, total_paid: { $sum: '$amount' } } }
+            {
+                $group: {
+                    _id: null,
+                    total_paid: { $sum: '$amount' },
+                    cash_paid: {
+                        $sum: {
+                            $cond: [
+                                { $and: [{ $isArray: "$payment_modes" }, { $gt: [{ $size: "$payment_modes" }, 0] }] },
+                                {
+                                    $reduce: {
+                                        input: "$payment_modes",
+                                        initialValue: 0,
+                                        in: { $add: ["$$value", { $cond: [{ $eq: ["$$this.mode", "CASH"] }, "$$this.amount", 0] }] }
+                                    }
+                                },
+                                0
+                            ]
+                        }
+                    },
+                    bank_paid: {
+                        $sum: {
+                            $cond: [
+                                { $and: [{ $isArray: "$payment_modes" }, { $gt: [{ $size: "$payment_modes" }, 0] }] },
+                                {
+                                    $reduce: {
+                                        input: "$payment_modes",
+                                        initialValue: 0,
+                                        in: { $add: ["$$value", { $cond: [{ $ne: ["$$this.mode", "CASH"] }, "$$this.amount", 0] }] }
+                                    }
+                                },
+                                0
+                            ]
+                        }
+                    }
+                }
+            }
         ]);
 
         res.status(200).json({
@@ -114,6 +150,8 @@ exports.getPaymentStats = async (req, res) => {
             data: {
                 total_payable,
                 total_paid: paymentAgg?.total_paid || 0,
+                cash_paid: paymentAgg?.cash_paid || 0,
+                bank_paid: paymentAgg?.bank_paid || 0,
                 unpaid: total_payable
             }
         });

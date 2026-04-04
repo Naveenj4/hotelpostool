@@ -20,7 +20,7 @@ export default function ReceiptEntry() {
 
     /* ── LIST STATE ── */
     const [receipts, setReceipts] = useState([]);
-    const [stats, setStats] = useState({ total_receivable: 0, total_paid: 0, unpaid: 0 });
+    const [stats, setStats] = useState({ total_receivable: 0, total_paid: 0, cash_paid: 0, bank_paid: 0, unpaid: 0 });
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [fromDate, setFromDate] = useState(todayStr());
@@ -392,6 +392,16 @@ export default function ReceiptEntry() {
                             <div className="re-stat-card paid">
                                 <div className="re-stat-label">Total Received</div>
                                 <div className="re-stat-value">₹{fmt(stats.total_paid)}</div>
+                                <div className="re-stat-breakdown">
+                                    <div className="re-stat-sub">
+                                        <span className="re-stat-sub-label">Cash:</span>
+                                        <span className="re-stat-sub-value">₹{fmt(stats.cash_paid)}</span>
+                                    </div>
+                                    <div className="re-stat-sub">
+                                        <span className="re-stat-sub-label">Bank:</span>
+                                        <span className="re-stat-sub-value">₹{fmt(stats.bank_paid)}</span>
+                                    </div>
+                                </div>
                             </div>
                             <div className="re-stat-card unpaid">
                                 <div className="re-stat-label">Outstanding</div>

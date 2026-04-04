@@ -82,8 +82,7 @@ exports.getReceiptStats = async (req, res) => {
         const customers = await Customer.find({ company_id });
         const total_receivable = customers.reduce((acc, c) => acc + (c.opening_balance || 0), 0);
 
-        // 2. Paid / Unpaid calculations can also be derived here if needed
-        // For simplicity, returning just basic aggregates
+        // 2. Paid / Unpaid calculations with Breakdown
         const [receiptAgg] = await Voucher.aggregate([
             { 
                 $match: { 
@@ -96,7 +95,37 @@ exports.getReceiptStats = async (req, res) => {
             {
                 $group: {
                     _id: null,
-                    total_paid: { $sum: '$amount' }
+                    total_paid: { $sum: '$amount' },
+                    cash_paid: {
+                        $sum: {
+                            $cond: [
+                                { $and: [{ $isArray: "$payment_modes" }, { $gt: [{ $size: "$payment_modes" }, 0] }] },
+                                {
+                                    $reduce: {
+                                        input: "$payment_modes",
+                                        initialValue: 0,
+                                        in: { $add: ["$$value", { $cond: [{ $eq: ["$$this.mode", "CASH"] }, "$$this.amount", 0] }] }
+                                    }
+                                },
+                                0 // If no modes, we don't assume cash/bank without ledger lookup
+                            ]
+                        }
+                    },
+                    bank_paid: {
+                        $sum: {
+                            $cond: [
+                                { $and: [{ $isArray: "$payment_modes" }, { $gt: [{ $size: "$payment_modes" }, 0] }] },
+                                {
+                                    $reduce: {
+                                        input: "$payment_modes",
+                                        initialValue: 0,
+                                        in: { $add: ["$$value", { $cond: [{ $ne: ["$$this.mode", "CASH"] }, "$$this.amount", 0] }] }
+                                    }
+                                },
+                                0
+                            ]
+                        }
+                    }
                 }
             }
         ]);
@@ -106,7 +135,9 @@ exports.getReceiptStats = async (req, res) => {
             data: {
                 total_receivable,
                 total_paid: receiptAgg?.total_paid || 0,
-                unpaid: total_receivable // As customers pay, opening balance decreases, so current opening_balance is the true unpaid
+                cash_paid: receiptAgg?.cash_paid || 0,
+                bank_paid: receiptAgg?.bank_paid || 0,
+                unpaid: total_receivable
             }
         });
 

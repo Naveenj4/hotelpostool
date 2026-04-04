@@ -103,6 +103,10 @@ export default function PurchaseEntryForm() {
     const [stateName, setStateName] = useState('');
     const [supplierSearch, setSupplierSearch] = useState('');
     const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
+    const [supplierCursor, setSupplierCursor] = useState(-1);
+    const [itemCursor, setItemCursor] = useState(-1);
+    const [activeItemRow, setActiveItemRow] = useState(-1);
+    const [showItemDropdown, setShowItemDropdown] = useState(false);
 
     // Column Config / Settings (Req 8, 9, 12, 14, 15)
     const [colConfig, setColConfig] = useState({
@@ -113,6 +117,8 @@ export default function PurchaseEntryForm() {
     });
 
     const [showMoreDrawer, setShowMoreDrawer] = useState(false);
+    const supplierRef = useRef(null);
+    const itemRefs = useRef([]);
 
     // Items
     const [items, setItems] = useState([emptyItem()]);
@@ -133,7 +139,10 @@ export default function PurchaseEntryForm() {
                 ]);
                 const supData = await supRes.json();
                 const prodData = await prodRes.json();
-                if (supData.success) setSuppliers(supData.data);
+                if (supData.success) {
+                    // Filter only active suppliers
+                    setSuppliers(supData.data.filter(s => s.is_active !== false));
+                }
                 if (prodData.success) setProducts(prodData.data);
             } catch (err) {
                 console.error(err);
@@ -142,6 +151,18 @@ export default function PurchaseEntryForm() {
             }
         };
         fetchData();
+
+        const handleClickOutside = (e) => {
+            if (supplierRef.current && !supplierRef.current.contains(e.target)) {
+                setShowSupplierDropdown(false);
+            }
+            if (!e.target.closest('.pef-item-name-cell')) {
+                setShowItemDropdown(false);
+                setActiveItemRow(-1);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Recalculate totals whenever items/other charges change
@@ -194,6 +215,7 @@ export default function PurchaseEntryForm() {
         if (field === 'product_id') {
             const prod = products.find(p => p._id === value);
             if (prod) {
+                item.product_id = prod._id;
                 item.item_name = prod.name;
                 item.code = prod.code || '';
                 item.barcode = prod.barcode || '';
@@ -304,6 +326,34 @@ export default function PurchaseEntryForm() {
         const fields = Object.keys(colConfig).filter(k => colConfig[k]);
         const currentIdx = fields.indexOf(field);
 
+        if (field === 'item_name' && showItemDropdown && activeItemRow === idx) {
+            const filtered = products.filter(p => 
+                p.name.toLowerCase().includes((items[idx].item_name || '').toLowerCase()) ||
+                (p.code && p.code.toLowerCase().includes((items[idx].item_name || '').toLowerCase()))
+            ).slice(0, 50);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setItemCursor(prev => (prev < filtered.length - 1 ? prev + 1 : prev));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setItemCursor(prev => (prev > 0 ? prev - 1 : 0));
+            } else if (e.key === 'Enter' && itemCursor >= 0) {
+                e.preventDefault();
+                handleItemChange(idx, 'product_id', filtered[itemCursor]._id);
+                setShowItemDropdown(false);
+                setItemCursor(-1);
+                // Focus next field
+                const nextField = fields[currentIdx + 1];
+                const nextEl = document.querySelector(`[data-idx="${idx}"][data-field="${nextField}"]`);
+                if (nextEl) nextEl.focus();
+                return;
+            } else if (e.key === 'Escape') {
+                setShowItemDropdown(false);
+                setItemCursor(-1);
+            }
+        }
+
         if (e.key === 'Enter') {
             e.preventDefault();
             if (currentIdx < fields.length - 1) {
@@ -327,14 +377,15 @@ export default function PurchaseEntryForm() {
             }
         } else if (e.key === 'Backspace') {
             const val = e.target.value;
-            // Only move back if the field is empty (or select element)
-            if (!val || val === '' || val === '0' || e.target.tagName === 'SELECT') {
-                e.preventDefault();
+            // Only move back if the field is empty
+            if (!val || val === '' || val === '0') {
                 if (currentIdx > 0) {
+                    e.preventDefault();
                     const prevField = fields[currentIdx - 1];
                     const prevEl = document.querySelector(`[data-idx="${idx}"][data-field="${prevField}"]`);
                     if (prevEl) prevEl.focus();
                 } else if (idx > 0) {
+                    e.preventDefault();
                     const lastField = fields[fields.length - 1];
                     const prevEl = document.querySelector(`[data-idx="${idx - 1}"][data-field="${lastField}"]`);
                     if (prevEl) prevEl.focus();
@@ -404,151 +455,164 @@ export default function PurchaseEntryForm() {
                 />
                 <div className="pef-container fade-in-up" style={{ animationDuration: '0.4s' }}>
 
-                    {/* ─── Bill Header ─── */}
-                    <div className="pef-bill-header">
-                        {/* Left: Invoice fields */}
-                        <div className="pef-left-fields">
-                            <div className="pef-field-row">
-                                <label className="pef-label">INVOICE NO</label>
-                                <input id="invoice-no-field" className="pef-input" value={invoiceNo}
-                                    onChange={e => setInvoiceNo(e.target.value.toUpperCase())}
-                                    onKeyDown={e => handleHeaderKeyDown(e, 'invoice-date-field')}
-                                    placeholder="INV-001" />
-                            </div>
-                            <div className="pef-field-row">
-                                <label className="pef-label">INVOICE DT</label>
-                                <input id="invoice-date-field" type="date" className="pef-input" value={invoiceDate}
-                                    onKeyDown={e => handleHeaderKeyDown(e, 'supplier-search-field')}
-                                    onChange={e => handleInvoiceDateChange(e.target.value)} />
-                            </div>
-                            <div className="pef-field-row">
-                                <label className="pef-label">PAYMENT TYPE</label>
-                                <div className="pef-select-wrap">
-                                    <ChevronDown size={12} className="pef-chevron" />
-                                    <select className="pef-select" value={paymentType}
-                                        onChange={e => setPaymentType(e.target.value)}>
-                                        <option value="CASH">CASH</option>
-                                        <option value="CREDIT">CREDIT</option>
-                                    </select>
+                    {/* ─── Bill Header (Neat Unified Form) ─── */}
+                    <div className="pef-bill-header-unified">
+                        <div className="pef-form-grid">
+                            {/* Column 1 */}
+                            <div className="pef-form-col">
+                                <div className="pef-f-group">
+                                    <label className="pef-f-label">INVOICE NO</label>
+                                    <input id="invoice-no-field" className="pef-f-input" value={invoiceNo}
+                                        onChange={e => setInvoiceNo(e.target.value.toUpperCase())}
+                                        onKeyDown={e => handleHeaderKeyDown(e, 'invoice-date-field')}
+                                        placeholder="INV-001" />
+                                </div>
+                                <div className="pef-f-group">
+                                    <label className="pef-f-label">DATE</label>
+                                    <input id="invoice-date-field" type="date" className="pef-f-input" value={invoiceDate}
+                                        onKeyDown={e => handleHeaderKeyDown(e, 'payment-type-field')}
+                                        onChange={e => handleInvoiceDateChange(e.target.value)} />
+                                </div>
+                                <div className="pef-f-group">
+                                    <label className="pef-f-label">PAYMENT</label>
+                                    <div className="pef-f-select-wrap">
+                                        <ChevronDown size={11} className="pef-f-chevron" />
+                                        <select id="payment-type-field" className="pef-f-select" value={paymentType}
+                                            onChange={e => setPaymentType(e.target.value)}>
+                                            <option value="CASH">CASH</option>
+                                            <option value="CREDIT">CREDIT</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Center: Supplier (Req 3, 4, 5, 6, 17, 18) */}
-                        <div className="pef-supplier-column" style={{ flex: 2 }}>
-                            <div className="pef-field-row !items-start">
-                                <div style={{ flex: 1, position: 'relative' }}>
-                                    <label className="pef-label !mb-1">SUPPLIER / VENDOR</label>
-                                    <div className="flex items-center gap-2">
-                                        <div className="relative flex-1">
-                                            <input 
-                                                id="supplier-search-field"
-                                                className="pef-input w-full font-bold" 
-                                                value={supplierSearch}
-                                                onChange={(e) => {
-                                                    setSupplierSearch(e.target.value);
-                                                    setShowSupplierDropdown(true);
-                                                }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === ' ' && !supplierSearch) {
-                                                        setShowSupplierDropdown(true);
-                                                    }
-                                                    if (e.key === 'Enter') {
+                            {/* Column 2 */}
+                            <div className="pef-form-col">
+                                <div className="pef-f-group" ref={supplierRef}>
+                                    <label className="pef-f-label">SUPPLIER / VENDOR</label>
+                                    <div className="relative">
+                                        <input 
+                                            id="supplier-search-field"
+                                            className="pef-f-input font-bold !bg-indigo-50/20 !border-indigo-100" 
+                                            value={supplierSearch}
+                                            autoComplete="off"
+                                            onFocus={() => setShowSupplierDropdown(true)}
+                                            onChange={(e) => {
+                                                setSupplierSearch(e.target.value);
+                                                setShowSupplierDropdown(true);
+                                                setSupplierCursor(-1);
+                                                if (!e.target.value) {
+                                                    setSupplierId('');
+                                                    setSelectedSupplier(null);
+                                                }
+                                            }}
+                                            onKeyDown={(e) => {
+                                                const filtered = suppliers.filter(s => 
+                                                    s.name.toLowerCase().includes(supplierSearch.toLowerCase()) ||
+                                                    (s.gst_number && s.gst_number.toLowerCase().includes(supplierSearch.toLowerCase()))
+                                                );
+                                                if (e.key === 'ArrowDown') {
+                                                    e.preventDefault();
+                                                    setSupplierCursor(prev => (prev < filtered.length - 1 ? prev + 1 : prev));
+                                                } else if (e.key === 'ArrowUp') {
+                                                    e.preventDefault();
+                                                    setSupplierCursor(prev => (prev > 0 ? prev - 1 : 0));
+                                                } else if (e.key === 'Enter') {
+                                                    if (supplierCursor >= 0 && showSupplierDropdown) {
+                                                        e.preventDefault();
+                                                        handleSupplierChange(filtered[supplierCursor]._id);
                                                         setShowSupplierDropdown(false);
+                                                        setSupplierCursor(-1);
+                                                    } else {
                                                         handleHeaderKeyDown(e, 'FIRST_ITEM');
                                                     }
-                                                }}
-                                                placeholder="Type name or space for list..."
-                                            />
-                                            {showSupplierDropdown && (
-                                                <div className="absolute top-full left-0 w-full bg-white shadow-2xl rounded-xl z-[100] border border-slate-100 max-h-[200px] overflow-y-auto mt-1">
-                                                    {suppliers.filter(s => s.name.toLowerCase().includes(supplierSearch.toLowerCase())).map(s => (
-                                                        <div 
-                                                            key={s._id} 
-                                                            className="px-4 py-2 hover:bg-slate-50 cursor-pointer font-bold text-sm text-slate-700"
-                                                            onClick={() => {
-                                                                handleSupplierChange(s._id);
-                                                                setShowSupplierDropdown(false);
-                                                            }}
-                                                        >
-                                                            {s.name}
+                                                } else if (e.key === 'Escape') {
+                                                    setShowSupplierDropdown(false);
+                                                }
+                                            }}
+                                            placeholder="Type name to search..."
+                                        />
+                                        {showSupplierDropdown && (
+                                            <div className="pef-dropdown-container">
+                                                {suppliers.filter(s => 
+                                                    s.name.toLowerCase().includes(supplierSearch.toLowerCase()) ||
+                                                    (s.gst_number && s.gst_number.toLowerCase().includes(supplierSearch.toLowerCase()))
+                                                ).map((s, idx) => (
+                                                    <div 
+                                                        key={s._id} 
+                                                        className={`pef-dropdown-item ${supplierCursor === idx ? 'active' : ''}`}
+                                                        onClick={() => {
+                                                            handleSupplierChange(s._id);
+                                                            setShowSupplierDropdown(false);
+                                                        }}
+                                                        onMouseEnter={() => setSupplierCursor(idx)}
+                                                    >
+                                                        <div className="flex justify-between items-center w-full">
+                                                            <span className="font-bold text-xs">{s.name}</span>
+                                                            <span className="text-[9px] text-slate-400 font-mono tracking-tighter">{s.gst_number || 'NO GSTIN'}</span>
                                                         </div>
-                                                    ))}
-                                                    <div className="p-2 border-t text-[10px] text-slate-400 text-center font-bold italic">End of List</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <button className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-                                            <BarChart2 size={16} />
+                                                    </div>
+                                                ))}
+                                                <div className="pef-dropdown-footer">List End</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="pef-f-group">
+                                        <label className="pef-f-label">GSTIN NO</label>
+                                        <input className="pef-f-input pef-f-readonly font-mono !text-[11px]" readOnly value={selectedSupplier?.gst_number || '—'} />
+                                    </div>
+                                    <div className="pef-f-group">
+                                        <label className="pef-f-label">OUTSTANDING</label>
+                                        <input className="pef-f-input pef-f-readonly font-black text-indigo-600 !text-right" 
+                                            readOnly value={selectedSupplier ? `₹${parseFloat(selectedSupplier.opening_balance || 0).toFixed(2)}` : '₹0.00'} />
+                                    </div>
+                                </div>
+                                <div className="pef-f-group">
+                                    <label className="pef-f-label">STORE ADDRESS</label>
+                                    <div className="relative">
+                                        <input className="pef-f-input pef-f-readonly !font-medium" readOnly value={selectedSupplier?.address || '—'} placeholder="Address" />
+                                        <button className="absolute right-1 top-1 w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center shadow-sm"
+                                            title="Add New Supplier" onClick={() => navigate('/dashboard/self-service/ledgers/create')}>
+                                            <Plus size={14} />
                                         </button>
                                     </div>
                                 </div>
-                                <div style={{ width: '180px' }}>
-                                    <label className="pef-label !mb-1">GSTIN NO</label>
-                                    <input className="pef-input pef-input-readonly w-full" 
-                                        readOnly value={selectedSupplier?.gst_number || ''} />
-                                </div>
                             </div>
-                            
-                            <div className="flex gap-4 mt-3">
-                                <div style={{ flex: 1 }}>
-                                    <label className="pef-label !mb-1">STORE ADDRESS</label>
-                                    <textarea 
-                                        id="supplier-address-field"
-                                        className="pef-input w-full !h-20 py-2 resize-none font-medium"
-                                        onKeyDown={e => handleHeaderKeyDown(e, 'FIRST_ITEM', 'supplier-search-field')}
-                                        value={selectedSupplier?.address || ''}
-                                        onChange={(e) => {
-                                            if (selectedSupplier) {
-                                                setSelectedSupplier({...selectedSupplier, address: e.target.value});
-                                            }
-                                        }}
-                                        placeholder="Party Address..."
-                                    />
-                                </div>
-                                <div style={{ width: '200px' }} className="space-y-2">
-                                    <div className="flex items-center justify-between gap-4">
-                                        <label className="pef-label !mb-0 min-w-[70px]">BALANCE</label>
-                                        <input className="pef-input pef-input-readonly !h-8 text-right font-black !text-indigo-600"
-                                            readOnly value={selectedSupplier ? parseFloat(selectedSupplier.opening_balance || 0).toFixed(2) : '0.00'} title="Outstanding Balance" />
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <label className="pef-label !mb-0 min-w-[70px]">DUE DAYS</label>
-                                        <input id="due-days-field" type="number" className="pef-input !h-8 text-right font-bold" min="0"
-                                            onKeyDown={e => handleHeaderKeyDown(e, 'due-date-field', 'supplier-search-field')}
-                                            value={dueDays} onChange={e => handleDueDaysChange(e.target.value)} />
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <label className="pef-label !mb-0 min-w-[70px]">DUE DATE</label>
-                                        <input id="due-date-field" type="date" className="pef-input !h-8 text-right font-bold"
-                                            onKeyDown={e => handleHeaderKeyDown(e, 'FIRST_ITEM', 'due-days-field')}
-                                            value={dueDate} onChange={e => setDueDate(e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Right: Registration & State (Req 18) */}
-                        <div className="pef-right-fields" style={{ width: '220px' }}>
-                            <div className="pef-field-row">
-                                <label className="pef-label">REG. TYPE</label>
-                                <div className="pef-select-wrap">
-                                    <ChevronDown size={12} className="pef-chevron" />
-                                    <select id="reg-type-field" className="pef-select" value={regType} 
-                                        onKeyDown={e => handleHeaderKeyDown(e, 'state-name-field', 'supplier-search-field')}
-                                        onChange={e => setRegType(e.target.value)}>
-                                        <option value="Regular">Regular</option>
-                                        <option value="Composition">Composition</option>
-                                        <option value="Unregistered">Unregistered</option>
-                                        <option value="Consumer">Consumer</option>
-                                    </select>
+                            {/* Column 3 */}
+                            <div className="pef-form-col">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="pef-f-group">
+                                        <label className="pef-f-label">REG. TYPE</label>
+                                        <div className="pef-f-select-wrap">
+                                            <ChevronDown size={11} className="pef-f-chevron" />
+                                            <select id="reg-type-field" className="pef-f-select" value={regType} 
+                                                onChange={e => setRegType(e.target.value)}>
+                                                <option value="Regular">Regular</option>
+                                                <option value="Composition">Composition</option>
+                                                <option value="Unregistered">Unregistered</option>
+                                                <option value="Consumer">Consumer</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="pef-f-group">
+                                        <label className="pef-f-label">STATE</label>
+                                        <input id="state-name-field" className="pef-f-input font-bold" value={stateName} 
+                                            onChange={e => setStateName(e.target.value)} placeholder="State" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="pef-field-row">
-                                <label className="pef-label">STATE</label>
-                                <input id="state-name-field" className="pef-input font-bold" value={stateName} 
-                                    onKeyDown={e => handleHeaderKeyDown(e, 'FIRST_ITEM', 'reg-type-field')}
-                                    onChange={e => setStateName(e.target.value)} placeholder="State Name" />
+                                <div className="pef-f-group">
+                                    <label className="pef-f-label">DUE DAYS</label>
+                                    <input id="due-days-field" type="number" className="pef-f-input font-bold" min="0"
+                                        value={dueDays} onChange={e => handleDueDaysChange(e.target.value)} />
+                                </div>
+                                <div className="pef-f-group">
+                                    <label className="pef-f-label">DUE DATE</label>
+                                    <input id="due-date-field" type="date" className="pef-f-input font-bold"
+                                        value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -612,17 +676,54 @@ export default function PurchaseEntryForm() {
                                                 </td>
                                             )}
                                             {colConfig.item_name && (
-                                                <td className="pef-td-name">
-                                                    <select className="pef-cell-select pef-w-name"
-                                                        data-idx={idx} data-field="product_id"
-                                                        value={item.product_id}
-                                                        onKeyDown={e => handleItemKeyDown(e, idx, 'product_id')}
-                                                        onChange={e => handleItemChange(idx, 'product_id', e.target.value)}>
-                                                        <option value="">— Item —</option>
-                                                        {products.map(p => (
-                                                            <option key={p._id} value={p._id}>{p.name}</option>
-                                                        ))}
-                                                    </select>
+                                                <td className="pef-td-name pef-item-name-cell">
+                                                    <div className="relative">
+                                                        <input
+                                                            className="pef-cell-input pef-w-name"
+                                                            data-idx={idx} data-field="item_name"
+                                                            value={item.item_name}
+                                                            autoComplete="off"
+                                                            onFocus={() => {
+                                                                setActiveItemRow(idx);
+                                                                setShowItemDropdown(true);
+                                                            }}
+                                                            onChange={e => {
+                                                                handleItemChange(idx, 'item_name', e.target.value);
+                                                                setShowItemDropdown(true);
+                                                                setItemCursor(-1);
+                                                            }}
+                                                            onKeyDown={e => handleItemKeyDown(e, idx, 'item_name')}
+                                                            placeholder="Type Item Name..."
+                                                        />
+                                                        {showItemDropdown && activeItemRow === idx && (
+                                                            <div className="pef-dropdown-container !w-[300px]">
+                                                                {products.filter(p => 
+                                                                    p.name.toLowerCase().includes((item.item_name || '').toLowerCase()) ||
+                                                                    (p.code && p.code.toLowerCase().includes((item.item_name || '').toLowerCase()))
+                                                                ).slice(0, 50).map((p, pIdx) => (
+                                                                    <div 
+                                                                        key={p._id} 
+                                                                        className={`pef-dropdown-item ${itemCursor === pIdx ? 'active' : ''}`}
+                                                                        onClick={() => {
+                                                                            handleItemChange(idx, 'product_id', p._id);
+                                                                            setShowItemDropdown(false);
+                                                                        }}
+                                                                        onMouseEnter={() => setItemCursor(pIdx)}
+                                                                    >
+                                                                        <div className="flex justify-between items-center w-full">
+                                                                            <span className="font-bold">{p.name}</span>
+                                                                            <span className="text-[10px] text-slate-400">{p.code || ''}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between text-[9px] text-slate-500 mt-0.5">
+                                                                            <span>Rate: ₹{p.purchase_price}</span>
+                                                                            <span>Stock: {p.current_stock || 0}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="pef-dropdown-footer">Showing top 50 items</div>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             )}
                                             {colConfig.unit && (
