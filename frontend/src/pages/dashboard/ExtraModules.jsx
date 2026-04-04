@@ -5,7 +5,7 @@ import Header from '@/components/dashboard/Header';
 import { 
     Ticket, Gift, Save, Loader2, AlertCircle, CheckCircle, 
     Plus, Trash2, Edit, CalendarDays, Sliders, ChevronRight,
-    Monitor, Printer, Clock, LayoutDashboard, BarChart3, Users, Table
+    Monitor, Printer, Clock, LayoutDashboard, BarChart3, Users, Table, Settings
 } from 'lucide-react';
 import '../../pages/SettingsPage.css';
 

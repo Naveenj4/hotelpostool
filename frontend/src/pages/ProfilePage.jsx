@@ -86,8 +86,24 @@ const ProfilePage = () => {
         finally { setLoading(false); }
     };
 
+    const fetchBackupStatus = async () => {
+        try {
+            const savedUser = localStorage.getItem('user');
+            if (!savedUser) return;
+            const { token } = JSON.parse(savedUser);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/settings/backup/status`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.success && result.data.lastBackup) {
+                setLastBackup(new Date(result.data.lastBackup.timestamp).toLocaleString());
+            }
+        } catch (err) { console.error("Failed to fetch backup status", err); }
+    };
+
     useEffect(() => { 
         fetchProfile();
+        fetchBackupStatus();
         const tab = new URLSearchParams(location.search).get('tab');
         if (tab) setActiveTab(tab);
     }, [location.search]);
@@ -145,6 +161,7 @@ const ProfilePage = () => {
             if (result.success) {
                 setLastBackup(new Date().toLocaleString());
                 setSuccess(prev => ({ ...prev, backup: true }));
+                fetchBackupStatus();
                 setTimeout(() => setSuccess(prev => ({ ...prev, backup: false })), 5000);
             } else {
                 if (result.message?.toLowerCase().includes('space') || result.message?.toLowerCase().includes('full')) {

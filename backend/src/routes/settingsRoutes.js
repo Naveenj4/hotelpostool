@@ -15,7 +15,8 @@ const {
 } = require('../controllers/settingsController');
 const {
     createBackup,
-    restoreBackup
+    restoreBackup,
+    getBackupStatus
 } = require('../controllers/backupController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -57,7 +58,10 @@ router.put('/bill-series', updateBillSeries);
 router.post('/new-profile', createNewProfile);
 
 // Backup & Restore
+router.get('/backup/status', getBackupStatus);
 router.post('/backup', createBackup);
 router.post('/restore', restoreBackup);
+
+module.exports = router;
 
 module.exports = router;

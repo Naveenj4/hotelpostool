@@ -5,7 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .bg-receipt {
-    background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 60%, #ecfdf5 100%);
+    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 60%, #fff7ed 100%);
     min-height: 100vh;
     font-family: 'Inter', sans-serif;
 }
@@ -38,7 +38,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #f97316, #ea580c);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -46,22 +46,15 @@
     font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.35);
-    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .re-header-create-btn:hover {
-    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    background: linear-gradient(135deg, #ea580c, #c2410c);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+    box-shadow: 0 6px 15px rgba(249, 115, 22, 0.35);
 }
 
-.re-payment-btn {
-    background: linear-gradient(135deg, #f97316, #ea580c) !important;
-    box-shadow: 0 2px 8px rgba(249,115,22,0.35) !important;
-}
-.re-payment-btn:hover {
-    background: linear-gradient(135deg, #ea580c, #c2410c) !important;
-}
 
 .re-header-back-btn {
     display: flex;
@@ -89,7 +82,7 @@
 .re-page-title {
     font-size: 1.25rem;
     font-weight: 800;
-    color: #4f46e5;
+    color: #ea580c;
     letter-spacing: 0.02em;
 }
 .re-payment-title { color: #ea580c !important; }
@@ -135,9 +128,9 @@
 }
 .re-stat-card:hover { transform: translateY(-2px); }
 
-.re-stat-card.receivable { border-left-color: #6366f1; }
-.re-stat-card.paid { border-left-color: #10b981; }
-.re-stat-card.unpaid { border-left-color: #f59e0b; }
+.re-stat-card.receivable { border-left-color: #f97316; }
+.re-stat-card.paid { border-left-color: #ea580c; }
+.re-stat-card.unpaid { border-left-color: #fdba74; }
 .re-stat-card.payable { border-left-color: #f97316; }
 
 .re-stat-label {
@@ -151,7 +144,7 @@
 .re-stat-value {
     font-size: 1.5rem;
     font-weight: 900;
-    color: #0f172a;
+    color: #ea580c;
     font-variant-numeric: tabular-nums;
 }
 
@@ -242,13 +235,13 @@
     outline: none;
     cursor: pointer;
 }
-.re-date-range input[type="date"]:focus { border-color: #6366f1; }
+.re-date-range input[type="date"]:focus { border-color: #f97316; }
 
 .re-create-btn-list {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #f97316, #ea580c);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -257,14 +250,13 @@
     font-weight: 700;
     cursor: pointer;
     margin-left: auto;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
-    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.re-create-btn-list:hover { transform: translateY(-1px); opacity: 0.9; }
+.re-create-btn-list:hover { transform: translateY(-1px); opacity: 0.9; box-shadow: 0 6px 15px rgba(249, 115, 22, 0.3); }
 
 .re-payment-create-btn {
     background: linear-gradient(135deg, #f97316, #ea580c) !important;
-    box-shadow: 0 2px 8px rgba(249,115,22,0.3) !important;
 }
 
 /* ── TABLE CARD ── */
@@ -284,7 +276,7 @@
 }
 
 .re-table thead tr {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    background: linear-gradient(135deg, #fff7ed, #fff1e3);
 }
 
 .re-table th {
@@ -308,9 +300,9 @@
 
 .re-tr:hover td { background: #fafbff; }
 
-.re-tr-selected td { background: #f0fdf4 !important; }
+.re-tr-selected td { background: #fff7ed !important; }
 
-.re-voucher-no { font-weight: 700; color: #6366f1; font-size: 0.8rem; }
+.re-voucher-no { font-weight: 700; color: #ea580c; font-size: 0.8rem; }
 .re-party-name { font-weight: 700; color: #0f172a; }
 .re-narration-cell {
     color: #64748b;
@@ -318,10 +310,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.re-amount-cell { font-weight: 800; color: #10b981; font-family: 'Inter', monospace; }
+.re-amount-cell { font-weight: 800; color: #ea580c; font-family: 'Inter', monospace; }
 .re-pay-amount-cell { font-weight: 800; color: #f97316; font-family: 'Inter', monospace; }
-.re-paid-cell { color: #10b981; font-weight: 600; }
-.re-pending-cell { color: #ef4444; font-weight: 700; }
+.re-paid-cell { color: #f97316; font-weight: 600; }
+.re-pending-cell { color: #ea580c; font-weight: 700; }
 .re-pay-pending-cell { color: #f97316; font-weight: 700; }
 
 .re-empty {
@@ -361,7 +353,7 @@
     border: 1px solid #e2e8f0;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
-.re-total-amount { color: #10b981; font-family: 'Inter', monospace; font-weight: 800; }
+.re-total-amount { color: #ea580c; font-family: 'Inter', monospace; font-weight: 800; }
 .re-pay-total { color: #f97316; font-family: 'Inter', monospace; font-weight: 800; }
 
 .re-amt-main { font-weight: 800; }
@@ -377,10 +369,10 @@
     border-radius: 4px;
     font-weight: 700;
 }
-.re-mode-tag.cash { background: #dcfce7; color: #166534; }
-.re-mode-tag.upi { background: #fef9c3; color: #854d0e; }
-.re-mode-tag.card { background: #ffedd5; color: #9a3412; }
-.re-mode-tag.online { background: #dbeafe; color: #1e40af; }
+.re-mode-tag.cash { background: #fff7ed; color: #ea580c; }
+.re-mode-tag.upi { background: #fff7ed; color: #ea580c; }
+.re-mode-tag.card { background: #fff7ed; color: #ea580c; }
+.re-mode-tag.online { background: #fff7ed; color: #ea580c; }
 
 /* ═══════════════════════════════════════════════════
    FORM VIEW
@@ -407,12 +399,12 @@
     padding: 0;
     transition: color 0.2s;
 }
-.re-back-link:hover { color: #4f46e5; }
+.re-back-link:hover { color: #ea580c; }
 
 .re-form-title {
     font-size: 1.1rem;
     font-weight: 800;
-    color: #4f46e5;
+    color: #ea580c;
 }
 
 /* FORM GRID */
@@ -461,8 +453,8 @@
     font-family: 'Inter', sans-serif;
 }
 .re-input:focus, .re-textarea:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    border-color: #f97316;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08);
     background: #fff;
 }
 
@@ -494,13 +486,13 @@
 .re-amt-input, .re-pay-amt-input {
     font-size: 1.1rem !important;
     font-weight: 800 !important;
-    color: #10b981 !important;
-    border-color: #10b981 !important;
+    color: #ea580c !important;
+    border-color: #ea580c !important;
 }
 .re-pay-amt-input { color: #f97316 !important; border-color: #f97316 !important; }
 
-.re-amt-input:focus { box-shadow: 0 0 0 3px rgba(16,185,129,0.15) !important; }
-.re-pay-amt-input:focus { box-shadow: 0 0 0 3px rgba(249,115,22,0.15) !important; }
+.re-amt-input:focus { box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1) !important; }
+.re-pay-amt-input:focus { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1) !important; }
 
 /* ── PARTY AUTOCOMPLETE DROPDOWN ── */
 .re-autocomplete-wrap { position: relative; }
@@ -532,7 +524,7 @@
     transition: background 0.15s;
     gap: 0.5rem;
 }
-.re-dropdown li:hover { background: #f0f4ff; }
+.re-dropdown li:hover { background: #fff7ed; }
 
 .re-dd-name { font-size: 0.88rem; font-weight: 700; color: #0f172a; }
 .re-dd-group { font-size: 0.72rem; font-weight: 600; color: #94a3b8; white-space: nowrap; }
@@ -550,13 +542,13 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    background: #eff6ff;
-    border-left: 4px solid #6366f1;
+    background: #fff7ed;
+    border-left: 4px solid #f97316;
     border-radius: 8px;
     padding: 0.65rem 1rem;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #1e40af;
+    color: #9a3412;
 }
 
 .re-bills-hint-icon { color: #94a3b8; }
@@ -565,20 +557,20 @@
 .re-settle-input, .re-pay-settle-input {
     width: 130px;
     background: #fff;
-    border: 1.5px solid #d1fae5;
+    border: 1.5px solid #ffedd5;
     border-radius: 6px;
     padding: 0.4rem 0.6rem;
     text-align: right;
     font-weight: 800;
     font-size: 0.85rem;
-    color: #10b981;
+    color: #ea580c;
     outline: none;
     font-family: 'Inter', monospace;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 .re-settle-input:focus {
-    border-color: #10b981;
-    box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    border-color: #ea580c;
+    box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.08);
 }
 .re-pay-settle-input { color: #f97316; border-color: #fed7aa; }
 .re-pay-settle-input:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
@@ -644,11 +636,11 @@
     border-radius: 8px;
     font-weight: 800;
     font-size: 0.88rem;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #f97316, #ea580c);
     color: #fff;
     border: none;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(16,185,129,0.35);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
     transition: all 0.2s;
 }
 .re-btn-save:hover:not(:disabled) { transform: translateY(-1px); opacity: 0.9; }
