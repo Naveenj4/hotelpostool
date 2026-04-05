@@ -41,7 +41,13 @@ const protect = async (req, res, next) => {
 
             next();
         } catch (error) {
-            console.error('Token verification error:', error);
+            console.error('Token verification error:', error.message);
+            if (error.name === 'JsonWebTokenError') {
+                return res.status(401).json({ success: false, message: 'Invalid token format' });
+            }
+            if (error.name === 'TokenExpiredError') {
+                return res.status(401).json({ success: false, message: 'Token expired' });
+            }
             res.status(401).json({ success: false, message: 'Not authorized, token failed' });
         }
     }

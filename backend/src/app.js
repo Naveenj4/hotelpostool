@@ -8,6 +8,12 @@ const connectDB = require('./config/db');
 // Load env vars
 dotenv.config();
 
+// Validate required environment variables
+if (!process.env.JWT_SECRET) {
+    console.warn('WARNING: JWT_SECRET not set. Using default. Set JWT_SECRET environment variable for production.');
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret_change_me';
+}
+
 // Connect to database
 connectDB();
 
@@ -20,9 +26,23 @@ app.set('trust proxy', 1);
 // Static folders
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// CORS Configuration
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production' 
+        ? [
+            process.env.FRONTEND_URL || 'https://hotelpostool.vercel.app',
+            'https://hotelpostool.vercel.app'
+          ]
+        : '*',
+    credentials: true,
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(helmet());
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
