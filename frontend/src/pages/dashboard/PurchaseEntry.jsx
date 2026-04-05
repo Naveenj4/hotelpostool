@@ -149,7 +149,7 @@ const PurchaseEntry = () => {
                                     <label className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 block">Vendor Partner *</label>
                                     <div className="relative">
                                         <Truck size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                                        <select required className="input-premium-modern !pl-12 appearance-none cursor-pointer w-full" value={purchaseDetails.supplier_id} onChange={(e) => setPurchaseDetails({ ...purchaseDetails, supplier_id: e.target.value })}>
+                                        <select required className="input-premium-modern with-icon-left !pl-12 appearance-none cursor-pointer w-full" value={purchaseDetails.supplier_id} onChange={(e) => setPurchaseDetails({ ...purchaseDetails, supplier_id: e.target.value })}>
                                             <option value="">Select Vendor...</option>
                                             {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                                         </select>
@@ -164,7 +164,7 @@ const PurchaseEntry = () => {
                                     <label className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 block">Inward Date</label>
                                     <div className="relative">
                                         <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                                        <input type="date" className="input-premium-modern !pl-12 w-full" value={purchaseDetails.purchase_date} onChange={(e) => setPurchaseDetails({ ...purchaseDetails, purchase_date: e.target.value })} />
+                                        <input type="date" className="input-premium-modern with-icon-left !pl-12 w-full" value={purchaseDetails.purchase_date} onChange={(e) => setPurchaseDetails({ ...purchaseDetails, purchase_date: e.target.value })} />
                                     </div>
                                 </div>
                             </div>
@@ -220,12 +220,12 @@ const PurchaseEntry = () => {
                                                 <td>
                                                     <div className="relative">
                                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">₹</span>
-                                                        <input type="number" min="0" className="input-premium-modern w-full !pl-8" value={item.purchase_rate} onChange={(e) => handleItemChange(idx, 'purchase_rate', e.target.value)} />
+                                                        <input type="number" min="0" className="input-premium-modern with-icon-left !pl-8 w-full" value={item.purchase_rate} onChange={(e) => handleItemChange(idx, 'purchase_rate', e.target.value)} />
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div className="relative">
-                                                        <input type="number" min="0" className="input-premium-modern w-full !pr-8 text-right" value={item.gst_percent} onChange={(e) => handleItemChange(idx, 'gst_percent', e.target.value)} />
+                                                        <input type="number" min="0" className="input-premium-modern with-icon-right !pr-8 text-right" value={item.gst_percent} onChange={(e) => handleItemChange(idx, 'gst_percent', e.target.value)} />
                                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">%</span>
                                                     </div>
                                                 </td>

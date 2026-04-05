@@ -345,10 +345,10 @@ const ProductMaster = () => {
         reader.readAsText(file);
     };
 
-    // Live computed stock value â€” shown in disabled Asset Value field
+    // Live computed stock value — shown in disabled Asset Value field
     const computedStockValue = ((parseFloat(formData.purchase_price) || 0) * (parseFloat(formData.opening_stock) || 0)).toFixed(2);
 
-    // Simple handleInputChange â€” stores raw string for ALL fields.
+    // Simple handleInputChange — stores raw string for ALL fields.
     // Number fields are kept as strings during editing to prevent the
     // React controlled-input "stuck at 0" bug where typing '5' into a
     // field showing 0 produces no state change and the input won't update.
@@ -500,7 +500,7 @@ const ProductMaster = () => {
         const numFields = ['purchase_price','cost_price','selling_price','mrp','gst_sales','gst_purchase','opening_stock','min_stock','max_stock','reorder_level','urgent_order_level'];
         const productAsStrings = { ...product };
         numFields.forEach(f => {
-            // Convert number from DB to string for form (e.g. 150 â†’ '150', 0 â†’ '')
+            // Convert number from DB to string for form (e.g. 150 → '150', 0 → '')
             const v = product[f];
             productAsStrings[f] = (v === 0 || v === null || v === undefined) ? '' : String(v);
         });
@@ -701,10 +701,10 @@ const ProductMaster = () => {
                                             ) : <span className="text-slate-200">-</span>}
                                         </td>
                                         <td className="text-slate-600 font-black uppercase text-xs tracking-widest">{p.unit || '-'}</td>
-                                        <td className="font-black text-rose-500 text-sm">â‚¹{p.purchase_price}</td>
-                                        <td className="font-black text-rose-500 text-sm">â‚¹{p.cost_price}</td>
-                                        <td className="font-black text-slate-700 text-sm">â‚¹{p.mrp}</td>
-                                        <td className="font-black text-indigo-600 text-sm">â‚¹{p.selling_price}</td>
+                                        <td className="font-black text-rose-500 text-sm">₹{p.purchase_price}</td>
+                                        <td className="font-black text-rose-500 text-sm">₹{p.cost_price}</td>
+                                        <td className="font-black text-slate-700 text-sm">₹{p.mrp}</td>
+                                        <td className="font-black text-indigo-600 text-sm">₹{p.selling_price}</td>
                                         <td className="text-slate-600 font-bold text-xs">{p.gst_purchase}%</td>
                                         <td className="text-slate-600 font-bold text-xs">{p.gst_sales}%</td>
                                         <td className={`text-[10px] font-black uppercase ${p.serve_types?.dine_in ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.dine_in ? 'YES' : 'NO'}</td>
@@ -712,7 +712,7 @@ const ProductMaster = () => {
                                         <td className={`text-[10px] font-black uppercase ${p.serve_types?.delivery ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.delivery ? 'YES' : 'NO'}</td>
                                         <td className={`text-[10px] font-black uppercase ${p.serve_types?.party_order ? 'text-emerald-500' : 'text-slate-300'}`}>{p.serve_types?.party_order ? 'YES' : 'NO'}</td>
                                         <td className="text-slate-600 font-black text-xs text-center">{p.opening_stock}</td>
-                                        <td className="font-black text-emerald-600 text-xs text-center">â‚¹{p.stock_value}</td>
+                                        <td className="font-black text-emerald-600 text-xs text-center">₹{p.stock_value}</td>
                                         <td className="text-slate-500 font-black text-xs text-center">{p.max_stock}</td>
                                         <td className="text-slate-500 font-black text-xs text-center">{p.min_stock}</td>
                                         <td className="text-rose-400 font-black text-xs text-center">{p.reorder_level}</td>
@@ -720,14 +720,14 @@ const ProductMaster = () => {
                                         <td>
                                             <div className="flex flex-wrap gap-1 max-w-[300px]">
                                                 {p.variations?.map((v, i) => (
-                                                    <span key={i} className="text-[9px] font-black uppercase bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200">{v.name} (+â‚¹{v.amount})</span>
+                                                    <span key={i} className="text-[9px] font-black uppercase bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200">{v.name} (+₹{v.amount})</span>
                                                 )) || <span className="text-slate-200">No Variations</span>}
                                             </div>
                                         </td>
                                         <td>
                                             <div className="flex flex-wrap gap-1 max-w-[300px]">
                                                 {p.addons?.map((a, i) => (
-                                                    <span key={i} className="text-[9px] font-black uppercase bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100">{a.name} (â‚¹{a.rate})</span>
+                                                    <span key={i} className="text-[9px] font-black uppercase bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100">{a.name} (₹{a.rate})</span>
                                                 )) || <span className="text-slate-200">No Addons</span>}
                                             </div>
                                         </td>
@@ -796,13 +796,13 @@ const ProductMaster = () => {
                                                     <label>Item Name <span className="text-rose-500">*</span></label>
                                                     <div className="relative group">
                                                         <Package size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                        <input type="text" name="name" required className="input-premium-modern !pl-12 w-full font-bold" placeholder="e.g. Margherita Pizza" value={formData.name} onChange={handleInputChange} />
+                                                        <input type="text" name="name" required className="input-premium-modern with-icon-left !pl-12 w-full font-bold" placeholder="e.g. Margherita Pizza" value={formData.name} onChange={handleInputChange} />
                                                     </div>
                                                 </div>
                                                 <div className="form-group-premium !mb-0"><label>Category <span className="text-rose-500">*</span></label><select name="category" required className="input-premium-modern w-full font-bold text-slate-700" value={formData.category} onChange={handleInputChange}><option value="">Choose Class</option>{categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}</select></div>
                                                 <div className="form-group-premium !mb-0"><label>Brand</label><select name="brand" className="input-premium-modern w-full font-bold text-slate-700" value={formData.brand} onChange={handleInputChange}><option value="">Generic / Custom</option>{brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}</select></div>
-                                                <div className="form-group-premium !mb-0"><label>SKU / Code</label><div className="relative group"><Hash size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" /><input type="text" name="code" className="input-premium-modern !pl-11 w-full font-semibold" placeholder="AUTO" value={formData.code} onChange={handleInputChange} /></div></div>
-                                                <div className="form-group-premium !mb-0"><label>Barcode</label><div className="relative group"><Activity size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" /><input type="text" name="barcode" className="input-premium-modern !pl-11 w-full font-semibold" placeholder="SCAN" value={formData.barcode} onChange={handleInputChange} /></div></div>
+                                                <div className="form-group-premium !mb-0"><label>SKU / Code</label><div className="relative group"><Hash size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" /><input type="text" name="code" className="input-premium-modern with-icon-left !pl-11 w-full font-semibold" placeholder="AUTO" value={formData.code} onChange={handleInputChange} /></div></div>
+                                                <div className="form-group-premium !mb-0"><label>Barcode</label><div className="relative group"><Activity size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" /><input type="text" name="barcode" className="input-premium-modern with-icon-left !pl-11 w-full font-semibold" placeholder="SCAN" value={formData.barcode} onChange={handleInputChange} /></div></div>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-50">
                                                 <div className="form-group-premium !mb-0"><label>Food Type</label><div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100"><button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-black transition-all ${formData.food_type === 'VEG' ? 'bg-white text-emerald-600 shadow border border-emerald-100' : 'text-slate-400 hover:text-emerald-600'}`}><div className={`w-2 h-2 rounded-full ${formData.food_type === 'VEG' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div> VEG</button><button type="button" onClick={() => setFormData(p => ({ ...p, food_type: 'NON_VEG' }))} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-black transition-all ${formData.food_type === 'NON_VEG' ? 'bg-white text-rose-600 shadow border border-rose-100' : 'text-slate-400 hover:text-rose-600'}`}><div className={`w-2 h-2 rounded-full ${formData.food_type === 'NON_VEG' ? 'bg-rose-500' : 'bg-slate-300'}`}></div> NON</button></div></div>

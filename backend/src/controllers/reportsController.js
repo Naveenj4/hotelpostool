@@ -4,6 +4,7 @@ const Supplier = require('../models/Supplier');
 const Customer = require('../models/Customer');
 const Ledger = require('../models/Ledger');
 const Purchase = require('../models/Purchase');
+const mongoose = require('mongoose');
 
 // @desc    Get daily/range sales report
 // @route   GET /api/reports/daily?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
@@ -936,7 +937,7 @@ exports.getSalesProfitReport = async (req, res) => {
 
         // 1. Fetch Summary Data (Total Sales and Returns)
         const summaryMatch = {
-            company_id: new mongoose.Types.ObjectId(hotelId),
+            company_id: hotelId?._id || hotelId,
             createdAt: { $gte: start, $lte: end }
         };
 
@@ -954,7 +955,7 @@ exports.getSalesProfitReport = async (req, res) => {
         // 2. Fetch Detailed Data Joined with Products
         const pipeline = [
             { $match: { 
-                company_id: new mongoose.Types.ObjectId(hotelId),
+                company_id: hotelId?._id || hotelId,
                 status: 'PAID',
                 createdAt: { $gte: start, $lte: end }
             }},
@@ -1125,7 +1126,7 @@ exports.getSalesRegister = async (req, res) => {
         end.setHours(23, 59, 59, 999);
 
         const match = {
-            company_id: new mongoose.Types.ObjectId(hotelId),
+            company_id: hotelId?._id || hotelId,
             createdAt: { $gte: start, $lte: end }
         };
 
@@ -1219,7 +1220,7 @@ exports.getItemWiseSalesDetailed = async (req, res) => {
         end.setHours(23, 59, 59, 999);
 
         const match = {
-            company_id: new mongoose.Types.ObjectId(hotelId),
+            company_id: hotelId?._id || hotelId,
             createdAt: { $gte: start, $lte: end }
         };
 
@@ -1256,7 +1257,7 @@ exports.getItemWiseSalesDetailed = async (req, res) => {
             });
         });
 
-        const productIds = Array.from(itemMap.keys()).map(id => new mongoose.Types.ObjectId(id));
+        const productIds = Array.from(itemMap.keys()).map(id => (typeof id === 'string' && id.length === 24) ? new mongoose.Types.ObjectId(id) : id);
         const products = await Product.find({ _id: { $in: productIds } }).select('code barcode category brand').lean();
         const productMeta = new Map(products.map(p => [p._id.toString(), p]));
 
@@ -1324,7 +1325,7 @@ exports.getSalesTransactionSummary = async (req, res) => {
         end.setHours(23, 59, 59, 999);
 
         const match = {
-            company_id: new mongoose.Types.ObjectId(hotelId),
+            company_id: hotelId?._id || hotelId,
             createdAt: { $gte: start, $lte: end }
         };
 
@@ -1572,8 +1573,8 @@ exports.getLedgerStatement = async (req, res) => {
         
         const prevTxs = await AccountTransaction.aggregate([
             { $match: { 
-                company_id: new mongoose.Types.ObjectId(hotelId), 
-                ledger_id: new mongoose.Types.ObjectId(ledgerId),
+                company_id: hotelId?._id || hotelId, 
+                ledger_id: (typeof ledgerId === 'string' && ledgerId.length === 24) ? new mongoose.Types.ObjectId(ledgerId) : ledgerId,
                 date: { $lt: start },
                 is_deleted: { $ne: true }
             }},
@@ -1650,7 +1651,6 @@ exports.getCashBankReport = async (req, res) => {
 
         const AccountTransaction = require('../models/AccountTransaction');
         const Ledger = require('../models/Ledger');
-        const mongoose = require('mongoose');
 
         let start = new Date(startDate || new Date().toISOString().split('T')[0]);
         start.setHours(0, 0, 0, 0);
@@ -1694,7 +1694,7 @@ exports.getCashBankReport = async (req, res) => {
         
         const prevTxs = await AccountTransaction.aggregate([
             { $match: { 
-                company_id: new mongoose.Types.ObjectId(hotelId), 
+                company_id: hotelId?._id || hotelId, 
                 ledger_id: { $in: cbIds },
                 date: { $lt: start },
                 is_deleted: { $ne: true }

@@ -1,4 +1,4 @@
-    import { useState, useEffect, useMemo, useRef } from 'react';
+    import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SidebarPaymentFlow from './SidebarPaymentFlow';
 import './BillingPage.css';
@@ -2627,23 +2627,21 @@ const BillingPage = () => {
                                         <div className="summary-details-grid">
                                             <div className="sum-detail-row">
                                                 <label>Discount</label>
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
-                                                    <div className="input-with-toggle" style={{ flex: 1 }}>
-                                                        <span style={{ padding: '4px 8px', background: '#f1f5f9', fontSize: '11px', fontWeight: 'bold', color: '#64748b', borderRight: '1px solid #e2e8f0' }}>₹</span>
+                                                <div className="discount-inputs-flex">
+                                                    <div className="input-with-toggle">
+                                                        <span>₹</span>
                                                         <input 
                                                             type="number" 
                                                             value={discountType === 'FIXED' ? discount : (subTotal > 0 ? (discount * subTotal / 100).toFixed(2) : 0)} 
                                                             onChange={(e) => { setDiscount(e.target.value); setDiscountType('FIXED'); }}
-                                                            style={{ border: 'none', width: '100%', padding: '4px 8px', outline: 'none', background: 'transparent' }} 
                                                         />
                                                     </div>
-                                                    <div className="input-with-toggle" style={{ flex: 1 }}>
-                                                        <span style={{ padding: '4px 8px', background: '#f1f5f9', fontSize: '11px', fontWeight: 'bold', color: '#64748b', borderRight: '1px solid #e2e8f0' }}>%</span>
+                                                    <div className="input-with-toggle">
+                                                        <span>%</span>
                                                         <input 
                                                             type="number" 
                                                             value={discountType === 'PERCENT' ? discount : (subTotal > 0 ? (discount / subTotal * 100).toFixed(2) : 0)} 
                                                             onChange={(e) => { setDiscount(e.target.value); setDiscountType('PERCENT'); }} 
-                                                            style={{ border: 'none', width: '100%', padding: '4px 8px', outline: 'none', background: 'transparent' }}
                                                         />
                                                     </div>
                                                 </div>
@@ -2668,7 +2666,7 @@ const BillingPage = () => {
                                                     <select 
                                                         value={taxType} 
                                                         onChange={e => setTaxType(e.target.value)}
-                                                        style={{ border: 'none', background: '#f1f5f9', fontSize: '9px', padding: '2px 4px', borderRadius: '4px', maxWidth: '80px', color: '#64748b', fontWeight: 'bold', outline: 'none', appearance: 'none', textAlign: 'center', cursor: 'pointer' }}>
+                                                        className="tax-selector">
                                                         <option value="EXCLUSIVE">Exclusive</option>
                                                         <option value="INCLUSIVE">Inclusive</option>
                                                     </select>

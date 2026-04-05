@@ -1427,9 +1427,17 @@
     background: #f8fafc !important;
     border: 2px solid transparent !important;
     border-radius: 1rem !important;
-    padding: 1rem 1.25rem !important;
+    padding: 1rem 1.25rem;
     font-weight: 600 !important;
     transition: all 0.3s ease !important;
+}
+
+.input-premium-modern.with-icon-left {
+    padding-left: 3.25rem !important;
+}
+
+.input-premium-modern.with-icon-right {
+    padding-right: 3.25rem !important;
 }
 
 .input-premium-modern:focus {

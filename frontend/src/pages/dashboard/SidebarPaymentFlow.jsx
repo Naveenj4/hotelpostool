@@ -83,16 +83,17 @@ const SidebarPaymentFlow = ({
                             </div>
                         </div>
                         <div className="row-fields-grid !grid-cols-2">
-                            <div className="input-field">
+                            <div className="payment-field">
                                 <label>RECEIVED AMT</label>
                                 <input 
                                     type="number" 
                                     placeholder="0.00" 
+                                    className="unified-input"
                                     value={cashAmounts.received} 
                                     onChange={(e) => setCashAmounts({ ...cashAmounts, received: e.target.value })}
                                 />
                             </div>
-                            <div className="input-field">
+                            <div className="payment-field">
                                 <label>BALANCE AMOUNT</label>
                                 <div className="display-value balance">
                                     ₹{balance.toFixed(2)}
@@ -146,14 +147,14 @@ const SidebarPaymentFlow = ({
                     </div>
 
                     {/* BILL DETAILS SUMMARY */}
-                    <div className="mt-6 p-5 bg-slate-50 rounded-2xl border border-slate-200">
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Billed Amt</span>
+                    <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest">Billed Amt</span>
                             <span className="text-xl font-black text-slate-800">₹{parseFloat(grandTotal).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Pending Amt</span>
-                            <span className={`text-2xl font-black ${pending > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        <div className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                            <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Pending Amt</span>
+                            <span className={`text-xl font-black ${pending > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                                 {pending > 0 ? `₹${pending.toFixed(2)}` : 'PAID'}
                             </span>
                         </div>
@@ -161,18 +162,20 @@ const SidebarPaymentFlow = ({
 
                     <div className="payment-actions">
                         <button 
-                            className="btn-save" 
+                            className="btn-pay-action btn-save" 
                             onClick={() => handleSubmit(false)} 
                             disabled={loading || (pending > 0 && !partialAllowed && (parseFloat(cashAmounts.received) > 0 || parseFloat(upiAmount) > 0 || parseFloat(cardAmount) > 0))}
                         >
-                            <Save size={18} /> SAVE
+                            <Save size={20} />
+                            <span>SAVE</span>
                         </button>
                         <button 
-                            className="btn-print" 
+                            className="btn-pay-action btn-print" 
                             onClick={() => handleSubmit(true)} 
                             disabled={loading || (pending > 0 && !partialAllowed)}
                         >
-                            <Printer size={18} /> SAVE & PRINT
+                            <Printer size={20} />
+                            <span>SAVE & PRINT</span>
                         </button>
                     </div>
                     <button className="unified-back-btn mt-4 w-full flex items-center justify-center gap-2" onClick={onCancel}>

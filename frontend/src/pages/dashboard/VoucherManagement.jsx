@@ -149,7 +149,7 @@ const VoucherManagement = () => {
                     <div className="flex flex-col md:flex-row items-center gap-6 mb-10 bento-card p-4">
                         <div className="relative flex-1 group">
                             <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                            <input type="text" placeholder="Search entries by ID, account or classification..." className="input-premium-modern !pl-16 w-full text-lg" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <input type="text" placeholder="Search entries by ID, account or classification..." className="input-premium-modern with-icon-left !pl-16 w-full text-lg" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex items-center gap-4">
                             <span className="metric-pill-modern bg-indigo-50 text-indigo-600 border border-indigo-100">
@@ -291,7 +291,7 @@ const VoucherManagement = () => {
                                             <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">Staged Date</label>
                                             <div className="relative">
                                                 <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-                                                <input type="date" required className="input-premium-modern !pl-12 w-full" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                                                <input type="date" required className="input-premium-modern with-icon-left !pl-12 w-full" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                                             </div>
                                         </div>
                                     </div>
@@ -348,7 +348,7 @@ const VoucherManagement = () => {
                                         <label className="text-[10px] font-black uppercase text-indigo-300 tracking-[0.3em] mb-5 block">Quantified Magnitude</label>
                                         <div className="relative">
                                             <span className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 text-4xl font-black italic">₹</span>
-                                            <input type="number" required placeholder="0.00" className="input-premium-modern w-full !pl-16 !bg-transparent !border-none !text-6xl !font-black !text-white !p-0 placeholder:text-white/10" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || '' })} />
+                                            <input type="number" required placeholder="0.00" className="input-premium-modern with-icon-left w-full !pl-16 !bg-transparent !border-none !text-6xl !font-black !text-white !p-0 placeholder:text-white/10" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || '' })} />
                                         </div>
                                     </div>
 

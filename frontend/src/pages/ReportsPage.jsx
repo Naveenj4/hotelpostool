@@ -97,7 +97,7 @@ const ReportsPage = () => {
     };
 
     const getHeaderTitle = () => {
-        switch(category) {
+        switch (category) {
             case 'stock': return 'Inventory Master Hub';
             case 'sales': return 'Sales Summary Hub';
             case 'purchase': return 'Purchase Audit Hub';
@@ -114,11 +114,11 @@ const ReportsPage = () => {
         if (category === 'stock') {
             if (filter === 'valuation') {
                 return (
-                    <GenericSummaryReport 
-                        key={componentKey} 
-                        isEmbedded={true} 
-                        title="Stock Valuation Report" 
-                        endpoint="/reports/stock-valuation" 
+                    <GenericSummaryReport
+                        key={componentKey}
+                        isEmbedded={true}
+                        title="Stock Valuation Report"
+                        endpoint="/reports/stock-valuation"
                     />
                 );
             }
@@ -134,13 +134,13 @@ const ReportsPage = () => {
                 case 'group': return <CategoryWiseSales key={componentKey} isEmbedded={true} />;
                 case 'transaction': return <TransactionWiseSales key={componentKey} isEmbedded={true} />;
                 case 'profit': return <SalesProfit key={componentKey} isEmbedded={true} />;
-                case 'brand': 
+                case 'brand':
                     return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Brand Wise Sales" endpoint="/reports/sales-by-brand" />;
                 case 'captain':
                     return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Captain Wise Sales" endpoint="/reports/sales-by-captain" />;
                 case 'agent':
                     return <GenericSummaryReport key={componentKey} isEmbedded={true} title="Personnel Sales" endpoint="/reports/sales/summary" groupBy="WAITER" />;
-                default: 
+                default:
                     return <DayWiseSales key={componentKey} isEmbedded={true} />;
             }
         }
@@ -191,22 +191,21 @@ const ReportsPage = () => {
 
             <main className="dashboard-main overflow-hidden font-sans flex flex-col">
                 <Header toggleSidebar={toggleSidebar} title={getHeaderTitle()} />
-                
+
                 <div className="fade-in px-6 lg:px-10 py-6 max-w-[2000px] mx-auto w-full flex-1 flex flex-col min-h-0 overflow-hidden">
-                    
+
                     {/* Integrated Compact Navigation Hub */}
-                    <div className="bg-white border border-slate-100 shadow-[0_2px_15px_rgb(0,0,0,0.02)] rounded-[1.5rem] p-2 mb-6 z-20 relative flex flex-col gap-2 flex-shrink-0">
+                    <div className="bg-white border border-slate-100 shadow-[0_2px_15px_rgb(0,0,0,0.02)] rounded-[1.5rem] p-2 mb-4 z-20 relative flex flex-col gap-2 flex-shrink-0">
                         {/* Category Selector (Compact Tabs) */}
                         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-slate-50/50 rounded-xl">
                             {CATEGORIES.map(cat => (
                                 <button
                                     key={cat.key}
                                     onClick={() => navigate(`/dashboard/self-service/reports?category=${cat.key}&filter=${FILTERS[cat.key][0].key}`)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                        category === cat.key 
-                                            ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${category === cat.key
+                                            ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                                             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                                    }`}
+                                        }`}
                                 >
                                     <span style={{ color: category === cat.key ? cat.color : '#94a3b8' }}>{cat.icon}</span>
                                     {cat.label}
@@ -220,11 +219,10 @@ const ReportsPage = () => {
                                 <button
                                     key={f.key}
                                     onClick={() => navigate(`/dashboard/self-service/reports?category=${category}&filter=${f.key}`)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[8.5px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                                        filter === f.key
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[8.5px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${filter === f.key
                                             ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
                                             : 'text-slate-400 hover:text-slate-500 hover:bg-slate-50 border border-transparent'
-                                    }`}
+                                        }`}
                                 >
                                     <span className={filter === f.key ? 'text-indigo-500' : 'text-slate-300'}>{f.icon}</span>
                                     {f.label}
@@ -234,7 +232,7 @@ const ReportsPage = () => {
                     </div>
 
                     {/* Report Content Container */}
-                    <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden relative min-h-0 flex flex-col">
+                    <div className="flex-1 bg-white rounded-[1.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden relative min-h-0 flex flex-col">
                         <div className="flex-1 overflow-y-auto scrollbar-premium is-embedded">
                             {renderActiveReport()}
                         </div>

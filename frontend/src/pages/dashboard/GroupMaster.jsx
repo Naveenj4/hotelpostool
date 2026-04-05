@@ -161,7 +161,7 @@ const GroupMaster = () => {
                     <div className="flex flex-col md:flex-row items-center gap-6 mb-8 bento-card p-4">
                         <div className="relative flex-1 group">
                             <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                            <input type="text" placeholder="Search groups..." className="input-premium-modern !pl-14 w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                            <input type="text" placeholder="Search groups..." className="input-premium-modern with-icon-left !pl-14 w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex items-center gap-3">
                             {['ALL', 'ASSETS', 'LIABILITIES', 'INCOME', 'EXPENSES'].map(n => (

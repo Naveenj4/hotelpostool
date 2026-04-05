@@ -1055,7 +1055,7 @@ a:hover {
 
 .search-premium input {
   width: 100%;
-  padding: 0.7rem 1rem 0.7rem 2.6rem;
+  padding: 0.7rem 1rem 0.7rem 3.5rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   font-weight: 600;
@@ -1075,11 +1075,20 @@ a:hover {
 
 .search-premium .lucide {
   position: absolute;
-  left: 0.8rem;
+  left: 1.1rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--slate-400);
   pointer-events: none;
+}
+
+/* Global Helper Classes for Icons in Inputs */
+.with-icon-left {
+  padding-left: 3rem !important;
+}
+
+.with-icon-right {
+  padding-right: 3rem !important;
 }
 
 /* --- Premium Table Container --- */
